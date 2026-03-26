@@ -24,3 +24,7 @@ services:
         sync: false # Set this in the Render dashboard manually for security!
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ADMIN_ORIGIN
+        value: https://campuswaybd.web.app
