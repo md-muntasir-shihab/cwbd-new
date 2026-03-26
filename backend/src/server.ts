@@ -327,8 +327,8 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/payments', webhookRoutes);
 
 
-// Health check
-app.get('/api/health', (_req, res) => {
+// Health check - /health alias for Render's health checker, /api/health for API clients
+const healthHandler = (_req: express.Request, res: express.Response) => {
     const dbStateMap: Record<number, 'down' | 'connected'> = {
         0: 'down',
         1: 'connected',
@@ -344,7 +344,9 @@ app.get('/api/health', (_req, res) => {
         version: APP_VERSION,
         db,
     });
-});
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 // 404 handler - Frontend is hosted separately on Firebase
 app.use((_req, res) => {
