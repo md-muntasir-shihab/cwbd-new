@@ -747,9 +747,9 @@ export async function login(req: Request, res: Response): Promise<void> {
             user: userPayload,
             suspiciousLogin,
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('login error:', error);
-        res.status(500).json({ message: 'Server error', details: error?.message, stack: error?.stack });
+        res.status(500).json({ message: 'Server error' });
     }
 }
 
