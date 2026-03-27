@@ -447,5 +447,3 @@ async function start() {
 }
 
 start();
-   
- 
