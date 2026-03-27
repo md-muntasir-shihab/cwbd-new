@@ -427,10 +427,10 @@ async function start() {
     // Seed default Chart-of-Account entries (idempotent)
     await seedDefaultChartOfAccounts();
 
-    const server = app.listen(PORT, () => {
+    const server = app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`🚀 CampusWay Backend running on port ${PORT}`);
-        console.log(`📡 Public API: http://localhost:${PORT}/api`);
-        console.log(`🔒 Admin API:  http://localhost:${PORT}/api/${ADMIN_SECRET_PATH}`);
+        console.log(`📡 Public API: http://0.0.0.0:${PORT}/api`);
+        console.log(`🔒 Admin API:  http://0.0.0.0:${PORT}/api/${ADMIN_SECRET_PATH}`);
     });
 
     server.on('error', (err: any) => {
