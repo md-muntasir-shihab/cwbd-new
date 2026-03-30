@@ -82,18 +82,20 @@ function validateRequiredEnv(): void {
         process.env.MONGODB_URI = process.env.MONGO_URI;
     }
 
-    const requiredKeys = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
-    if (IS_PRODUCTION) {
-        requiredKeys.push('FRONTEND_URL', 'ADMIN_ORIGIN');
-    }
-    const missing = requiredKeys.filter((key) => !String(process.env[key] || '').trim());
+    const missing = [];
     const hasMongoUri = Boolean(String(process.env.MONGODB_URI || process.env.MONGO_URI || '').trim());
     if (!hasMongoUri) missing.push('MONGODB_URI|MONGO_URI');
 
     if (missing.length > 0) {
         console.error(`[startup] Missing required env keys: ${missing.join(', ')}`);
-        console.error('[startup] Please update backend/.env (see backend/.env.example).');
+        console.error('[startup] Please update Azure App Service Configuration.');
         process.exit(1);
+    }
+    if (IS_PRODUCTION) {
+        if (!process.env.JWT_SECRET) console.warn('[startup] WARNING: JWT_SECRET is missing. Using insecure fallback.');
+        if (!process.env.JWT_REFRESH_SECRET && !process.env.REFRESH_SECRET) console.warn('[startup] WARNING: JWT_REFRESH_SECRET is missing. Using insecure fallback.');
+        if (!process.env.FRONTEND_URL) console.warn('[startup] WARNING: FRONTEND_URL is missing. Using insecure fallback.');
+        if (!process.env.ADMIN_ORIGIN) console.warn('[startup] WARNING: ADMIN_ORIGIN is missing. Using insecure fallback.');
     }
 }
 
@@ -348,39 +350,6 @@ const healthHandler = (_req: express.Request, res: express.Response) => {
 };
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
-
-// Temporary Admin Reset Route (Delete after use)
-app.get('/api/admin-reset-test', async (req, res) => {
-    if (req.query.key !== 'campusway-fix-2026') {
-        return res.status(403).send('Forbidden');
-    }
-
-    try {
-        const User = mongoose.model('User');
-        const hash = await bcrypt.hash('admin123456', 12);
-
-        await User.updateOne(
-            { email: 'admin@campusway.com' },
-            {
-                $set: {
-                    username: 'admin',
-                    full_name: 'System Admin',
-                    password: hash,
-                    role: 'superadmin',
-                    status: 'active',
-                    emailVerifiedAt: new Date(),
-                    mustChangePassword: false,
-                    loginAttempts: 0,
-                    lockUntil: null
-                }
-            },
-            { upsert: true }
-        );
-        res.send('Admin reset successful');
-    } catch (err: any) {
-        res.status(500).send(err.message);
-    }
-});
 
 // 404 handler - Frontend is hosted separately on Firebase
 app.use((_req, res) => {

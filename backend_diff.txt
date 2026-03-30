@@ -1,0 +1,1875 @@
+diff --git a/backend/.e2e-security-backup.json b/backend/.e2e-security-backup.json
+index 8b42565..62d84dd 100644
+--- a/backend/.e2e-security-backup.json
++++ b/backend/.e2e-security-backup.json
+@@ -1,19 +1,19 @@
+ {
+-  "capturedAt": "2026-03-25T20:14:12.446Z",
++  "capturedAt": "2026-03-30T06:57:03.076Z",
+   "security": {
+-    "singleBrowserLogin": true,
+-    "forceLogoutOnNewLogin": true,
++    "allowLegacyTokens": true,
++    "allowTestOtp": true,
++    "default2faMethod": "email",
+     "enable2faAdmin": false,
+     "enable2faStudent": false,
+     "force2faSuperAdmin": false,
+-    "default2faMethod": "email",
+-    "otpExpiryMinutes": 15,
+-    "maxOtpAttempts": 5,
++    "forceLogoutOnNewLogin": true,
+     "ipChangeAlert": true,
+-    "allowLegacyTokens": false,
++    "maxOtpAttempts": 5,
++    "otpExpiryMinutes": 15,
++    "singleBrowserLogin": true,
+     "strictExamTabLock": true,
+     "strictTokenHashValidation": false,
+-    "allowTestOtp": true,
+     "testOtpCode": "123456"
+   },
+   "securitySettings": {
+diff --git a/backend/src/controllers/adminSummaryController.ts b/backend/src/controllers/adminSummaryController.ts
+index d66573a..ae16b40 100644
+--- a/backend/src/controllers/adminSummaryController.ts
++++ b/backend/src/controllers/adminSummaryController.ts
+@@ -27,91 +27,97 @@ export const adminGetDashboardSummary = async (_req: Request, res: Response): Pr
+         const renewalDueUntil = new Date(now);
+         renewalDueUntil.setDate(renewalDueUntil.getDate() + 7);
+         const staffRoles = ['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'];
++        const activePublicResourceFilter = {
++            isPublic: true,
++            publishDate: { $lte: now },
++            $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
++        };
+ 
+         const [
+-            totalUniversities,
+-            activeUniversities,
+-            featuredUniversities,
++            universityStats,
+             homeSettings,
+-            pendingNews,
+-            publishedToday,
+-            liveExams,
+-            upcomingExams,
++            newsStats,
++            examStats,
+             totalQuestions,
+-            totalActiveStudents,
+-            suspendedStudents,
+-            pendingPaymentStudents,
+-            pendingPaymentApprovals,
+-            paidToday,
+-            unreadSupportTickets,
+-            unreadContactMessages,
+-            publicResources,
+-            featuredResources,
+-            totalCampaigns,
+-            queuedOrProcessingCampaigns,
+-            failedCampaignsToday,
+-            activeSubscribers,
+-            renewalDueSubscribers,
+-            activePlans,
+-            activeStaff,
+-            pendingInvites,
+-            activeRoles,
+-            unreadSecurityAlerts,
+-            criticalSecurityAlerts,
++            studentStats,
++            paymentStats,
++            supportStats,
++            resourceStats,
++            campaignStats,
++            subscriptionStats,
++            teamStats,
++            securityStats,
+         ] = await Promise.all([
+-            University.countDocuments({}),
+-            University.countDocuments({ isActive: true, isArchived: { $ne: true } }),
+-            University.countDocuments({ featured: true }),
++            Promise.all([
++                University.countDocuments({}),
++                University.countDocuments({ isActive: true, isArchived: { $ne: true } }),
++                University.countDocuments({ featured: true }),
++            ]).then(([total, active, featured]) => ({ total, active, featured })),
+             HomeSettings.findOne().lean(),
+-            News.countDocuments({ status: { $in: ['pending_review', 'draft'] } }),
+-            News.countDocuments({ isPublished: true, publishDate: { $gte: startOfToday, $lt: endOfToday } }),
+-            Exam.countDocuments({ isPublished: true, status: 'live' }),
+-            Exam.countDocuments({ isPublished: true, status: 'scheduled' }),
++            Promise.all([
++                News.countDocuments({ status: { $in: ['pending_review', 'draft'] } }),
++                News.countDocuments({ isPublished: true, publishDate: { $gte: startOfToday, $lt: endOfToday } }),
++            ]).then(([pendingReview, publishedToday]) => ({ pendingReview, publishedToday })),
++            Promise.all([
++                Exam.countDocuments({ isPublished: true, status: 'scheduled' }),
++                Exam.countDocuments({ isPublished: true, status: 'live' }),
++            ]).then(([upcoming, live]) => ({ upcoming, live })),
+             Question.countDocuments({}),
+-            User.countDocuments({ role: 'student', status: 'active' }),
+-            User.countDocuments({ role: 'student', status: 'suspended' }),
+-            User.countDocuments({ role: 'student', status: 'pending' }),
+-            ManualPayment.countDocuments({ status: 'pending' }),
+-            ManualPayment.countDocuments({
+-                status: 'paid',
+-                $or: [
+-                    { paidAt: { $gte: startOfToday, $lt: endOfToday } },
+-                    { paidAt: { $exists: false }, date: { $gte: startOfToday, $lt: endOfToday } },
+-                    { paidAt: null, date: { $gte: startOfToday, $lt: endOfToday } },
+-                ],
+-            }),
+-            SupportTicket.countDocuments({
+-                $or: [
+-                    { unreadCountForAdmin: { $gt: 0 } },
+-                    {
+-                        unreadCountForAdmin: { $exists: false },
+-                        status: { $in: ['open', 'in_progress'] },
+-                    },
+-                ],
+-            }),
+-            ContactMessage.countDocuments({ unreadByAdmin: true }),
+-            Resource.countDocuments({
+-                isPublic: true,
+-                publishDate: { $lte: now },
+-                $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
+-            }),
+-            Resource.countDocuments({
+-                isPublic: true,
+-                isFeatured: true,
+-                publishDate: { $lte: now },
+-                $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
+-            }),
+-            TeamInvite.countDocuments({ status: { $in: ['pending', 'sent'] } }),
+-            TeamRole.countDocuments({ isActive: true }),
+-            SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false }).catch(() => 0) : Promise.resolve(0),
+-            SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false, severity: 'critical' }).catch(() => 0) : Promise.resolve(0),
+-            NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
+-            NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: { $in: ['queued', 'processing'] } }).catch(() => 0) : Promise.resolve(0),
+-            NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: 'failed', updatedAt: { $gte: startOfToday, $lt: endOfToday } }).catch(() => 0) : Promise.resolve(0),
+-            UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now } }).catch(() => 0) : Promise.resolve(0),
+-            UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now, $lte: renewalDueUntil } }).catch(() => 0) : Promise.resolve(0),
+-            SubscriptionPlan ? SubscriptionPlan.countDocuments({ enabled: true, isArchived: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
+-            User ? User.countDocuments({ role: { $in: staffRoles }, status: 'active' }).catch(() => 0) : Promise.resolve(0),
++            Promise.all([
++                User.countDocuments({ role: 'student', status: 'active' }),
++                User.countDocuments({ role: 'student', status: 'pending' }),
++                User.countDocuments({ role: 'student', status: 'suspended' }),
++            ]).then(([totalActive, pendingPayment, suspended]) => ({ totalActive, pendingPayment, suspended })),
++            Promise.all([
++                ManualPayment.countDocuments({ status: 'pending' }),
++                ManualPayment.countDocuments({
++                    status: 'paid',
++                    $or: [
++                        { paidAt: { $gte: startOfToday, $lt: endOfToday } },
++                        { paidAt: { $exists: false }, date: { $gte: startOfToday, $lt: endOfToday } },
++                        { paidAt: null, date: { $gte: startOfToday, $lt: endOfToday } },
++                    ],
++                }),
++            ]).then(([pendingApprovals, paidToday]) => ({ pendingApprovals, paidToday })),
++            Promise.all([
++                SupportTicket.countDocuments({
++                    $or: [
++                        { unreadCountForAdmin: { $gt: 0 } },
++                        {
++                            unreadCountForAdmin: { $exists: false },
++                            status: { $in: ['open', 'in_progress'] },
++                        },
++                    ],
++                }),
++                ContactMessage.countDocuments({ unreadByAdmin: true }),
++            ]).then(([unreadTickets, unreadContactMessages]) => ({
++                unreadTickets,
++                unreadContactMessages,
++                unreadMessages: unreadTickets + unreadContactMessages,
++            })),
++            Promise.all([
++                Resource.countDocuments(activePublicResourceFilter),
++                Resource.countDocuments({ ...activePublicResourceFilter, isFeatured: true }),
++            ]).then(([publicResources, featuredResources]) => ({ publicResources, featuredResources })),
++            Promise.all([
++                NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
++                NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: { $in: ['queued', 'processing'] } }).catch(() => 0) : Promise.resolve(0),
++                NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: 'failed', updatedAt: { $gte: startOfToday, $lt: endOfToday } }).catch(() => 0) : Promise.resolve(0),
++            ]).then(([totalCampaigns, queuedOrProcessing, failedToday]) => ({ totalCampaigns, queuedOrProcessing, failedToday })),
++            Promise.all([
++                UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now } }).catch(() => 0) : Promise.resolve(0),
++                UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now, $lte: renewalDueUntil } }).catch(() => 0) : Promise.resolve(0),
++                SubscriptionPlan ? SubscriptionPlan.countDocuments({ enabled: true, isArchived: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
++            ]).then(([activeSubscribers, renewalDue, activePlans]) => ({ activeSubscribers, renewalDue, activePlans })),
++            Promise.all([
++                User.countDocuments({ role: { $in: staffRoles }, status: 'active' }).catch(() => 0),
++                TeamInvite.countDocuments({ status: { $in: ['pending', 'sent'] } }),
++                TeamRole.countDocuments({ isActive: true }),
++            ]).then(([activeStaff, pendingInvites, activeRoles]) => ({ activeStaff, pendingInvites, activeRoles })),
++            Promise.all([
++                SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false }).catch(() => 0) : Promise.resolve(0),
++                SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false, severity: 'critical' }).catch(() => 0) : Promise.resolve(0),
++            ]).then(([unreadAlerts, criticalAlerts]) => ({ unreadAlerts, criticalAlerts })),
+         ]);
+ 
+         const highlightedCategories = Array.isArray(homeSettings?.highlightedCategories)
+@@ -132,13 +138,11 @@ export const adminGetDashboardSummary = async (_req: Request, res: Response): Pr
+             99: 'down',
+         };
+         const db = dbStateMap[mongoose.connection.readyState] || 'down';
+-        const unreadSupportMessages = unreadSupportTickets + unreadContactMessages;
+-
+         res.json({
+             universities: {
+-                total: totalUniversities,
+-                active: activeUniversities,
+-                featured: featuredUniversities,
++                total: universityStats.total,
++                active: universityStats.active,
++                featured: universityStats.featured,
+             },
+             home: {
+                 highlightedCategories,
+@@ -146,58 +150,25 @@ export const adminGetDashboardSummary = async (_req: Request, res: Response): Pr
+                 enabledSections,
+             },
+             news: {
+-                pendingReview: pendingNews,
+-                publishedToday,
++                pendingReview: newsStats.pendingReview,
++                publishedToday: newsStats.publishedToday,
+             },
+             exams: {
+-                upcoming: upcomingExams,
+-                live: liveExams,
++                upcoming: examStats.upcoming,
++                live: examStats.live,
+             },
+             questionBank: {
+                 totalQuestions,
+             },
+-            students: {
+-                totalActive: totalActiveStudents,
+-                pendingPayment: pendingPaymentStudents,
+-                suspended: suspendedStudents,
+-            },
+-            payments: {
+-                pendingApprovals: pendingPaymentApprovals,
+-                paidToday,
+-            },
+-            financeCenter: {
+-                pendingApprovals: pendingPaymentApprovals,
+-                paidToday,
+-            },
+-            subscriptions: {
+-                activeSubscribers,
+-                renewalDue: renewalDueSubscribers,
+-                activePlans,
+-            },
+-            resources: {
+-                publicResources,
+-                featuredResources,
+-            },
+-            campaigns: {
+-                totalCampaigns,
+-                queuedOrProcessing: queuedOrProcessingCampaigns,
+-                failedToday: failedCampaignsToday,
+-            },
+-            supportCenter: {
+-                unreadMessages: unreadSupportMessages,
+-                unreadTickets: unreadSupportTickets,
+-                unreadContactMessages,
+-            },
+-            teamAccess: {
+-                activeStaff,
+-                pendingInvites,
+-                activeRoles,
+-            },
+-            security: {
+-                unreadAlerts: unreadSecurityAlerts,
+-                criticalAlerts: criticalSecurityAlerts,
+-                db,
+-            },
++            students: studentStats,
++            payments: paymentStats,
++            financeCenter: paymentStats,
++            subscriptions: subscriptionStats,
++            resources: resourceStats,
++            campaigns: campaignStats,
++            supportCenter: supportStats,
++            teamAccess: teamStats,
++            security: { ...securityStats, db },
+             systemStatus: {
+                 db,
+                 timeUTC: now.toISOString(),
+diff --git a/backend/src/controllers/authController.ts b/backend/src/controllers/authController.ts
+index 840cd53..7d48bc0 100644
+--- a/backend/src/controllers/authController.ts
++++ b/backend/src/controllers/authController.ts
+@@ -1711,17 +1711,20 @@ export async function getMe(req: AuthRequest, res: Response): Promise<void> {
+             return;
+         }
+ 
+-        const fullName = await getUserDisplayName(user);
++        let fullName = user.full_name || user.username;
++        let profilePhoto = String(user.profile_photo || '').trim();
+         let profileCompletionPercentage = 0;
+         let userUniqueId = '';
+         let studentMeta: Record<string, unknown> | null = null;
+ 
+         if (user.role === 'student') {
+             const profile = await StudentProfile.findOne({ user_id: user._id })
+-                .select('profile_completion_percentage user_unique_id department ssc_batch hsc_batch admittedAt groupIds')
++                .select('profile_completion_percentage user_unique_id department ssc_batch hsc_batch admittedAt groupIds full_name profile_photo_url')
+                 .lean();
+             profileCompletionPercentage = Number(profile?.profile_completion_percentage || 0);
+             userUniqueId = String(profile?.user_unique_id || '');
++            fullName = String(profile?.full_name || user.full_name || user.username);
++            profilePhoto = profilePhoto || String(profile?.profile_photo_url || '').trim();
+             studentMeta = {
+                 department: String(profile?.department || ''),
+                 ssc_batch: String(profile?.ssc_batch || ''),
+@@ -1729,6 +1732,12 @@ export async function getMe(req: AuthRequest, res: Response): Promise<void> {
+                 admittedAt: profile?.admittedAt || user.createdAt,
+                 groupIds: Array.isArray(profile?.groupIds) ? profile?.groupIds.map((id) => String(id)) : [],
+             };
++        } else {
++            const adminProfile = await AdminProfile.findOne({ user_id: user._id })
++                .select('admin_name profile_photo')
++                .lean();
++            fullName = String(adminProfile?.admin_name || user.full_name || user.username);
++            profilePhoto = profilePhoto || String(adminProfile?.profile_photo || '').trim();
+         }
+ 
+         res.json({
+@@ -1748,7 +1757,7 @@ export async function getMe(req: AuthRequest, res: Response): Promise<void> {
+                 permissionsV2: user.permissionsV2 || resolvePermissionsV2(user.role),
+                 mustChangePassword: user.mustChangePassword,
+                 redirectTo: getRedirectPath(user.role),
+-                profile_photo: user.profile_photo || '',
++                profile_photo: profilePhoto,
+                 profile_completion_percentage: profileCompletionPercentage,
+                 user_unique_id: userUniqueId,
+                 subscription: getSubscriptionSummary(user),
+diff --git a/backend/src/controllers/cmsController.ts b/backend/src/controllers/cmsController.ts
+index e2e7b61..e98049c 100644
+--- a/backend/src/controllers/cmsController.ts
++++ b/backend/src/controllers/cmsController.ts
+@@ -4,7 +4,7 @@ import News from '../models/News';
+ import Service from '../models/Service';
+ import ServicePageConfig from '../models/ServicePageConfig';
+ import Resource from '../models/Resource';
+-import ResourceSettings from '../models/ResourceSettings';
++import ResourceSettings, { RESOURCE_ALLOWED_TYPES, RESOURCE_SETTINGS_DEFAULTS } from '../models/ResourceSettings';
+ import ContactMessage from '../models/ContactMessage';
+ import SiteSettings from '../models/Settings';
+ import slugify from 'slugify';
+@@ -552,13 +552,64 @@ export async function adminUpdateResourceSettings(req: Request, res: Response):
+     try {
+         const input = (req.body || {}) as Record<string, unknown>;
+         const allowedKeys = new Set([
+-            'pageTitle', 'pageSubtitle', 'defaultThumbnailUrl', 'showFeatured', 'trackingEnabled',
+-            'allowUserUploads', 'requireAdminApproval', 'maxFileSizeMB', 'allowedCategories'
++            'pageTitle',
++            'pageSubtitle',
++            'heroBadgeLabel',
++            'searchPlaceholder',
++            'defaultThumbnailUrl',
++            'publicPageEnabled',
++            'studentHubEnabled',
++            'showHero',
++            'showStats',
++            'showFeatured',
++            'featuredLimit',
++            'defaultSort',
++            'defaultType',
++            'defaultCategory',
++            'itemsPerPage',
++            'showSearch',
++            'showTypeFilter',
++            'showCategoryFilter',
++            'trackingEnabled',
++            'allowUserUploads',
++            'requireAdminApproval',
++            'maxFileSizeMB',
++            'allowedCategories',
++            'allowedTypes',
++            'openLinksInNewTab',
++            'featuredSectionTitle',
++            'emptyStateMessage',
+         ]);
+         const safeUpdate: Record<string, unknown> = {};
+         for (const [k, v] of Object.entries(input)) {
+             if (allowedKeys.has(k)) safeUpdate[k] = v;
+         }
++        if (Array.isArray(safeUpdate.allowedCategories)) {
++            safeUpdate.allowedCategories = safeUpdate.allowedCategories
++                .map((item) => String(item || '').trim())
++                .filter(Boolean);
++        }
++        if (Array.isArray(safeUpdate.allowedTypes)) {
++            safeUpdate.allowedTypes = safeUpdate.allowedTypes
++                .map((item) => String(item || '').trim().toLowerCase())
++                .filter((item) => RESOURCE_ALLOWED_TYPES.includes(item as typeof RESOURCE_ALLOWED_TYPES[number]));
++        }
++        if (!Array.isArray(safeUpdate.allowedTypes) || (safeUpdate.allowedTypes as string[]).length === 0) {
++            delete safeUpdate.allowedTypes;
++        }
++        if (safeUpdate.defaultType !== undefined) {
++            const nextDefaultType = String(safeUpdate.defaultType || '').trim().toLowerCase();
++            safeUpdate.defaultType =
++                nextDefaultType === 'all' || RESOURCE_ALLOWED_TYPES.includes(nextDefaultType as typeof RESOURCE_ALLOWED_TYPES[number])
++                    ? nextDefaultType
++                    : RESOURCE_SETTINGS_DEFAULTS.defaultType;
++        }
++        if (safeUpdate.defaultSort !== undefined) {
++            const nextDefaultSort = String(safeUpdate.defaultSort || '').trim().toLowerCase();
++            safeUpdate.defaultSort = ['latest', 'downloads', 'views'].includes(nextDefaultSort)
++                ? nextDefaultSort
++                : RESOURCE_SETTINGS_DEFAULTS.defaultSort;
++        }
+         const settings = await ResourceSettings.findOneAndUpdate(
+             {},
+             { $set: safeUpdate },
+diff --git a/backend/src/controllers/profileController.ts b/backend/src/controllers/profileController.ts
+index 9548f6b..c95cdd3 100644
+--- a/backend/src/controllers/profileController.ts
++++ b/backend/src/controllers/profileController.ts
+@@ -138,8 +138,18 @@ export async function getProfile(req: AuthRequest, res: Response): Promise<void>
+         res.json({
+             user: {
+                 ...user,
+-                profile: profileData,
+-                fullName: user.role === 'student' ? profileData?.full_name : profileData?.admin_name
++                profile: user.role === 'student'
++                    ? {
++                        ...(profileData || {}),
++                        profile_photo_url: profileData?.profile_photo_url || user.profile_photo || '',
++                    }
++                    : {
++                        ...(profileData || {}),
++                        profile_photo: profileData?.profile_photo || user.profile_photo || '',
++                    },
++                fullName: user.role === 'student'
++                    ? (profileData?.full_name || user.full_name)
++                    : (profileData?.admin_name || user.full_name),
+             },
+             loginHistory,
+             actionHistory,
+@@ -182,10 +192,36 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
+             Object.assign(profile, updates);
+             profile.profile_completion_percentage = computeProfileCompletion(profile.toObject() as any);
+             await profile.save();
++            const normalizedFullName = typeof updates.full_name === 'string'
++                ? String(updates.full_name).trim()
++                : '';
++            const normalizedProfilePhoto = typeof updates.profile_photo_url === 'string'
++                ? String(updates.profile_photo_url).trim()
++                : undefined;
++
++            const userPatch: Record<string, unknown> = {};
++            if (normalizedFullName) {
++                userPatch.full_name = normalizedFullName;
++            }
++            if (typeof normalizedProfilePhoto === 'string') {
++                userPatch.profile_photo = normalizedProfilePhoto;
++            }
++
++            const updatedUser = Object.keys(userPatch).length > 0
++                ? await User.findByIdAndUpdate(
++                    userId,
++                    { $set: userPatch },
++                    { new: true },
++                ).select('full_name profile_photo')
++                : await User.findById(userId).select('full_name profile_photo');
+ 
+             res.json({
+                 message: 'Profile updated.',
+-                profile
++                profile,
++                user: {
++                    full_name: updatedUser?.full_name || normalizedFullName || user.full_name,
++                    profile_photo: updatedUser?.profile_photo || normalizedProfilePhoto || '',
++                },
+             });
+         } else {
+             const allowed = ['admin_name', 'profile_photo'];
+@@ -194,15 +230,65 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
+                 if (req.body[key] !== undefined) updates[key] = req.body[key];
+             }
+ 
+-            const profile = await AdminProfile.findOneAndUpdate(
+-                { user_id: userId },
+-                { $set: updates },
+-                { new: true }
+-            );
++            const normalizedAdminName = typeof updates.admin_name === 'string'
++                ? String(updates.admin_name).trim()
++                : '';
++            const normalizedProfilePhoto = typeof updates.profile_photo === 'string'
++                ? String(updates.profile_photo).trim()
++                : undefined;
++
++            const profilePatch: Record<string, unknown> = {
++                role_level: ['superadmin', 'admin', 'moderator', 'editor', 'viewer'].includes(user.role)
++                    ? user.role
++                    : 'viewer',
++            };
++            if (typeof updates.admin_name === 'string') {
++                profilePatch.admin_name = normalizedAdminName || user.full_name || user.username;
++            }
++            if (typeof normalizedProfilePhoto === 'string') {
++                profilePatch.profile_photo = normalizedProfilePhoto;
++            }
++
++            let profile = await AdminProfile.findOne({ user_id: userId });
++            if (!profile) {
++                profile = await AdminProfile.create({
++                    user_id: userId,
++                    admin_name: String(profilePatch.admin_name || user.full_name || user.username).trim() || user.username,
++                    role_level: profilePatch.role_level,
++                    permissions: user.permissions || {},
++                    profile_photo: typeof profilePatch.profile_photo === 'string' ? profilePatch.profile_photo : '',
++                });
++            } else {
++                Object.assign(profile, profilePatch);
++                if (!profile.permissions) {
++                    profile.permissions = user.permissions || {};
++                }
++                await profile.save();
++            }
++
++            const userPatch: Record<string, unknown> = {};
++            if (normalizedAdminName) {
++                userPatch.full_name = normalizedAdminName;
++            }
++            if (typeof normalizedProfilePhoto === 'string') {
++                userPatch.profile_photo = normalizedProfilePhoto;
++            }
++
++            const updatedUser = Object.keys(userPatch).length > 0
++                ? await User.findByIdAndUpdate(
++                    userId,
++                    { $set: userPatch },
++                    { new: true },
++                ).select('full_name profile_photo')
++                : await User.findById(userId).select('full_name profile_photo');
+ 
+             res.json({
+                 message: 'Profile updated.',
+-                profile
++                profile,
++                user: {
++                    full_name: updatedUser?.full_name || normalizedAdminName || user.full_name,
++                    profile_photo: updatedUser?.profile_photo || normalizedProfilePhoto || '',
++                },
+             });
+         }
+     } catch (err) {
+diff --git a/backend/src/controllers/resourceController.ts b/backend/src/controllers/resourceController.ts
+index 577c445..a260f32 100644
+--- a/backend/src/controllers/resourceController.ts
++++ b/backend/src/controllers/resourceController.ts
+@@ -1,6 +1,11 @@
+ import { Request, Response } from 'express';
+ import Resource from '../models/Resource';
+ import mongoose from 'mongoose';
++import ResourceSettings, {
++    RESOURCE_ALLOWED_TYPES,
++    RESOURCE_SETTINGS_DEFAULTS,
++    type IResourceSettings,
++} from '../models/ResourceSettings';
+ 
+ function isAllToken(value: unknown): boolean {
+     const normalized = String(value || '').trim().toLowerCase();
+@@ -37,6 +42,89 @@ function extractObjectIdFromSlug(value: string): string | null {
+     return mongoose.Types.ObjectId.isValid(id) ? id : null;
+ }
+ 
++type PublicResourceSettingsResponse = {
++    pageTitle: string;
++    pageSubtitle: string;
++    heroBadgeLabel: string;
++    searchPlaceholder: string;
++    defaultThumbnailUrl: string;
++    publicPageEnabled: boolean;
++    studentHubEnabled: boolean;
++    showHero: boolean;
++    showStats: boolean;
++    showFeatured: boolean;
++    featuredLimit: number;
++    defaultSort: string;
++    defaultType: string;
++    defaultCategory: string;
++    itemsPerPage: number;
++    showSearch: boolean;
++    showTypeFilter: boolean;
++    showCategoryFilter: boolean;
++    trackingEnabled: boolean;
++    allowedCategories: string[];
++    allowedTypes: string[];
++    openLinksInNewTab: boolean;
++    featuredSectionTitle: string;
++    emptyStateMessage: string;
++};
++
++function sanitizeResourceSettings(raw?: Partial<IResourceSettings> | null): PublicResourceSettingsResponse {
++    const allowedTypes = Array.isArray(raw?.allowedTypes) && raw?.allowedTypes.length > 0
++        ? raw.allowedTypes
++            .map((item) => String(item || '').trim().toLowerCase())
++            .filter((item) => RESOURCE_ALLOWED_TYPES.includes(item as typeof RESOURCE_ALLOWED_TYPES[number]))
++        : [...RESOURCE_SETTINGS_DEFAULTS.allowedTypes];
++
++    const allowedCategories = Array.isArray(raw?.allowedCategories) && raw?.allowedCategories.length > 0
++        ? raw.allowedCategories.map((item) => String(item || '').trim()).filter(Boolean)
++        : [...RESOURCE_SETTINGS_DEFAULTS.allowedCategories];
++
++    return {
++        pageTitle: String(raw?.pageTitle || RESOURCE_SETTINGS_DEFAULTS.pageTitle).trim() || RESOURCE_SETTINGS_DEFAULTS.pageTitle,
++        pageSubtitle: String(raw?.pageSubtitle || RESOURCE_SETTINGS_DEFAULTS.pageSubtitle).trim() || RESOURCE_SETTINGS_DEFAULTS.pageSubtitle,
++        heroBadgeLabel: String(raw?.heroBadgeLabel || RESOURCE_SETTINGS_DEFAULTS.heroBadgeLabel).trim() || RESOURCE_SETTINGS_DEFAULTS.heroBadgeLabel,
++        searchPlaceholder: String(raw?.searchPlaceholder || RESOURCE_SETTINGS_DEFAULTS.searchPlaceholder).trim() || RESOURCE_SETTINGS_DEFAULTS.searchPlaceholder,
++        defaultThumbnailUrl: String(raw?.defaultThumbnailUrl || '').trim(),
++        publicPageEnabled: raw?.publicPageEnabled !== false,
++        studentHubEnabled: raw?.studentHubEnabled !== false,
++        showHero: raw?.showHero !== false,
++        showStats: raw?.showStats !== false,
++        showFeatured: raw?.showFeatured !== false,
++        featuredLimit: Math.max(0, Math.min(24, Number(raw?.featuredLimit || RESOURCE_SETTINGS_DEFAULTS.featuredLimit))),
++        defaultSort: ['latest', 'downloads', 'views'].includes(String(raw?.defaultSort || '').trim().toLowerCase())
++            ? String(raw?.defaultSort).trim().toLowerCase()
++            : RESOURCE_SETTINGS_DEFAULTS.defaultSort,
++        defaultType: String(raw?.defaultType || RESOURCE_SETTINGS_DEFAULTS.defaultType).trim().toLowerCase() || RESOURCE_SETTINGS_DEFAULTS.defaultType,
++        defaultCategory: String(raw?.defaultCategory || RESOURCE_SETTINGS_DEFAULTS.defaultCategory).trim() || RESOURCE_SETTINGS_DEFAULTS.defaultCategory,
++        itemsPerPage: Math.max(4, Math.min(48, Number(raw?.itemsPerPage || RESOURCE_SETTINGS_DEFAULTS.itemsPerPage))),
++        showSearch: raw?.showSearch !== false,
++        showTypeFilter: raw?.showTypeFilter !== false,
++        showCategoryFilter: raw?.showCategoryFilter !== false,
++        trackingEnabled: raw?.trackingEnabled !== false,
++        allowedCategories,
++        allowedTypes,
++        openLinksInNewTab: raw?.openLinksInNewTab !== false,
++        featuredSectionTitle: String(raw?.featuredSectionTitle || RESOURCE_SETTINGS_DEFAULTS.featuredSectionTitle).trim() || RESOURCE_SETTINGS_DEFAULTS.featuredSectionTitle,
++        emptyStateMessage: String(raw?.emptyStateMessage || RESOURCE_SETTINGS_DEFAULTS.emptyStateMessage).trim() || RESOURCE_SETTINGS_DEFAULTS.emptyStateMessage,
++    };
++}
++
++async function loadSanitizedResourceSettings(): Promise<PublicResourceSettingsResponse> {
++    const settings = await ResourceSettings.findOne().lean();
++    return sanitizeResourceSettings(settings as unknown as Partial<IResourceSettings> | null);
++}
++
++export async function getPublicResourceSettings(_req: Request, res: Response): Promise<void> {
++    try {
++        const settings = await loadSanitizedResourceSettings();
++        res.json({ settings, lastUpdatedAt: new Date().toISOString() });
++    } catch (err) {
++        console.error('getPublicResourceSettings error:', err);
++        res.status(500).json({ message: 'Server error' });
++    }
++}
++
+ export async function getPublicResources(req: Request, res: Response): Promise<void> {
+     try {
+         const { type, category, q, sort = 'publishDate', limit = '50', page = '1' } = req.query;
+@@ -91,6 +179,11 @@ export async function getPublicResources(req: Request, res: Response): Promise<v
+ 
+ export async function incrementResourceView(req: Request, res: Response): Promise<void> {
+     try {
++        const settings = await loadSanitizedResourceSettings();
++        if (!settings.trackingEnabled) {
++            res.json({ ok: true, trackingEnabled: false });
++            return;
++        }
+         await Resource.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
+         res.json({ ok: true });
+     } catch {
+@@ -100,6 +193,11 @@ export async function incrementResourceView(req: Request, res: Response): Promis
+ 
+ export async function incrementResourceDownload(req: Request, res: Response): Promise<void> {
+     try {
++        const settings = await loadSanitizedResourceSettings();
++        if (!settings.trackingEnabled) {
++            res.json({ ok: true, trackingEnabled: false });
++            return;
++        }
+         await Resource.findByIdAndUpdate(req.params.id, { $inc: { downloads: 1 } });
+         res.json({ ok: true });
+     } catch {
+@@ -136,8 +234,13 @@ export async function getPublicResourceBySlug(req: Request, res: Response): Prom
+             return;
+         }
+ 
+-        // Fire-and-forget view increment
+-        Resource.findByIdAndUpdate(resource._id, { $inc: { views: 1 } }).catch(() => undefined);
++        // Respect tracking toggle before incrementing detail-page views.
++        loadSanitizedResourceSettings()
++            .then((settings) => {
++                if (!settings.trackingEnabled) return;
++                return Resource.findByIdAndUpdate(resource!._id, { $inc: { views: 1 } }).catch(() => undefined);
++            })
++            .catch(() => undefined);
+ 
+         // Fetch up to 4 related resources from same category
+         const relatedResources = await Resource.find({
+diff --git a/backend/src/controllers/teamAccessController.ts b/backend/src/controllers/teamAccessController.ts
+index c7eb813..bb2b5fa 100644
+--- a/backend/src/controllers/teamAccessController.ts
++++ b/backend/src/controllers/teamAccessController.ts
+@@ -10,11 +10,14 @@ import TeamApprovalRule from '../models/TeamApprovalRule';
+ import TeamAuditLog from '../models/TeamAuditLog';
+ import TeamInvite from '../models/TeamInvite';
+ import ActiveSession from '../models/ActiveSession';
++import AuditLog from '../models/AuditLog';
++import LoginActivity from '../models/LoginActivity';
+ import type { AuthRequest } from '../middlewares/auth';
+ import { DEFAULT_TEAM_ROLES, TEAM_ACTIONS, TEAM_MODULES } from '../teamAccess/defaults';
+ import { issueSecurityToken } from '../services/securityTokenService';
+ import { sendCampusMail } from '../utils/mailer';
+ import { escapeRegex } from '../utils/escapeRegex';
++import { getClientIp, getDeviceInfo } from '../utils/requestMeta';
+ 
+ const TEAM_USER_ROLES = ['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'] as const;
+ const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5173';
+@@ -175,11 +178,56 @@ async function writeAudit(
+         oldValueSummary,
+         newValueSummary,
+         status,
+-        ip: String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || ''),
+-        device: String(req.headers['user-agent'] || ''),
++        ip: getClientIp(req),
++        device: getDeviceInfo(req),
+     });
+ }
+ 
++function buildActivityActor(raw: unknown): {
++    _id: string;
++    full_name?: string;
++    username?: string;
++    email?: string;
++    role?: string;
++} | undefined {
++    if (!isRecord(raw)) return undefined;
++    const id = String(raw._id || '').trim();
++    if (!id) return undefined;
++    return {
++        _id: id,
++        full_name: String(raw.full_name || '').trim() || undefined,
++        username: String(raw.username || '').trim() || undefined,
++        email: String(raw.email || '').trim() || undefined,
++        role: String(raw.role || '').trim() || undefined,
++    };
++}
++
++function buildSessionDurationMinutes(startValue: unknown, endValue: unknown): number | null {
++    const start = startValue ? new Date(String(startValue)) : null;
++    const end = endValue ? new Date(String(endValue)) : null;
++    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
++    const diffMs = end.getTime() - start.getTime();
++    if (diffMs < 0) return null;
++    return Math.max(0, Math.round(diffMs / 60000));
++}
++
++function buildSessionDeviceLabel(item: Record<string, unknown>): string {
++    const deviceName = String(item.device_name || '').trim();
++    const browser = String(item.browser || '').trim();
++    const platform = String(item.platform || '').trim();
++    const deviceType = String(item.device_type || '').trim();
++    return [deviceName, browser, platform, deviceType].filter(Boolean).join(' ??? ');
++}
++
++function normalizeAuditStatus(value: unknown, fallback = 'success'): string {
++    const status = String(value || '').trim().toLowerCase();
++    if (!status) return fallback;
++    if (status === 'active' || status === 'terminated') return status;
++    if (status === 'warning' || status === 'pending' || status === 'failed' || status === 'blocked') return status;
++    if (status === 'success') return 'success';
++    return fallback;
++}
++
+ export async function ensureDefaultTeamRoles(): Promise<void> {
+     for (const role of DEFAULT_TEAM_ROLES) {
+         const existing = await TeamRole.findOne({ slug: role.slug });
+@@ -924,16 +972,173 @@ export async function teamGetActivity(req: Request, res: Response): Promise<void
+         const module = String(req.query.module || '').trim();
+         const action = String(req.query.action || '').trim();
+ 
+-        const filter: Record<string, unknown> = {};
+-        if (actorId && mongoose.Types.ObjectId.isValid(actorId)) filter.actorId = asObjectId(actorId);
+-        if (module) filter.module = module;
+-        if (action) filter.action = action;
++        const objectActorId = actorId && mongoose.Types.ObjectId.isValid(actorId) ? asObjectId(actorId) : null;
++        const teamFilter: Record<string, unknown> = {};
++        const auditFilter: Record<string, unknown> = {};
++        const loginFilter: Record<string, unknown> = {};
++        const sessionFilter: Record<string, unknown> = {};
++
++        if (objectActorId) {
++            teamFilter.actorId = objectActorId;
++            auditFilter.actor_id = objectActorId;
++            loginFilter.user_id = objectActorId;
++            sessionFilter.user_id = objectActorId;
++        }
++        if (module) {
++            teamFilter.module = module;
++            auditFilter.module = module;
++        }
++        if (action) {
++            teamFilter.action = action;
++            auditFilter.action = action;
++        }
+ 
+-        const items = await TeamAuditLog.find(filter)
+-            .populate('actorId', 'full_name username email role')
+-            .sort({ createdAt: -1 })
+-            .limit(300)
+-            .lean();
++        const includeLoginActivity = !module || ['auth_security', 'security_logs', 'team_access_control'].includes(module);
++        const includeSessionActivity = !module || ['session_security', 'security_logs', 'auth_security', 'team_access_control'].includes(module);
++        const loginSuccessFilter = action === 'login_success' ? true : action === 'login_failed' ? false : undefined;
++        const sessionStatusFilter = action === 'session_active'
++            ? 'active'
++            : action === 'session_terminated'
++                ? 'terminated'
++                : undefined;
++
++        if (loginSuccessFilter !== undefined) {
++            loginFilter.success = loginSuccessFilter;
++        }
++        if (sessionStatusFilter) {
++            sessionFilter.status = sessionStatusFilter;
++        }
++
++        const [teamItems, auditItems, loginItems, sessionItems] = await Promise.all([
++            TeamAuditLog.find(teamFilter)
++                .populate('actorId', 'full_name username email role')
++                .sort({ createdAt: -1 })
++                .limit(160)
++                .lean(),
++            AuditLog.find(auditFilter)
++                .populate('actor_id', 'full_name username email role')
++                .sort({ timestamp: -1 })
++                .limit(160)
++                .lean(),
++            includeLoginActivity
++                ? LoginActivity.find(loginFilter)
++                    .populate('user_id', 'full_name username email role')
++                    .sort({ createdAt: -1 })
++                    .limit(120)
++                    .lean()
++                : Promise.resolve([]),
++            includeSessionActivity
++                ? ActiveSession.find(sessionFilter)
++                    .populate('user_id', 'full_name username email role')
++                    .sort({ last_activity: -1, login_time: -1 })
++                    .limit(120)
++                    .lean()
++                : Promise.resolve([]),
++        ]);
++
++        const items = [
++            ...teamItems.map((item) => {
++                const actor = buildActivityActor(item.actorId);
++                const createdAt = (item as typeof item & { createdAt?: Date }).createdAt || new Date();
++                return {
++                    _id: String(item._id),
++                    kind: 'team_audit',
++                    actorId: actor,
++                    actorName: actor?.full_name || actor?.username || 'System',
++                    actorRole: actor?.role,
++                    module: String(item.module || 'team_access_control'),
++                    action: String(item.action || 'activity'),
++                    targetType: String(item.targetType || '').trim() || undefined,
++                    targetId: String(item.targetId || '').trim() || undefined,
++                    oldValueSummary: item.oldValueSummary,
++                    newValueSummary: item.newValueSummary,
++                    status: normalizeAuditStatus(item.status),
++                    ip: String(item.ip || '').trim() || undefined,
++                    device: String(item.device || '').trim() || undefined,
++                    createdAt,
++                };
++            }),
++            ...auditItems.map((item) => {
++                const actor = buildActivityActor(item.actor_id);
++                return {
++                    _id: String(item._id),
++                    kind: 'audit_log',
++                    actorId: actor,
++                    actorName: actor?.full_name || actor?.username || 'System',
++                    actorRole: String(item.actor_role || actor?.role || '').trim() || undefined,
++                    module: String(item.module || 'system'),
++                    action: String(item.action || 'activity'),
++                    targetType: String(item.target_type || '').trim() || undefined,
++                    targetId: item.target_id ? String(item.target_id) : undefined,
++                    oldValueSummary: item.before,
++                    newValueSummary: item.after,
++                    status: normalizeAuditStatus(item.status),
++                    ip: String(item.ip_address || '').trim() || undefined,
++                    device: String(item.device || '').trim() || undefined,
++                    details: item.details,
++                    sessionId: String(item.sessionId || '').trim() || undefined,
++                    createdAt: item.timestamp,
++                };
++            }),
++            ...loginItems.map((item) => {
++                const actor = buildActivityActor(item.user_id);
++                return {
++                    _id: String(item._id),
++                    kind: 'login_activity',
++                    actorId: actor,
++                    actorName: actor?.full_name || actor?.username || item.login_identifier || 'Unknown user',
++                    actorRole: String(item.role || actor?.role || '').trim() || undefined,
++                    module: 'auth_security',
++                    action: item.success ? 'login_success' : 'login_failed',
++                    targetType: 'auth',
++                    targetId: actor?._id,
++                    status: item.success ? 'success' : 'failed',
++                    ip: String(item.ip_address || '').trim() || undefined,
++                    device: String(item.device_info || item.user_agent || '').trim() || undefined,
++                    details: {
++                        loginIdentifier: item.login_identifier,
++                        suspicious: Boolean(item.suspicious),
++                        reason: item.reason || '',
++                    },
++                    createdAt: item.createdAt,
++                };
++            }),
++            ...sessionItems.map((item) => {
++                const actor = buildActivityActor(item.user_id);
++                const sessionRecord = item as unknown as Record<string, unknown>;
++                const loginAt = item.login_time || item.createdAt;
++                const lastActivityAt = item.last_activity || item.updatedAt || loginAt;
++                return {
++                    _id: String(item._id),
++                    kind: 'session_activity',
++                    actorId: actor,
++                    actorName: actor?.full_name || actor?.username || 'Unknown user',
++                    actorRole: actor?.role,
++                    module: 'session_security',
++                    action: item.status === 'terminated' ? 'session_terminated' : 'session_active',
++                    targetType: 'session',
++                    targetId: String(item.session_id || '').trim() || undefined,
++                    status: normalizeAuditStatus(item.status, 'active'),
++                    ip: String(item.ip_address || '').trim() || undefined,
++                    device: buildSessionDeviceLabel(sessionRecord) || undefined,
++                    browser: String(item.browser || '').trim() || undefined,
++                    platform: String(item.platform || '').trim() || undefined,
++                    locationSummary: String(item.location_summary || '').trim() || undefined,
++                    sessionId: String(item.session_id || '').trim() || undefined,
++                    loginAt,
++                    lastActivityAt,
++                    durationMinutes: buildSessionDurationMinutes(loginAt, lastActivityAt),
++                    details: {
++                        riskScore: item.risk_score,
++                        riskFlags: item.risk_flags,
++                        terminatedReason: item.terminated_reason,
++                    },
++                    createdAt: lastActivityAt,
++                };
++            }),
++        ]
++            .sort((left, right) => new Date(String(right.createdAt)).getTime() - new Date(String(left.createdAt)).getTime())
++            .slice(0, 300);
+ 
+         res.json({ items });
+     } catch (error) {
+diff --git a/backend/src/controllers/universityController.ts b/backend/src/controllers/universityController.ts
+index bcce01e..a5aba75 100644
+--- a/backend/src/controllers/universityController.ts
++++ b/backend/src/controllers/universityController.ts
+@@ -487,7 +487,7 @@ export async function getUniversities(req: Request, res: Response): Promise<void
+         const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+         const limitNum = Math.min(500, Math.max(1, parseInt(String(limit), 10) || 24));
+         const dashboardConfig = await getUniversityDashboardConfig();
+-        const { filter, categoryMissing } = buildUniversityFilter(req.query, { requireCategory: true, allowAllCategories: dashboardConfig.showAllCategories });
++        const { filter, categoryMissing } = buildUniversityFilter(req.query, { requireCategory: true, allowAllCategories: true });
+         const taxonomy = await getActivePublicUniversityTaxonomy();
+         const featuredRaw = String(req.query.featured || '').trim().toLowerCase();
+         const featuredMode = ['true', '1', 'yes', 'on'].includes(featuredRaw);
+diff --git a/backend/src/middlewares/sensitiveAction.ts b/backend/src/middlewares/sensitiveAction.ts
+index 6973273..be58619 100644
+--- a/backend/src/middlewares/sensitiveAction.ts
++++ b/backend/src/middlewares/sensitiveAction.ts
+@@ -5,7 +5,11 @@ import AuditLog from '../models/AuditLog';
+ import User from '../models/User';
+ import { AuthRequest } from './auth';
+ import { RiskyActionKey } from '../models/SecuritySettings';
+-import { requestApproval, shouldRequireTwoPersonApproval } from '../services/actionApprovalService';
++import {
++    buildApprovalRequestContextFromRequest,
++    requestApproval,
++    shouldRequireTwoPersonApproval,
++} from '../services/actionApprovalService';
+ import { getSecuritySettingsSnapshot } from '../services/securityCenterService';
+ import { consumeBackupCode, verifyTotpCode } from '../services/twoFactorService';
+ import { createSecurityAlert } from '../controllers/securityAlertController';
+@@ -173,6 +177,7 @@ export function requireSensitiveAction(options: SensitiveActionOptions) {
+                         userId: String(req.user._id),
+                         role: String(req.user.role || ''),
+                     },
++                    requestContext: buildApprovalRequestContextFromRequest(req),
+                 });
+ 
+                 res.status(202).json({
+diff --git a/backend/src/middlewares/twoPersonApproval.ts b/backend/src/middlewares/twoPersonApproval.ts
+index 7d925b2..5e71a43 100644
+--- a/backend/src/middlewares/twoPersonApproval.ts
++++ b/backend/src/middlewares/twoPersonApproval.ts
+@@ -1,7 +1,11 @@
+ import { NextFunction, Response } from 'express';
+ import { AuthRequest } from './auth';
+ import { RiskyActionKey } from '../models/SecuritySettings';
+-import { requestApproval, shouldRequireTwoPersonApproval } from '../services/actionApprovalService';
++import {
++    buildApprovalRequestContextFromRequest,
++    requestApproval,
++    shouldRequireTwoPersonApproval,
++} from '../services/actionApprovalService';
+ 
+ export function requireTwoPersonApproval(
+     actionKey: RiskyActionKey,
+@@ -39,6 +43,7 @@ export function requireTwoPersonApproval(
+                     userId: req.user._id,
+                     role: req.user.role,
+                 },
++                requestContext: buildApprovalRequestContextFromRequest(req),
+             });
+ 
+             res.status(202).json({
+diff --git a/backend/src/models/ActionApproval.ts b/backend/src/models/ActionApproval.ts
+index 55c2594..439e6a9 100644
+--- a/backend/src/models/ActionApproval.ts
++++ b/backend/src/models/ActionApproval.ts
+@@ -8,6 +8,26 @@ export type ActionApprovalStatus =
+     | 'executed'
+     | 'expired';
+ 
++export interface IActionApprovalReviewSummaryItem {
++    label: string;
++    value: string;
++}
++
++export interface IActionApprovalRequestContext {
++    ipAddress?: string;
++    deviceInfo?: string;
++    browser?: string;
++    platform?: string;
++    locationSummary?: string;
++    sessionId?: string;
++}
++
++export interface IActionApprovalTargetSummary {
++    targetType?: string;
++    targetId?: string;
++    targetLabel?: string;
++}
++
+ export interface IActionApproval extends Document {
+     actionKey: RiskyActionKey;
+     module: string;
+@@ -22,6 +42,11 @@ export interface IActionApproval extends Document {
+     paramsSnapshot: Record<string, unknown>;
+     querySnapshot: Record<string, unknown>;
+     payloadSnapshot: Record<string, unknown>;
++    requestContext?: IActionApprovalRequestContext;
++    targetSummary?: IActionApprovalTargetSummary;
++    reviewSummary?: IActionApprovalReviewSummaryItem[];
++    beforeSnapshot?: Record<string, unknown>;
++    afterSnapshot?: Record<string, unknown>;
+     decisionReason?: string;
+     initiatedAt: Date;
+     decidedAt?: Date | null;
+@@ -32,6 +57,35 @@ export interface IActionApproval extends Document {
+     updatedAt: Date;
+ }
+ 
++const ActionApprovalReviewSummarySchema = new Schema<IActionApprovalReviewSummaryItem>(
++    {
++        label: { type: String, trim: true, default: '' },
++        value: { type: String, trim: true, default: '' },
++    },
++    { _id: false },
++);
++
++const ActionApprovalRequestContextSchema = new Schema<IActionApprovalRequestContext>(
++    {
++        ipAddress: { type: String, trim: true, default: '' },
++        deviceInfo: { type: String, trim: true, default: '' },
++        browser: { type: String, trim: true, default: '' },
++        platform: { type: String, trim: true, default: '' },
++        locationSummary: { type: String, trim: true, default: '' },
++        sessionId: { type: String, trim: true, default: '' },
++    },
++    { _id: false },
++);
++
++const ActionApprovalTargetSummarySchema = new Schema<IActionApprovalTargetSummary>(
++    {
++        targetType: { type: String, trim: true, default: '' },
++        targetId: { type: String, trim: true, default: '' },
++        targetLabel: { type: String, trim: true, default: '' },
++    },
++    { _id: false },
++);
++
+ const ActionApprovalSchema = new Schema<IActionApproval>(
+     {
+         actionKey: {
+@@ -64,6 +118,11 @@ const ActionApprovalSchema = new Schema<IActionApproval>(
+         paramsSnapshot: { type: Schema.Types.Mixed, default: {} },
+         querySnapshot: { type: Schema.Types.Mixed, default: {} },
+         payloadSnapshot: { type: Schema.Types.Mixed, default: {} },
++        requestContext: { type: ActionApprovalRequestContextSchema, default: () => ({}) },
++        targetSummary: { type: ActionApprovalTargetSummarySchema, default: () => ({}) },
++        reviewSummary: { type: [ActionApprovalReviewSummarySchema], default: [] },
++        beforeSnapshot: { type: Schema.Types.Mixed, default: {} },
++        afterSnapshot: { type: Schema.Types.Mixed, default: {} },
+         decisionReason: { type: String, default: '' },
+         initiatedAt: { type: Date, default: Date.now },
+         decidedAt: { type: Date, default: null },
+diff --git a/backend/src/models/ResourceSettings.ts b/backend/src/models/ResourceSettings.ts
+index a17aa64..115794e 100644
+--- a/backend/src/models/ResourceSettings.ts
++++ b/backend/src/models/ResourceSettings.ts
+@@ -1,29 +1,116 @@
+ import mongoose, { Document, Schema } from 'mongoose';
+ 
++export const RESOURCE_ALLOWED_TYPES = ['pdf', 'link', 'video', 'audio', 'image', 'note'] as const;
++export const RESOURCE_DEFAULT_ALLOWED_CATEGORIES = [
++    'Question Banks',
++    'Study Materials',
++    'Official Links',
++    'Tips & Tricks',
++    'Scholarships',
++    'Admit Cards',
++] as const;
++
++export const RESOURCE_SETTINGS_DEFAULTS = {
++    pageTitle: 'Student Resources',
++    pageSubtitle: 'Access PDFs, question banks, video tutorials, links, and notes in one searchable library.',
++    heroBadgeLabel: 'Study Smart',
++    searchPlaceholder: 'Search resources, question banks, and notes...',
++    defaultThumbnailUrl: '',
++    publicPageEnabled: true,
++    studentHubEnabled: true,
++    showHero: true,
++    showStats: true,
++    showFeatured: true,
++    featuredLimit: 4,
++    defaultSort: 'latest',
++    defaultType: 'all',
++    defaultCategory: 'All',
++    itemsPerPage: 12,
++    showSearch: true,
++    showTypeFilter: true,
++    showCategoryFilter: true,
++    trackingEnabled: true,
++    allowUserUploads: false,
++    requireAdminApproval: true,
++    maxFileSizeMB: 50,
++    allowedCategories: [...RESOURCE_DEFAULT_ALLOWED_CATEGORIES],
++    allowedTypes: [...RESOURCE_ALLOWED_TYPES],
++    openLinksInNewTab: true,
++    featuredSectionTitle: 'Featured Resources',
++    emptyStateMessage: 'No resources found. Try adjusting your filters or search query.',
++} as const;
++
++export type ResourceSettingsSort = 'latest' | 'downloads' | 'views';
++export type ResourceSettingsDefaultType = 'all' | (typeof RESOURCE_ALLOWED_TYPES)[number];
++
+ export interface IResourceSettings extends Document {
+     pageTitle: string;
+     pageSubtitle: string;
++    heroBadgeLabel: string;
++    searchPlaceholder: string;
+     defaultThumbnailUrl: string;
++    publicPageEnabled: boolean;
++    studentHubEnabled: boolean;
++    showHero: boolean;
++    showStats: boolean;
+     showFeatured: boolean;
++    featuredLimit: number;
++    defaultSort: ResourceSettingsSort;
++    defaultType: ResourceSettingsDefaultType;
++    defaultCategory: string;
++    itemsPerPage: number;
++    showSearch: boolean;
++    showTypeFilter: boolean;
++    showCategoryFilter: boolean;
+     trackingEnabled: boolean;
+     allowUserUploads: boolean;
+     requireAdminApproval: boolean;
+     maxFileSizeMB: number;
+     allowedCategories: string[];
++    allowedTypes: string[];
++    openLinksInNewTab: boolean;
++    featuredSectionTitle: string;
++    emptyStateMessage: string;
+     createdAt: Date;
+     updatedAt: Date;
+ }
+ 
+ const ResourceSettingsSchema = new Schema<IResourceSettings>({
+-    pageTitle: { type: String, default: 'Student Resources' },
+-    pageSubtitle: { type: String, default: 'Access PDFs, question banks, video tutorials, links, and notes ??? all in one searchable library.' },
+-    defaultThumbnailUrl: { type: String, default: '' },
+-    showFeatured: { type: Boolean, default: true },
+-    trackingEnabled: { type: Boolean, default: true },
+-    allowUserUploads: { type: Boolean, default: false },
+-    requireAdminApproval: { type: Boolean, default: true },
+-    maxFileSizeMB: { type: Number, default: 50 },
+-    allowedCategories: { type: [String], default: ['PDF', 'Video', 'Note', 'Link', 'Archive', 'Code'] },
++    pageTitle: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.pageTitle },
++    pageSubtitle: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.pageSubtitle },
++    heroBadgeLabel: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.heroBadgeLabel },
++    searchPlaceholder: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.searchPlaceholder },
++    defaultThumbnailUrl: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.defaultThumbnailUrl },
++    publicPageEnabled: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.publicPageEnabled },
++    studentHubEnabled: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.studentHubEnabled },
++    showHero: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.showHero },
++    showStats: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.showStats },
++    showFeatured: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.showFeatured },
++    featuredLimit: { type: Number, default: RESOURCE_SETTINGS_DEFAULTS.featuredLimit, min: 0, max: 24 },
++    defaultSort: {
++        type: String,
++        enum: ['latest', 'downloads', 'views'],
++        default: RESOURCE_SETTINGS_DEFAULTS.defaultSort,
++    },
++    defaultType: {
++        type: String,
++        enum: ['all', ...RESOURCE_ALLOWED_TYPES],
++        default: RESOURCE_SETTINGS_DEFAULTS.defaultType,
++    },
++    defaultCategory: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.defaultCategory, trim: true },
++    itemsPerPage: { type: Number, default: RESOURCE_SETTINGS_DEFAULTS.itemsPerPage, min: 4, max: 48 },
++    showSearch: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.showSearch },
++    showTypeFilter: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.showTypeFilter },
++    showCategoryFilter: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.showCategoryFilter },
++    trackingEnabled: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.trackingEnabled },
++    allowUserUploads: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.allowUserUploads },
++    requireAdminApproval: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.requireAdminApproval },
++    maxFileSizeMB: { type: Number, default: RESOURCE_SETTINGS_DEFAULTS.maxFileSizeMB, min: 1, max: 500 },
++    allowedCategories: { type: [String], default: [...RESOURCE_SETTINGS_DEFAULTS.allowedCategories] },
++    allowedTypes: { type: [String], default: [...RESOURCE_SETTINGS_DEFAULTS.allowedTypes] },
++    openLinksInNewTab: { type: Boolean, default: RESOURCE_SETTINGS_DEFAULTS.openLinksInNewTab },
++    featuredSectionTitle: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.featuredSectionTitle },
++    emptyStateMessage: { type: String, default: RESOURCE_SETTINGS_DEFAULTS.emptyStateMessage },
+ }, { timestamps: true });
+ 
+ export default mongoose.model<IResourceSettings>('ResourceSettings', ResourceSettingsSchema);
+diff --git a/backend/src/routes/publicRoutes.ts b/backend/src/routes/publicRoutes.ts
+index bd558ff..150b8e0 100644
+--- a/backend/src/routes/publicRoutes.ts
++++ b/backend/src/routes/publicRoutes.ts
+@@ -28,7 +28,13 @@ import {
+ } from '../controllers/authController';
+ import { getUniversities, getUniversityBySlug, getUniversityCategories } from '../controllers/universityController';
+ import { getFeaturedUniversityClusters, getPublicUniversityClusterMembers } from '../controllers/universityClusterController';
+-import { getPublicResources, incrementResourceView, incrementResourceDownload, getPublicResourceBySlug } from '../controllers/resourceController';
++import {
++    getPublicResources,
++    incrementResourceView,
++    incrementResourceDownload,
++    getPublicResourceBySlug,
++    getPublicResourceSettings,
++} from '../controllers/resourceController';
+ import { getActiveBanners } from '../controllers/bannerController';
+ import { getHomeConfig } from '../controllers/homeConfigController';
+ import { getSiteSettings } from '../controllers/cmsController';
+@@ -175,6 +181,7 @@ router.get('/banners', getActiveBanners);
+ router.get('/banners/active', getActiveBanners);
+ router.get('/home-config', getHomeConfig);
+ /* ?????? Public ??? Resources ?????? */
++router.get('/resources/settings/public', getPublicResourceSettings);
+ router.get('/resources', getPublicResources);
+ router.get('/resources/:slug', getPublicResourceBySlug);
+ router.post('/resources/:id/view', incrementResourceView);
+diff --git a/backend/src/server.ts b/backend/src/server.ts
+index 1057a8f..b2feb79 100644
+--- a/backend/src/server.ts
++++ b/backend/src/server.ts
+@@ -349,39 +349,6 @@ const healthHandler = (_req: express.Request, res: express.Response) => {
+ app.get('/health', healthHandler);
+ app.get('/api/health', healthHandler);
+ 
+-// Temporary Admin Reset Route (Delete after use)
+-app.get('/api/admin-reset-test', async (req, res) => {
+-    if (req.query.key !== 'campusway-fix-2026') {
+-        return res.status(403).send('Forbidden');
+-    }
+-
+-    try {
+-        const User = mongoose.model('User');
+-        const hash = await bcrypt.hash('admin123456', 12);
+-
+-        await User.updateOne(
+-            { email: 'admin@campusway.com' },
+-            {
+-                $set: {
+-                    username: 'admin',
+-                    full_name: 'System Admin',
+-                    password: hash,
+-                    role: 'superadmin',
+-                    status: 'active',
+-                    emailVerifiedAt: new Date(),
+-                    mustChangePassword: false,
+-                    loginAttempts: 0,
+-                    lockUntil: null
+-                }
+-            },
+-            { upsert: true }
+-        );
+-        res.send('Admin reset successful');
+-    } catch (err: any) {
+-        res.status(500).send(err.message);
+-    }
+-});
+-
+ // 404 handler - Frontend is hosted separately on Firebase
+ app.use((_req, res) => {
+     res.status(404).json({ message: 'Route not found' });
+diff --git a/backend/src/services/actionApprovalService.ts b/backend/src/services/actionApprovalService.ts
+index b7f907a..16411f2 100644
+--- a/backend/src/services/actionApprovalService.ts
++++ b/backend/src/services/actionApprovalService.ts
+@@ -1,5 +1,11 @@
+ import mongoose from 'mongoose';
+-import ActionApproval, { IActionApproval } from '../models/ActionApproval';
++import ActionApproval, {
++    IActionApproval,
++    IActionApprovalRequestContext,
++    IActionApprovalReviewSummaryItem,
++    IActionApprovalTargetSummary,
++} from '../models/ActionApproval';
++import ActiveSession from '../models/ActiveSession';
+ import AuditLog from '../models/AuditLog';
+ import User from '../models/User';
+ import StudentProfile from '../models/StudentProfile';
+@@ -11,6 +17,7 @@ import News from '../models/News';
+ import Exam from '../models/Exam';
+ import ManualPayment from '../models/ManualPayment';
+ import { RiskyActionKey } from '../models/SecuritySettings';
++import { getClientIp, getDeviceInfo } from '../utils/requestMeta';
+ import { SecuritySettingsSnapshot, getSecuritySettingsSnapshot } from './securityCenterService';
+ 
+ type ApprovalActor = {
+@@ -28,6 +35,7 @@ type RequestApprovalInput = {
+     querySnapshot: Record<string, unknown>;
+     payloadSnapshot: Record<string, unknown>;
+     actor: ApprovalActor;
++    requestContext?: IActionApprovalRequestContext;
+ };
+ 
+ type ExecutionResult = {
+@@ -37,6 +45,360 @@ type ExecutionResult = {
+     details?: Record<string, unknown>;
+ };
+ 
++type ApprovalReviewContext = {
++    requestContext: IActionApprovalRequestContext;
++    targetSummary: IActionApprovalTargetSummary;
++    reviewSummary: IActionApprovalReviewSummaryItem[];
++    beforeSnapshot?: Record<string, unknown>;
++    afterSnapshot?: Record<string, unknown>;
++};
++
++function safeString(value: unknown): string {
++    return String(value || '').trim();
++}
++
++function humanizeActionKey(actionKey: string): string {
++    return String(actionKey || '')
++        .split('.')
++        .map((part) => safeString(part).replace(/[_-]+/g, ' '))
++        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
++        .join(' / ');
++}
++
++function readValidObjectIds(value: unknown): string[] {
++    if (!Array.isArray(value)) return [];
++    return value
++        .map((item) => safeString(item))
++        .filter((item) => mongoose.Types.ObjectId.isValid(item));
++}
++
++function pickRecord<T extends Record<string, unknown>>(source: T, keys: Array<keyof T>) {
++    const result: Record<string, unknown> = {};
++    for (const key of keys) {
++        if (source[key] !== undefined) {
++            result[String(key)] = source[key];
++        }
++    }
++    return result;
++}
++
++function summarizeList(values: string[], limit = 3): string {
++    const normalized = values.map((item) => safeString(item)).filter(Boolean);
++    if (normalized.length === 0) return 'N/A';
++    if (normalized.length <= limit) return normalized.join(', ');
++    return `${normalized.slice(0, limit).join(', ')} +${normalized.length - limit} more`;
++}
++
++function detectBrowser(userAgent: string): string {
++    if (/chrome/i.test(userAgent) && !/edge/i.test(userAgent)) return 'Chrome';
++    if (/firefox/i.test(userAgent)) return 'Firefox';
++    if (/safari/i.test(userAgent) && !/chrome/i.test(userAgent)) return 'Safari';
++    if (/edge/i.test(userAgent)) return 'Edge';
++    return '';
++}
++
++function detectPlatform(userAgent: string): string {
++    if (/windows/i.test(userAgent)) return 'Windows';
++    if (/android/i.test(userAgent)) return 'Android';
++    if (/iphone|ipad|ios/i.test(userAgent)) return 'iOS';
++    if (/mac os|macintosh/i.test(userAgent)) return 'macOS';
++    if (/linux/i.test(userAgent)) return 'Linux';
++    return '';
++}
++
++async function buildRequestContext(input?: IActionApprovalRequestContext): Promise<IActionApprovalRequestContext> {
++    const sessionId = safeString(input?.sessionId);
++    const fallbackUserAgent = safeString(input?.deviceInfo);
++    const fallbackBrowser = safeString(input?.browser) || detectBrowser(fallbackUserAgent);
++    const fallbackPlatform = safeString(input?.platform) || detectPlatform(fallbackUserAgent);
++
++    if (!sessionId) {
++        return {
++            ipAddress: safeString(input?.ipAddress),
++            deviceInfo: fallbackUserAgent,
++            browser: fallbackBrowser,
++            platform: fallbackPlatform,
++            locationSummary: safeString(input?.locationSummary),
++            sessionId: '',
++        };
++    }
++
++    const session = await ActiveSession.findOne({ session_id: sessionId }).lean().catch(() => null);
++    return {
++        ipAddress: safeString(session?.ip_address || input?.ipAddress),
++        deviceInfo: safeString(session?.device_name || session?.device_type || input?.deviceInfo),
++        browser: safeString(session?.browser || fallbackBrowser),
++        platform: safeString(session?.platform || fallbackPlatform),
++        locationSummary: safeString(session?.location_summary || input?.locationSummary),
++        sessionId,
++    };
++}
++
++async function buildStudentsBulkDeleteContext(payloadSnapshot: Record<string, unknown>): Promise<ApprovalReviewContext> {
++    const studentIds = readValidObjectIds(payloadSnapshot.studentIds);
++    const users = studentIds.length > 0
++        ? await User.find({ _id: { $in: studentIds }, role: 'student' })
++            .select('full_name email username status subscription.planName')
++            .lean()
++        : [];
++
++    return {
++        requestContext: {},
++        targetSummary: {
++            targetType: 'students',
++            targetId: studentIds[0] || '',
++            targetLabel: `${studentIds.length} student${studentIds.length === 1 ? '' : 's'}`,
++        },
++        reviewSummary: [
++            { label: 'Action', value: 'Delete selected student accounts and linked records' },
++            { label: 'Students selected', value: String(studentIds.length) },
++            {
++                label: 'Targets',
++                value: summarizeList(users.map((item) => safeString(item.full_name || item.email || item.username))),
++            },
++        ],
++        beforeSnapshot: {
++            totalStudents: studentIds.length,
++            students: users.slice(0, 25).map((item) => pickRecord(item as Record<string, unknown>, ['_id', 'full_name', 'email', 'username', 'status'])),
++        },
++        afterSnapshot: {
++            effect: 'Delete student users, student profiles, admin profiles, login activity, and group memberships.',
++            affectedCollections: ['users', 'student_profiles', 'admin_profiles', 'login_activities', 'student_groups'],
++        },
++    };
++}
++
++async function buildUniversitiesBulkDeleteContext(
++    paramsSnapshot: Record<string, unknown>,
++    payloadSnapshot: Record<string, unknown>,
++): Promise<ApprovalReviewContext> {
++    const ids = readValidObjectIds(payloadSnapshot.ids);
++    const mode = safeString(payloadSnapshot.mode).toLowerCase() === 'hard' ? 'hard' : 'soft';
++    const rows = ids.length > 0
++        ? await University.find({ _id: { $in: ids } })
++            .select('name shortForm category isActive isArchived')
++            .lean()
++        : [];
++
++    return {
++        requestContext: {},
++        targetSummary: {
++            targetType: 'universities',
++            targetId: ids[0] || safeString(paramsSnapshot.id),
++            targetLabel: `${ids.length} universit${ids.length === 1 ? 'y' : 'ies'}`,
++        },
++        reviewSummary: [
++            { label: 'Action', value: mode === 'hard' ? 'Permanently delete universities' : 'Archive and deactivate universities' },
++            { label: 'Universities selected', value: String(ids.length) },
++            {
++                label: 'Targets',
++                value: summarizeList(rows.map((item) => safeString(item.name || item.shortForm))),
++            },
++        ],
++        beforeSnapshot: {
++            mode,
++            universities: rows.slice(0, 25).map((item) => pickRecord(item as Record<string, unknown>, ['_id', 'name', 'shortForm', 'category', 'isActive', 'isArchived'])),
++        },
++        afterSnapshot: mode === 'hard'
++            ? {
++                effect: 'Selected university records will be permanently removed.',
++                mode,
++            }
++            : {
++                effect: 'Selected universities will be archived, deactivated, and hidden from active listings.',
++                mode,
++                flags: { isArchived: true, isActive: false },
++            },
++    };
++}
++
++async function buildNewsBulkDeleteContext(
++    paramsSnapshot: Record<string, unknown>,
++    payloadSnapshot: Record<string, unknown>,
++): Promise<ApprovalReviewContext> {
++    const idsFromPayload = readValidObjectIds(payloadSnapshot.ids);
++    const paramId = safeString(paramsSnapshot.id);
++    const ids = idsFromPayload.length > 0
++        ? idsFromPayload
++        : (mongoose.Types.ObjectId.isValid(paramId) ? [paramId] : []);
++    const rows = ids.length > 0
++        ? await News.find({ _id: { $in: ids } })
++            .select('title status category sourceName')
++            .lean()
++        : [];
++
++    return {
++        requestContext: {},
++        targetSummary: {
++            targetType: 'news',
++            targetId: ids[0] || '',
++            targetLabel: `${ids.length} news item${ids.length === 1 ? '' : 's'}`,
++        },
++        reviewSummary: [
++            { label: 'Action', value: 'Delete selected news items' },
++            { label: 'News selected', value: String(ids.length) },
++            { label: 'Targets', value: summarizeList(rows.map((item) => safeString(item.title))) },
++        ],
++        beforeSnapshot: {
++            newsItems: rows.slice(0, 25).map((item) => pickRecord(item as Record<string, unknown>, ['_id', 'title', 'status', 'category', 'sourceName'])),
++        },
++        afterSnapshot: {
++            effect: 'Selected news records will be removed from the CMS and public feeds.',
++        },
++    };
++}
++
++async function buildPublishExamResultContext(paramsSnapshot: Record<string, unknown>): Promise<ApprovalReviewContext> {
++    const examId = safeString(paramsSnapshot.id);
++    const exam = mongoose.Types.ObjectId.isValid(examId)
++        ? await Exam.findById(examId)
++            .select('title status resultPublishMode resultPublishDate isPublished')
++            .lean()
++        : null;
++
++    return {
++        requestContext: {},
++        targetSummary: {
++            targetType: 'exam',
++            targetId: examId,
++            targetLabel: safeString(exam?.title) || 'Exam result publish',
++        },
++        reviewSummary: [
++            { label: 'Action', value: 'Publish exam result immediately' },
++            { label: 'Exam', value: safeString(exam?.title) || 'Unknown exam' },
++            { label: 'Current mode', value: safeString(exam?.resultPublishMode) || 'unset' },
++        ],
++        beforeSnapshot: exam ? pickRecord(exam as Record<string, unknown>, ['_id', 'title', 'status', 'resultPublishMode', 'resultPublishDate', 'isPublished']) : {},
++        afterSnapshot: {
++            resultPublishMode: 'immediate',
++            effect: 'Result publish date will be updated to now.',
++        },
++    };
++}
++
++async function buildPublishBreakingNewsContext(paramsSnapshot: Record<string, unknown>): Promise<ApprovalReviewContext> {
++    const newsId = safeString(paramsSnapshot.id);
++    const item = mongoose.Types.ObjectId.isValid(newsId)
++        ? await News.findById(newsId)
++            .select('title status publishDate publishedAt priority isPublished')
++            .lean()
++        : null;
++
++    return {
++        requestContext: {},
++        targetSummary: {
++            targetType: 'news',
++            targetId: newsId,
++            targetLabel: safeString(item?.title) || 'Breaking news publish',
++        },
++        reviewSummary: [
++            { label: 'Action', value: 'Publish breaking news immediately' },
++            { label: 'News item', value: safeString(item?.title) || 'Unknown news item' },
++            { label: 'Current status', value: safeString(item?.status) || 'unset' },
++        ],
++        beforeSnapshot: item ? pickRecord(item as Record<string, unknown>, ['_id', 'title', 'status', 'publishDate', 'publishedAt', 'priority', 'isPublished']) : {},
++        afterSnapshot: {
++            status: 'published',
++            isPublished: true,
++            effect: 'The item will go live immediately and clear any scheduled publish date.',
++        },
++    };
++}
++
++async function buildPaymentRefundContext(paramsSnapshot: Record<string, unknown>): Promise<ApprovalReviewContext> {
++    const paymentId = safeString(paramsSnapshot.id);
++    const payment = mongoose.Types.ObjectId.isValid(paymentId)
++        ? await ManualPayment.findById(paymentId)
++            .select('studentId amount currency method status transactionId reference entryType')
++            .populate('studentId', 'full_name email')
++            .lean()
++        : null;
++
++    const studentRecord = payment?.studentId && typeof payment.studentId === 'object'
++        ? payment.studentId as { full_name?: string; email?: string }
++        : null;
++
++    return {
++        requestContext: {},
++        targetSummary: {
++            targetType: 'payment',
++            targetId: paymentId,
++            targetLabel: safeString(payment?.reference || payment?.transactionId) || 'Manual payment refund',
++        },
++        reviewSummary: [
++            { label: 'Action', value: 'Mark payment as refunded' },
++            { label: 'Amount', value: `${Number(payment?.amount || 0)} ${safeString(payment?.currency) || 'BDT'}` },
++            { label: 'Student', value: safeString(studentRecord?.full_name || studentRecord?.email) || 'Unknown student' },
++        ],
++        beforeSnapshot: payment ? {
++            _id: payment._id,
++            amount: payment.amount,
++            currency: payment.currency,
++            method: payment.method,
++            status: payment.status,
++            transactionId: payment.transactionId,
++            reference: payment.reference,
++            entryType: payment.entryType,
++            student: studentRecord || undefined,
++        } : {},
++        afterSnapshot: {
++            status: 'refunded',
++            paidAt: null,
++            effect: 'The manual payment will move to refunded status and paidAt will be cleared.',
++        },
++    };
++}
++
++async function buildApprovalReviewContext(
++    actionKey: RiskyActionKey,
++    paramsSnapshot: Record<string, unknown>,
++    payloadSnapshot: Record<string, unknown>,
++    requestContextInput?: IActionApprovalRequestContext,
++): Promise<ApprovalReviewContext> {
++    const requestContext = await buildRequestContext(requestContextInput);
++
++    let computedContext: ApprovalReviewContext;
++    switch (actionKey) {
++        case 'students.bulk_delete':
++            computedContext = await buildStudentsBulkDeleteContext(payloadSnapshot);
++            break;
++        case 'universities.bulk_delete':
++            computedContext = await buildUniversitiesBulkDeleteContext(paramsSnapshot, payloadSnapshot);
++            break;
++        case 'news.bulk_delete':
++            computedContext = await buildNewsBulkDeleteContext(paramsSnapshot, payloadSnapshot);
++            break;
++        case 'exams.publish_result':
++            computedContext = await buildPublishExamResultContext(paramsSnapshot);
++            break;
++        case 'news.publish_breaking':
++            computedContext = await buildPublishBreakingNewsContext(paramsSnapshot);
++            break;
++        case 'payments.mark_refunded':
++            computedContext = await buildPaymentRefundContext(paramsSnapshot);
++            break;
++        default:
++            computedContext = {
++                requestContext: {},
++                targetSummary: {
++                    targetType: 'unknown',
++                    targetId: safeString(paramsSnapshot.id),
++                    targetLabel: humanizeActionKey(actionKey),
++                },
++                reviewSummary: [{ label: 'Action', value: humanizeActionKey(actionKey) }],
++            };
++            break;
++    }
++
++    return {
++        requestContext,
++        targetSummary: computedContext.targetSummary,
++        reviewSummary: computedContext.reviewSummary,
++        beforeSnapshot: computedContext.beforeSnapshot,
++        afterSnapshot: computedContext.afterSnapshot,
++    };
++}
++
+ async function writeApprovalAudit(
+     actor: ApprovalActor,
+     action: string,
+@@ -50,10 +412,13 @@ async function writeApprovalAudit(
+         action,
+         target_id: approval._id,
+         target_type: 'action_approval',
+-        ip_address: '127.0.0.1',
++        ip_address: safeString(approval.requestContext?.ipAddress) || '127.0.0.1',
++        sessionId: safeString(approval.requestContext?.sessionId) || undefined,
++        device: safeString(approval.requestContext?.deviceInfo) || undefined,
+         details: {
+             actionKey: approval.actionKey,
+             status: approval.status,
++            targetSummary: approval.targetSummary || {},
+             ...details,
+         },
+     });
+@@ -74,6 +439,13 @@ export async function requestApproval(input: RequestApprovalInput): Promise<IAct
+     await expireStaleApprovals();
+     const security = await getSecuritySettingsSnapshot(false);
+     const expiryMinutes = Math.max(5, Number(security.twoPersonApproval.approvalExpiryMinutes || 120));
++    const reviewContext = await buildApprovalReviewContext(
++        input.actionKey,
++        input.paramsSnapshot,
++        input.payloadSnapshot,
++        input.requestContext,
++    );
++
+     const approval = await ActionApproval.create({
+         actionKey: input.actionKey,
+         module: input.module,
+@@ -85,6 +457,11 @@ export async function requestApproval(input: RequestApprovalInput): Promise<IAct
+         payloadSnapshot: input.payloadSnapshot,
+         initiatedBy: new mongoose.Types.ObjectId(input.actor.userId),
+         initiatedByRole: input.actor.role,
++        requestContext: reviewContext.requestContext,
++        targetSummary: reviewContext.targetSummary,
++        reviewSummary: reviewContext.reviewSummary,
++        beforeSnapshot: reviewContext.beforeSnapshot || {},
++        afterSnapshot: reviewContext.afterSnapshot || {},
+         initiatedAt: new Date(),
+         expiresAt: new Date(Date.now() + expiryMinutes * 60 * 1000),
+         status: 'pending_second_approval',
+@@ -98,12 +475,7 @@ export async function requestApproval(input: RequestApprovalInput): Promise<IAct
+ }
+ 
+ async function executeStudentsBulkDelete(approval: IActionApproval): Promise<ExecutionResult> {
+-    const studentIdsRaw = Array.isArray(approval.payloadSnapshot.studentIds)
+-        ? approval.payloadSnapshot.studentIds
+-        : [];
+-    const studentIds = studentIdsRaw
+-        .map((id) => String(id || '').trim())
+-        .filter((id) => mongoose.Types.ObjectId.isValid(id));
++    const studentIds = readValidObjectIds(approval.payloadSnapshot.studentIds);
+     if (studentIds.length === 0) {
+         return { ok: false, message: 'No valid studentIds provided for execution.' };
+     }
+@@ -124,15 +496,12 @@ async function executeStudentsBulkDelete(approval: IActionApproval): Promise<Exe
+ }
+ 
+ async function executeUniversitiesBulkDelete(approval: IActionApproval): Promise<ExecutionResult> {
+-    const idsRaw = Array.isArray(approval.payloadSnapshot.ids) ? approval.payloadSnapshot.ids : [];
+-    const ids = idsRaw
+-        .map((id) => String(id || '').trim())
+-        .filter((id) => mongoose.Types.ObjectId.isValid(id));
++    const ids = readValidObjectIds(approval.payloadSnapshot.ids);
+     if (ids.length === 0) {
+         return { ok: false, message: 'No valid university IDs provided for execution.' };
+     }
+ 
+-    const mode = String(approval.payloadSnapshot.mode || 'soft').toLowerCase() === 'hard' ? 'hard' : 'soft';
++    const mode = safeString(approval.payloadSnapshot.mode).toLowerCase() === 'hard' ? 'hard' : 'soft';
+     let affected = 0;
+     if (mode === 'hard') {
+         const result = await University.deleteMany({ _id: { $in: ids } });
+@@ -160,14 +529,11 @@ async function executeUniversitiesBulkDelete(approval: IActionApproval): Promise
+ }
+ 
+ async function executeNewsBulkDelete(approval: IActionApproval): Promise<ExecutionResult> {
+-    const idsRaw = Array.isArray(approval.payloadSnapshot.ids) ? approval.payloadSnapshot.ids : [];
+-    const fromPayload = idsRaw
+-        .map((id) => String(id || '').trim())
+-        .filter((id) => mongoose.Types.ObjectId.isValid(id));
+-    const fromParams = String(approval.paramsSnapshot.id || '').trim();
+-    const ids = fromPayload.length > 0
+-        ? fromPayload
+-        : (mongoose.Types.ObjectId.isValid(fromParams) ? [fromParams] : []);
++    const idsFromPayload = readValidObjectIds(approval.payloadSnapshot.ids);
++    const paramId = safeString(approval.paramsSnapshot.id);
++    const ids = idsFromPayload.length > 0
++        ? idsFromPayload
++        : (mongoose.Types.ObjectId.isValid(paramId) ? [paramId] : []);
+     if (ids.length === 0) {
+         return { ok: false, message: 'No valid news IDs provided for execution.' };
+     }
+@@ -181,7 +547,7 @@ async function executeNewsBulkDelete(approval: IActionApproval): Promise<Executi
+ }
+ 
+ async function executePublishExamResult(approval: IActionApproval): Promise<ExecutionResult> {
+-    const examId = String(approval.paramsSnapshot.id || '').trim();
++    const examId = safeString(approval.paramsSnapshot.id);
+     if (!mongoose.Types.ObjectId.isValid(examId)) {
+         return { ok: false, message: 'Invalid exam id for publish result.' };
+     }
+@@ -206,7 +572,7 @@ async function executePublishExamResult(approval: IActionApproval): Promise<Exec
+ }
+ 
+ async function executePublishBreakingNews(approval: IActionApproval): Promise<ExecutionResult> {
+-    const newsId = String(approval.paramsSnapshot.id || '').trim();
++    const newsId = safeString(approval.paramsSnapshot.id);
+     if (!mongoose.Types.ObjectId.isValid(newsId)) {
+         return { ok: false, message: 'Invalid news id for publish now.' };
+     }
+@@ -236,7 +602,7 @@ async function executePublishBreakingNews(approval: IActionApproval): Promise<Ex
+ }
+ 
+ async function executeMarkPaymentRefunded(approval: IActionApproval): Promise<ExecutionResult> {
+-    const paymentId = String(approval.paramsSnapshot.id || '').trim();
++    const paymentId = safeString(approval.paramsSnapshot.id);
+     if (!mongoose.Types.ObjectId.isValid(paymentId)) {
+         return { ok: false, message: 'Invalid payment id for refund.' };
+     }
+@@ -332,7 +698,7 @@ export async function rejectApproval(id: string, actor: ApprovalActor, reason?:
+     approval.status = 'rejected';
+     approval.secondApprover = new mongoose.Types.ObjectId(actor.userId);
+     approval.secondApproverRole = actor.role;
+-    approval.decisionReason = String(reason || '').trim();
++    approval.decisionReason = safeString(reason);
+     approval.decidedAt = new Date();
+     await approval.save();
+     await writeApprovalAudit(actor, 'approval.rejected', approval, { reason: approval.decisionReason || '' });
+@@ -355,3 +721,24 @@ export async function shouldRequireTwoPersonApproval(actionKey: RiskyActionKey):
+         security.twoPersonApproval.riskyActions.includes(actionKey)
+     );
+ }
++
++export function buildApprovalRequestContextFromRequest(reqLike: {
++    headers?: Record<string, unknown>;
++    ip?: string;
++    socket?: { remoteAddress?: string };
++    user?: { sessionId?: string };
++}): IActionApprovalRequestContext {
++    const request = reqLike as unknown as {
++        headers: Record<string, unknown>;
++        ip?: string;
++        socket?: { remoteAddress?: string };
++    };
++    const deviceInfo = getDeviceInfo(request as never);
++    return {
++        ipAddress: getClientIp(request as never),
++        deviceInfo,
++        browser: detectBrowser(deviceInfo),
++        platform: detectPlatform(deviceInfo),
++        sessionId: safeString(reqLike.user?.sessionId),
++    };
++}

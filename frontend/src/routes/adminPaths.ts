@@ -79,6 +79,7 @@ export const ADMIN_PATHS = {
     studentMgmtDetail: adminUi('student-management/students'),  // /:id suffix added by router
     subscriptionsV2: adminUi('subscriptions-v2'),
     subscriptionPlans: adminUi('subscriptions/plans'),
+    subscriptionContactCenter: adminUi('campaigns/contact-center'),
     payments: adminUi('payments'),
     financeCenter: adminUi('finance'),
     financeDashboard: adminUi('finance/dashboard'),
@@ -288,10 +289,16 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         module: 'subscription_plans',
         allowedRoles: ['superadmin', 'admin', 'moderator'],
         requiredLegacyPermission: 'canManagePlans',
-        matchPrefixes: [adminUi('subscriptions/plans'), adminUi('subscription-plans'), adminUi('subscriptions-v2')],
+        matchPrefixes: [
+            adminUi('subscriptions/plans'),
+            adminUi('subscription-plans'),
+            adminUi('subscriptions-v2'),
+            ADMIN_PATHS.subscriptionContactCenter,
+        ],
         children: [
             { key: 'sub-plans', label: 'Subscription Plans', path: ADMIN_PATHS.subscriptionPlans, icon: CreditCard },
             { key: 'sub-v2', label: 'Subscriptions', path: ADMIN_PATHS.subscriptionsV2, icon: CreditCard },
+            { key: 'sub-contact-center', label: 'Subscription Contact Center', path: ADMIN_PATHS.subscriptionContactCenter, icon: Users },
         ],
     },
 
@@ -338,7 +345,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
             { key: 'cmp-list', label: 'Campaigns', path: ADMIN_PATHS.campaignsList, icon: ScrollText },
             { key: 'cmp-new', label: 'New Campaign', path: ADMIN_PATHS.campaignsNew, icon: Send },
             { key: 'cmp-audiences', label: 'Audiences', path: ADMIN_PATHS.campaignsAudiences, icon: Target },
-            { key: 'cmp-contact-center', label: 'Subscription Contact Center', path: ADMIN_PATHS.campaignsContactCenter, icon: Users },
             { key: 'cmp-templates', label: 'Templates', path: ADMIN_PATHS.campaignsTemplates, icon: FileText },
             { key: 'cmp-providers', label: 'Providers', path: ADMIN_PATHS.campaignsProviders, icon: Link2 },
             { key: 'cmp-triggers', label: 'Smart Triggers', path: ADMIN_PATHS.campaignsTriggers, icon: Zap },
@@ -415,7 +421,7 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
 export function isAdminPathActive(pathname: string, item: AdminMenuItem): boolean {
     if (pathname === item.path) return true;
     const prefixes = item.matchPrefixes || [item.path];
-    return prefixes.some((prefix) => prefix !== ADMIN_PATHS.dashboard && pathname.startsWith(`${prefix}/`));
+    return prefixes.some((prefix) => prefix !== ADMIN_PATHS.dashboard && (pathname === prefix || pathname.startsWith(`${prefix}/`)));
 }
 
 export const LEGACY_ADMIN_PATH_REDIRECTS: Record<string, string> = {

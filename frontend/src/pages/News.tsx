@@ -23,7 +23,6 @@ import {
     getPublicNewsV2Widgets,
     trackPublicNewsV2Share,
 } from '../services/api';
-import InfoHint from '../components/ui/InfoHint';
 
 const DEFAULT_SETTINGS: ApiNewsPublicSettings = {
     pageTitle: 'Admission News & Updates',
@@ -269,26 +268,20 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#060f23]">
+        <div className="min-h-screen bg-background dark:bg-[#081322]">
             <section
-                className="border-b border-slate-200/80 bg-gradient-to-r from-cyan-500/15 via-sky-500/10 to-emerald-500/10 py-8 dark:border-cyan-500/20"
+                className="border-b border-card-border/80 bg-gradient-to-r from-cyan-500/10 via-sky-500/8 to-emerald-500/6 py-8 dark:border-dark-border/80 dark:from-cyan-500/8 dark:via-indigo-500/10 dark:to-transparent"
                 style={settings.headerBannerUrl ? { backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.72)), url(${settings.headerBannerUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
             >
                 <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">CampusWay News Hub</p>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-3xl font-black text-slate-900 dark:text-white sm:text-4xl">{pageTitle}</h1>
-                            <InfoHint
-                                title="News Feed Guide"
-                                description="All published RSS items are shown as cards. Filters instantly update the feed."
-                            />
-                        </div>
-                        <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-200">{pageSubtitle}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">CampusWay News Hub</p>
+                        <h1 className="text-3xl font-black text-text dark:text-dark-text sm:text-4xl">{pageTitle}</h1>
+                        <p className="mt-2 max-w-2xl text-sm text-text-muted dark:text-dark-text/75">{pageSubtitle}</p>
                     </div>
                     <button
                         type="button"
-                        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm lg:hidden dark:border-white/20 dark:bg-slate-900 dark:text-slate-100"
+                        className="inline-flex items-center gap-2 rounded-xl border border-card-border bg-white px-3 py-2 text-sm font-semibold text-text shadow-sm lg:hidden dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
                         onClick={() => setMobileFilterOpen(true)}
                     >
                         <Filter className="h-4 w-4" />
@@ -339,7 +332,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                     )}
 
                     {!isLoading && renderedItems.length === 0 && (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-sm text-slate-500 dark:border-white/15 dark:bg-slate-900/30 dark:text-slate-300">
+                        <div className="rounded-2xl border border-dashed border-card-border bg-white px-6 py-10 text-center text-sm text-text-muted dark:border-dark-border dark:bg-dark-surface/55 dark:text-dark-text/75">
                             No news found for this filter.
                         </div>
                     )}
@@ -373,10 +366,10 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                         }
                                         setPreview(news);
                                     }}
-                                    className={`cursor-pointer rounded-2xl border bg-white p-3 shadow-sm transition dark:bg-slate-950/60 ${
+                                    className={`cursor-pointer rounded-2xl border bg-white/95 p-3 shadow-sm transition dark:bg-dark-surface/85 ${
                                         preview?._id === news._id
                                             ? 'border-cyan-500/60 ring-2 ring-cyan-500/20'
-                                            : 'border-slate-200/80 hover:border-cyan-400/50 dark:border-white/10'
+                                            : 'border-card-border/80 hover:border-cyan-400/50 dark:border-dark-border/80'
                                     }`}
                                 >
                                     <div className={`grid grid-cols-1 gap-3 ${layoutMode === 'list' ? 'sm:grid-cols-[220px_1fr]' : 'sm:grid-cols-[200px_1fr]'}`}>
@@ -387,11 +380,11 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                             loading="lazy"
                                         />
                                         <div className="space-y-2">
-                                            <h2 className="line-clamp-2 text-lg font-semibold text-slate-900 dark:text-white">{news.title}</h2>
-                                            <p className="line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+                                            <h2 className="line-clamp-2 text-lg font-semibold text-text dark:text-dark-text">{news.title}</h2>
+                                            <p className="line-clamp-2 text-sm text-text-muted dark:text-dark-text/75">
                                                 {news.shortSummary || news.shortDescription}
                                             </p>
-                                            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+                                            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted dark:text-dark-text/75">
                                                 {settings.appearance.showSourceIcons && (
                                                     <img
                                                         src={news.sourceIconUrl || settings.defaultSourceIconUrl || '/logo.png'}
@@ -404,7 +397,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                     <Globe2 className="h-3 w-3" />
                                                     {news.sourceName || 'CampusWay'}
                                                 </span>
-                                                <span className="text-slate-400">&middot;</span>
+                                                <span className="text-slate-400 dark:text-slate-500">&middot;</span>
                                                 <span className="inline-flex items-center gap-1">
                                                     <CalendarDays className="h-3 w-3" />
                                                     {renderDate(news.publishedAt || news.publishDate || news.createdAt)}
@@ -461,7 +454,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                 {shareButtons.whatsapp ? (
                                                     <button
                                                         type="button"
-                                                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:border-cyan-500 hover:text-cyan-600 dark:border-white/20 dark:text-slate-200"
+                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleShare(news, 'whatsapp');
@@ -473,7 +466,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                 {shareButtons.facebook ? (
                                                     <button
                                                         type="button"
-                                                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:border-cyan-500 hover:text-cyan-600 dark:border-white/20 dark:text-slate-200"
+                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleShare(news, 'facebook');
@@ -485,7 +478,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                 {shareButtons.messenger ? (
                                                     <button
                                                         type="button"
-                                                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:border-cyan-500 hover:text-cyan-600 dark:border-white/20 dark:text-slate-200"
+                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleShare(news, 'messenger');
@@ -497,7 +490,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                 {shareButtons.telegram ? (
                                                     <button
                                                         type="button"
-                                                        className="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:border-cyan-500 hover:text-cyan-600 dark:border-white/20 dark:text-slate-200"
+                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleShare(news, 'telegram');
@@ -509,7 +502,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                 {shareButtons.copyLink ? (
                                                     <button
                                                         type="button"
-                                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:border-cyan-500 hover:text-cyan-600 dark:border-white/20 dark:text-slate-200"
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleShare(news, 'copy_link');
@@ -522,7 +515,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                                 {shareButtons.copyText ? (
                                                     <button
                                                         type="button"
-                                                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:border-cyan-500 hover:text-cyan-600 dark:border-white/20 dark:text-slate-200"
+                                                        className="inline-flex items-center gap-1 rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleShare(news, 'copy_text');
@@ -581,7 +574,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                         initial={{ opacity: 0, x: 12 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="sticky top-24 space-y-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-950/70"
+                        className="sticky top-24 space-y-3 rounded-2xl border border-card-border/80 bg-white/95 p-4 shadow-sm dark:border-dark-border/80 dark:bg-dark-surface/85"
                     >
                         {preview ? (
                             <>
@@ -591,11 +584,11 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                     className="h-44 w-full rounded-xl object-cover"
                                     loading="lazy"
                                 />
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{preview.title}</h3>
-                                <p className="text-sm text-slate-600 dark:text-slate-300">
+                                <h3 className="text-lg font-semibold text-text dark:text-dark-text">{preview.title}</h3>
+                                <p className="text-sm text-text-muted dark:text-dark-text/75">
                                     {preview.shortSummary || preview.shortDescription}
                                 </p>
-                                <div className="text-xs text-slate-500 dark:text-slate-300">
+                                <div className="text-xs text-text-muted dark:text-dark-text/75">
                                     <p>Source: {preview.sourceName || 'CampusWay'}</p>
                                     <p>{renderDate(preview.publishedAt || preview.publishDate || preview.createdAt)}</p>
                                 </div>
@@ -620,7 +613,7 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                                 )}
                             </>
                         ) : (
-                            <p className="text-sm text-slate-500 dark:text-slate-300">Select a card to preview.</p>
+                            <p className="text-sm text-text-muted dark:text-dark-text/75">Select a card to preview.</p>
                         )}
                     </motion.div>
                 </aside>
@@ -695,17 +688,11 @@ function FilterPanel({
     }, [sourceSearch, sources]);
 
     return (
-        <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-3 dark:border-white/10 dark:bg-slate-950/60">
-            <div className="flex justify-end">
-                <InfoHint
-                    title="Filter Help"
-                    description="Source, category, tag, and keyword filters can be combined to narrow down the feed."
-                />
-            </div>
+        <div className="space-y-4 rounded-2xl border border-card-border/80 bg-white/95 p-3 dark:border-dark-border/80 dark:bg-dark-surface/85">
             <label className="relative block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
-                    className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-cyan-500 dark:border-white/20 dark:bg-slate-900"
+                    className="w-full rounded-xl border border-card-border bg-white py-2 pl-9 pr-3 text-sm outline-none transition focus:border-cyan-500 dark:border-dark-border dark:bg-dark-surface"
                     placeholder="Search headlines..."
                     value={search}
                     onChange={(e) => onSearch(e.target.value)}
@@ -717,7 +704,7 @@ function FilterPanel({
                 <label className="relative block">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                     <input
-                        className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-8 pr-2 text-xs outline-none transition focus:border-cyan-500 dark:border-white/20 dark:bg-slate-900"
+                        className="w-full rounded-lg border border-card-border bg-white py-1.5 pl-8 pr-2 text-xs outline-none transition focus:border-cyan-500 dark:border-dark-border dark:bg-dark-surface"
                         placeholder="Search sources..."
                         value={sourceSearch}
                         onChange={(e) => setSourceSearch(e.target.value)}
@@ -728,7 +715,7 @@ function FilterPanel({
                         type="button"
                         onClick={() => onSource('')}
                         className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${
-                            source === '' ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'
+                            source === '' ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-text-muted hover:bg-slate-100 dark:text-dark-text/75 dark:hover:bg-white/5'
                         }`}
                     >
                         <span>All Sources</span>
@@ -739,7 +726,7 @@ function FilterPanel({
                             type="button"
                             onClick={() => onSource(item._id)}
                             className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${
-                                source === item._id ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5'
+                                source === item._id ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-text-muted hover:bg-slate-100 dark:text-dark-text/75 dark:hover:bg-white/5'
                             }`}
                         >
                             <span className="inline-flex items-center gap-2">
@@ -763,7 +750,7 @@ function FilterPanel({
                             className={`rounded-full border px-3 py-1 text-xs ${
                                 category === item
                                     ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200'
-                                    : 'border-slate-300 text-slate-600 dark:border-white/20 dark:text-slate-300'
+                                    : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
                             }`}
                         >
                             {item}
@@ -782,7 +769,7 @@ function FilterPanel({
                         type="button"
                         onClick={() => onTag('')}
                         className={`rounded-full border px-3 py-1 text-xs ${
-                            tag === '' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'border-slate-300 text-slate-600 dark:border-white/20 dark:text-slate-300'
+                            tag === '' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
                         }`}
                     >
                         All
@@ -795,7 +782,7 @@ function FilterPanel({
                             className={`rounded-full border px-3 py-1 text-xs ${
                                 tag === item
                                     ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200'
-                                    : 'border-slate-300 text-slate-600 dark:border-white/20 dark:text-slate-300'
+                                    : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
                             }`}
                         >
                             {item}

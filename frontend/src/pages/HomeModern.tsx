@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
     Search, Megaphone, AlertCircle, RefreshCw,
     GraduationCap, CalendarClock, ChevronLeft, ChevronRight, ClipboardCheck, Newspaper,
-    BookOpen, BarChart3, Layers, Sparkles
+    BookOpen, BarChart3, Layers, Sparkles, ArrowRight
 } from 'lucide-react';
 import UniversityCard from '../components/university/UniversityCard';
 import DeadlineBadge from '../components/university/DeadlineBadge';
@@ -199,9 +199,9 @@ function buildApplicationUrgency(
 
 function UnitDateChip({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-xl border border-slate-700/80 bg-slate-950/55 px-3 py-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-            <p className="mt-1 text-xs font-semibold text-slate-100">{formatMetaDate(value)}</p>
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 px-3 py-2 dark:border-slate-700/80 dark:bg-slate-950/55">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-500">{label}</p>
+            <p className="mt-1 text-xs font-semibold text-slate-900 dark:text-slate-100">{formatMetaDate(value)}</p>
         </div>
     );
 }
@@ -209,8 +209,8 @@ function UnitDateChip({ label, value }: { label: string; value: string }) {
 function CompactMetaLine({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex items-center justify-between gap-3 text-xs">
-            <span className="text-slate-500">{label}</span>
-            <span className="text-right font-semibold text-slate-200">{value}</span>
+            <span className="text-slate-500 dark:text-slate-500">{label}</span>
+            <span className="text-right font-semibold text-slate-700 dark:text-slate-200">{value}</span>
         </div>
     );
 }
@@ -305,8 +305,7 @@ function SectionWrap({ children, className = '' }: { children: ReactNode; classN
         <motion.section
             variants={fadeInUp}
             initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.1 }}
+            animate="show"
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             className={`w-full ${className}`}
         >
@@ -339,20 +338,20 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
     const appMeta = buildApplicationUrgency(cluster.applicationStartDate, cluster.applicationEndDate);
 
     return (
-        <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/95 shadow-[0_14px_30px_rgba(4,12,24,0.26)]">
+        <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_14px_30px_rgba(15,23,42,0.10)] dark:border-slate-700/70 dark:bg-slate-900/95 dark:shadow-[0_14px_30px_rgba(4,12,24,0.26)]">
             <div className="flex items-start gap-3 p-3 pb-2.5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-[0.18em] text-cyan-600 dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-300">
                     {fallbackText}
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Cluster</p>
-                            <Link to={`/universities/cluster/${cluster.slug}`} className="mt-1 block line-clamp-2 text-sm font-semibold leading-snug text-white hover:text-cyan-200">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">Cluster</p>
+                            <Link to={`/universities/cluster/${cluster.slug}`} className="mt-1 block line-clamp-2 text-sm font-semibold leading-snug text-slate-900 transition-colors hover:text-cyan-600 dark:text-white dark:hover:text-cyan-200">
                                 {cluster.name}
                             </Link>
                         </div>
-                        <span className="shrink-0 rounded-full border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-cyan-200">
+                        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-cyan-700 dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-200">
                             {cluster.memberCount} members
                         </span>
                     </div>
@@ -363,7 +362,7 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
                 {cluster.categories.slice(0, 2).map((category) => (
                     <span
                         key={category}
-                        className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-200"
+                        className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:text-sky-200"
                     >
                         {category}
                     </span>
@@ -373,9 +372,9 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
             <div className="space-y-2 px-3 pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <DaysLeftChip daysLeft={appMeta.daysLeft} urgencyState={appMeta.urgencyState} />
-                    <span className="text-[11px] font-semibold text-slate-400">{appMeta.endLabel}</span>
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{appMeta.endLabel}</span>
                 </div>
-                <div className="rounded-xl border border-slate-700/80 bg-slate-950/55 p-2.5">
+                <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 p-2.5 dark:border-slate-700/80 dark:bg-slate-950/55">
                     <CompactMetaLine label="Application Window" value={appMeta.windowLabel} />
                     <div className="mt-2 grid grid-cols-1 gap-1.5">
                         <CompactMetaLine label="Nearest Deadline" value={formatMetaDate(cluster.nearestDeadline)} />
@@ -388,8 +387,8 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
                 </div>
             </div>
 
-            <div className="mt-auto border-t border-slate-700/80 px-3 py-2.5">
-                <p className="text-xs text-slate-400">{centersText ? `Centers: ${centersText}` : 'Centers: N/A'}</p>
+            <div className="mt-auto border-t border-slate-200/80 px-3 py-2.5 dark:border-slate-700/80">
+                <p className="text-xs text-slate-500 dark:text-slate-400">{centersText ? `Centers: ${centersText}` : 'Centers: N/A'}</p>
                 <div className="mt-2.5 grid grid-cols-2 gap-2">
                     {cluster.admissionWebsite ? (
                         <a
@@ -403,14 +402,14 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
                     ) : (
                         <Link
                             to={`/universities/cluster/${cluster.slug}`}
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-800"
+                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
                         >
                             View Cluster
                         </Link>
                     )}
                     <Link
                         to={`/universities/cluster/${cluster.slug}`}
-                        className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-800"
+                        className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
                     >
                         Details
                     </Link>
@@ -428,70 +427,76 @@ function CategoryPreviewCard({ category }: { category: ApiCategoryCardPreview })
     return (
         <Link
             to={`/universities/category/${category.slug}`}
-            className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/95 shadow-[0_14px_30px_rgba(4,12,24,0.26)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(4,12,24,0.30)]"
+            className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.14)] dark:border-slate-700/70 dark:bg-slate-900/95 dark:shadow-[0_14px_30px_rgba(4,12,24,0.26)] dark:hover:shadow-[0_20px_40px_rgba(4,12,24,0.30)]"
             data-testid="highlighted-category-card"
         >
-            <div className="flex items-start gap-3 p-3 pb-2.5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-950 text-xs font-black uppercase tracking-[0.18em] text-cyan-300">
-                    <div className="flex h-full w-full items-center justify-center px-1 text-center">
-                        {fallbackText}
-                    </div>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Highlighted Category</p>
-                            <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-white" title={category.name}>
-                                {category.name}
-                            </h3>
+            <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-r from-cyan-500/10 via-sky-500/10 to-transparent dark:from-cyan-500/8 dark:via-sky-500/6" />
+            <div className="relative flex h-full flex-col p-4">
+                <div className="flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-xs font-black uppercase tracking-[0.18em] text-cyan-600 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-300">
+                        <div className="flex h-full w-full items-center justify-center px-1 text-center">
+                            {fallbackText}
                         </div>
-                        <span className="shrink-0 rounded-full border border-slate-700 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-cyan-200">
-                            {category.memberCount} universities
-                        </span>
                     </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-sky-200">
-                            Home Highlight
-                        </span>
-                        {category.badgeText ? (
-                            <span className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-200">
-                                {category.badgeText}
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">Highlighted Category</p>
+                                <h3 className="mt-1 line-clamp-2 text-base font-semibold leading-snug text-slate-900 dark:text-white" title={category.name}>
+                                    {category.name}
+                                </h3>
+                            </div>
+                            <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-cyan-700 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-200">
+                                {category.memberCount} universities
                             </span>
-                        ) : null}
-                        <DeadlineBadge urgencyState={categoryUrgency.urgencyState} />
-                    </div>
-                </div>
-            </div>
+                        </div>
 
-            <div className="space-y-2 px-3 pb-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    <DaysLeftChip daysLeft={categoryUrgency.daysLeft} urgencyState={categoryUrgency.urgencyState} />
-                    <span className="text-[11px] font-semibold text-slate-400">Nearest deadline {formatMetaDate(category.nearestDeadline)}</span>
-                </div>
-                <div className="rounded-xl border border-slate-700/80 bg-slate-950/55 p-2.5">
-                    <CompactMetaLine label="Nearest Exam" value={formatMetaDate(category.nearestExam)} />
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                        <CompactMetaLine label="Universities" value={String(category.memberCount)} />
-                        <CompactMetaLine label="Clusters" value={String(clusterCount)} />
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
+                                Home Highlight
+                            </span>
+                            {category.badgeText ? (
+                                <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
+                                    {category.badgeText}
+                                </span>
+                            ) : null}
+                            <DeadlineBadge urgencyState={categoryUrgency.urgencyState} />
+                        </div>
                     </div>
                 </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <DaysLeftChip daysLeft={categoryUrgency.daysLeft} urgencyState={categoryUrgency.urgencyState} />
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Nearest deadline {formatMetaDate(category.nearestDeadline)}</span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Nearest Exam</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{formatMetaDate(category.nearestExam)}</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Coverage</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{category.memberCount} universities</p>
+                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{clusterCount} clusters linked</p>
+                    </div>
+                </div>
+
                 {clusterCount > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {category.clusterGroups.slice(0, 2).map((group) => (
-                            <span key={group} className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-purple-200">
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {category.clusterGroups.slice(0, 3).map((group) => (
+                            <span key={group} className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-semibold text-purple-700 dark:text-purple-200">
                                 {group}
                             </span>
                         ))}
                     </div>
                 )}
-            </div>
 
-            <div className="mt-auto flex items-center justify-end gap-3 border-t border-slate-700/80 px-3 py-2.5 text-xs text-slate-400">
-                <span className="shrink-0 font-semibold text-cyan-200 transition-colors group-hover:text-cyan-100">
-                    View
-                </span>
+                <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition-colors group-hover:text-cyan-600 dark:text-cyan-200 dark:group-hover:text-cyan-100">
+                    Explore category
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                </div>
             </div>
         </Link>
     );
@@ -533,7 +538,6 @@ export default function HomeModern() {
     const [search, setSearch] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedCluster, setSelectedCluster] = useState('');
-    const [categoryInteracted, setCategoryInteracted] = useState(false);
     const categoryScrollRef = useRef<HTMLDivElement | null>(null);
     const clusterScrollRef = useRef<HTMLDivElement | null>(null);
     const [categoryScrollState, setCategoryScrollState] = useState({ canLeft: false, canRight: false });
@@ -543,16 +547,6 @@ export default function HomeModern() {
     const hs = data?.homeSettings;
     const categories = data?.universityCategories ?? [];
     const uniSettings = data?.uniSettings;
-
-    /* Set default category from backend */
-    useEffect(() => {
-        if (!categoryInteracted && categories.length > 0 && !selectedCategory) {
-            const defaultCat = uniSettings?.defaultCategory || hs?.universityPreview?.defaultActiveCategory || '';
-            if (defaultCat && categories.some(c => c.categoryName === defaultCat)) {
-                setSelectedCategory(defaultCat);
-            }
-        }
-    }, [categories, categoryInteracted, selectedCategory, uniSettings, hs]);
 
     /* Highlighted categories sorted first */
     const sortedCategories = useMemo(() => {
@@ -655,7 +649,7 @@ export default function HomeModern() {
     const stats = data?.stats;
     const cardConfig = hs?.universityCardConfig;
     const animLevel = hs?.ui?.animationLevel ?? 'minimal';
-    const compactCarouselCardClass = 'snap-start shrink-0 w-[250px] sm:w-[270px] md:w-[290px]';
+    const compactCarouselCardClass = 'snap-start shrink-0 w-[264px] sm:w-[286px] md:w-[308px]';
 
     const handleHorizontalWheel = (event: React.WheelEvent<HTMLDivElement>) => {
         const container = event.currentTarget;
@@ -853,24 +847,43 @@ export default function HomeModern() {
 
     /* 4 ─ Featured Universities */
     function renderFeatured() {
+        const hasFeaturedContent = filteredFeaturedCategories.length > 0 || filteredFeatured.length > 0;
         return (
             <SectionWrap>
                 <div className="space-y-6 px-4 md:px-0" data-testid="home-featured-section">
                     <div>
                         <SectionHeader title="Featured Universities" subtitle="Hand-picked for you" icon={GraduationCap} viewAllHref="/universities" />
-                        {(filteredFeaturedCategories.length > 0 || filteredFeatured.length > 0) ? (
-                            <PremiumCarousel>
-                                {filteredFeaturedCategories.map(category => (
-                                    <div key={category.id} className={compactCarouselCardClass}>
-                                        <CategoryPreviewCard category={category} />
+                        {hasFeaturedContent ? (
+                            <div className="space-y-4">
+                                {filteredFeaturedCategories.length > 0 && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Category Spotlights</p>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{filteredFeaturedCategories.length} highlighted</span>
+                                        </div>
+                                        <PremiumCarousel ariaLabel="Featured category spotlights">
+                                            {filteredFeaturedCategories.map(category => (
+                                                <div key={category.id} className="snap-start shrink-0 w-[280px] sm:w-[316px]">
+                                                    <CategoryPreviewCard category={category} />
+                                                </div>
+                                            ))}
+                                        </PremiumCarousel>
                                     </div>
-                                ))}
-                                {filteredFeatured.map(uni => (
-                                    <div key={uni.id} className={compactCarouselCardClass}>
-                                        <UniversityCard university={uni} config={cardConfig} animationLevel={animLevel} actionVariant="default" />
+                                )}
+                                {filteredFeatured.length > 0 ? (
+                                    <PremiumCarousel ariaLabel="Featured universities carousel">
+                                        {filteredFeatured.map(uni => (
+                                            <div key={uni.id} className={compactCarouselCardClass}>
+                                                <UniversityCard university={uni} config={cardConfig} animationLevel={animLevel} actionVariant="default" />
+                                            </div>
+                                        ))}
+                                    </PremiumCarousel>
+                                ) : (
+                                    <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
+                                        Featured universities are not available for the current filter, but the highlighted categories remain active.
                                     </div>
-                                ))}
-                            </PremiumCarousel>
+                                )}
+                            </div>
                         ) : (
                             <EmptySection icon={GraduationCap} message="No featured universities match your filter" />
                         )}
@@ -959,7 +972,7 @@ export default function HomeModern() {
                             style={{ scrollPaddingLeft: '4.5rem', scrollPaddingRight: '4.5rem' }}
                         >
                             <button
-                                onClick={() => { setSelectedCategory(''); setSelectedCluster(''); setCategoryInteracted(true); }}
+                                onClick={() => { setSelectedCategory(''); setSelectedCluster(''); }}
                                 className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
                                     !selectedCategory
                                         ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/25'
@@ -975,7 +988,6 @@ export default function HomeModern() {
                                         onClick={() => {
                                             setSelectedCategory(isActive ? '' : cat.categoryName);
                                             setSelectedCluster('');
-                                            setCategoryInteracted(true);
                                         }}
                                         className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5 ${
                                             isActive
@@ -1324,8 +1336,7 @@ export default function HomeModern() {
                                 <motion.div
                                     key={stat.key}
                                     initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
+                                    animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5, delay: idx * 0.1 }}
                                     whileHover={{ scale: 1.04, y: -2 }}
                                     className={`relative text-center p-5 md:p-6 rounded-2xl bg-gradient-to-br ${statGradients[idx % 4]} border border-gray-100/80 dark:border-gray-700/40 backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg`}
@@ -1395,17 +1406,15 @@ export default function HomeModern() {
     return (
         <div className="bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto space-y-10 md:space-y-14 pb-20">
-                <AnimatePresence mode="wait">
-                    {sectionOrder.map(section => {
-                        const renderer = sectionRenderers[section.id];
-                        if (!renderer) return null;
-                        return (
-                            <SectionErrorBoundary key={section.id}>
-                                <SectionRenderer renderer={renderer} />
-                            </SectionErrorBoundary>
-                        );
-                    })}
-                </AnimatePresence>
+                {sectionOrder.map(section => {
+                    const renderer = sectionRenderers[section.id];
+                    if (!renderer) return null;
+                    return (
+                        <SectionErrorBoundary key={section.id}>
+                            <SectionRenderer renderer={renderer} />
+                        </SectionErrorBoundary>
+                    );
+                })}
             </div>
             <PlanDetailsDrawer
                 open={Boolean(activeSubscriptionPlan)}

@@ -72,7 +72,7 @@ export interface UniversityListParams {
 }
 
 export function useUniversities(params: UniversityListParams) {
-  const { category, clusterGroup, q, sort = 'name_asc', page = 1, limit = 300 } = params;
+  const { category, clusterGroup, q, sort = 'name_asc', page = 1, limit = 500 } = params;
   return useQuery<UniversityCard[]>({
     queryKey: ['universities', { category, clusterGroup: clusterGroup || '', q: q || '', sort, page, limit }],
     enabled: Boolean(category),

@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { UniversityCategoryDetail } from '../../lib/apiClient';
 
@@ -12,6 +12,10 @@ export default function CategoryChipRow({ categories, activeCategory, onCategory
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+    const totalCount = useMemo(
+        () => categories.reduce((sum, item) => sum + Math.max(0, Number(item.count) || 0), 0),
+        [categories],
+    );
 
     const checkOverflow = useCallback(() => {
         const el = scrollRef.current;
@@ -69,6 +73,18 @@ export default function CategoryChipRow({ categories, activeCategory, onCategory
                 className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-hide -mx-1 px-1"
                 role="tablist"
             >
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeCategory === 'all' || !activeCategory}
+                    onClick={() => onCategoryChange('all')}
+                    className={`tab-pill whitespace-nowrap flex-shrink-0 text-xs sm:text-sm ${(activeCategory === 'all' || !activeCategory) ? 'tab-pill-active' : 'tab-pill-inactive'}`}
+                    data-testid="university-category-tab"
+                    data-category="all"
+                >
+                    All
+                    <span className="ml-1 text-xs opacity-70">({totalCount})</span>
+                </button>
                 {categories.map((item, index) => (
                     <button
                         key={`${item.categorySlug || item.categoryName}-${index}`}

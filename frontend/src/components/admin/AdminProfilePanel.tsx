@@ -81,7 +81,7 @@ const AdminProfilePanel: React.FC = () => {
     };
 
     const displayName = profileData?.admin_name || user?.fullName || user?.username || 'Admin';
-    const profilePhoto = String(profileData?.profile_photo || '').trim();
+    const profilePhoto = String(profileData?.profile_photo || user?.profile_photo || '').trim();
     const latestLogin = loginHistory[0]?.createdAt;
 
     if (loading) {

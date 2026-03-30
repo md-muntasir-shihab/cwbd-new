@@ -172,8 +172,8 @@ export default function DashboardHome({ universities, exams, users, onTabChange 
             {
                 key: 'news',
                 title: 'News Management',
-                description: `${valueText(summary.news.pendingReview)} items waiting for review`,
-                value: valueText(summary.news.publishedToday),
+                description: `${valueText(summary.news.publishedToday)} published today`,
+                value: valueText(summary.news.pendingReview),
                 icon: BookOpen,
                 actionLabel: 'Open Review Queue',
                 actionTab: 'news',
@@ -242,8 +242,8 @@ export default function DashboardHome({ universities, exams, users, onTabChange 
             {
                 key: 'campaigns',
                 title: 'Campaigns Hub',
-                description: `${valueText(summary.campaigns.queuedOrProcessing)} queued/processing, ${valueText(summary.campaigns.failedToday)} failed today`,
-                value: valueText(summary.campaigns.totalCampaigns),
+                description: `${valueText(summary.campaigns.failedToday)} failed today, ${valueText(summary.campaigns.totalCampaigns)} total campaigns`,
+                value: valueText(summary.campaigns.queuedOrProcessing),
                 icon: Megaphone,
                 actionLabel: 'Open Campaigns Hub',
                 actionTab: 'campaigns',
@@ -252,8 +252,8 @@ export default function DashboardHome({ universities, exams, users, onTabChange 
             {
                 key: 'finance',
                 title: 'Finance Center',
-                description: `${valueText(summary.financeCenter.pendingApprovals)} pending approvals`,
-                value: valueText(summary.financeCenter.paidToday),
+                description: `${valueText(summary.financeCenter.paidToday)} payments cleared today`,
+                value: valueText(summary.financeCenter.pendingApprovals),
                 icon: Sparkles,
                 actionLabel: 'Open Finance Center',
                 actionTab: 'finance',
@@ -262,8 +262,8 @@ export default function DashboardHome({ universities, exams, users, onTabChange 
             {
                 key: 'team-access',
                 title: 'Team & Access Control',
-                description: `${valueText(summary.teamAccess.pendingInvites)} pending invites, ${valueText(summary.teamAccess.activeRoles)} active roles`,
-                value: valueText(summary.teamAccess.activeStaff),
+                description: `${valueText(summary.teamAccess.activeStaff)} active staff, ${valueText(summary.teamAccess.activeRoles)} active roles`,
+                value: valueText(summary.teamAccess.pendingInvites),
                 icon: KeyRound,
                 actionLabel: 'Open Team Access',
                 actionTab: 'team-access',
@@ -311,7 +311,7 @@ export default function DashboardHome({ universities, exams, users, onTabChange 
                 {visibleCards.map((card) => (
                     <article
                         key={card.key}
-                        className="group relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800/80 dark:bg-slate-950/70 dark:hover:border-indigo-500/30"
+                        className="group relative flex min-h-[15.5rem] flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/90 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-800/80 dark:bg-slate-950/70 dark:hover:border-indigo-500/30"
                     >
                         {/* Decorative gradient blob */}
                         <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-indigo-500/10 to-cyan-500/10 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:from-indigo-500/15 group-hover:to-cyan-500/15 dark:from-indigo-500/8 dark:to-cyan-500/8" />
@@ -319,16 +319,16 @@ export default function DashboardHome({ universities, exams, users, onTabChange 
                         <div className="relative flex items-start justify-between gap-3">
                             <div className="min-w-0 flex-1">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{card.title}</p>
-                                <p className="mt-2 text-3xl font-black tracking-tight text-slate-900 dark:text-white">{card.value}</p>
+                                <p className="mt-2 break-words text-3xl font-black tracking-tight text-slate-900 dark:text-white sm:text-[2rem]">{card.value}</p>
                             </div>
                             <span className="inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/15 to-cyan-500/10 text-indigo-600 ring-1 ring-indigo-500/20 transition-transform duration-300 group-hover:scale-110 dark:from-indigo-500/20 dark:to-cyan-500/15 dark:text-indigo-300 dark:ring-indigo-500/25">
                                 <card.icon className="h-5 w-5" />
                             </span>
                         </div>
 
-                        <p className="mt-3 min-h-[2rem] text-xs leading-5 text-slate-500 dark:text-slate-400">{card.description}</p>
+                        <p className="mt-3 min-h-[2.75rem] text-xs leading-5 text-slate-500 dark:text-slate-400">{card.description}</p>
 
-                        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200/70 pt-4 dark:border-slate-800/70">
+                        <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-slate-200/70 pt-4 dark:border-slate-800/70">
                             <button
                                 type="button"
                                 onClick={() => onTabChange(card.actionTab)}

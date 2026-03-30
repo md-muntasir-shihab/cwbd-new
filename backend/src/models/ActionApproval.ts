@@ -8,6 +8,26 @@ export type ActionApprovalStatus =
     | 'executed'
     | 'expired';
 
+export interface IActionApprovalReviewSummaryItem {
+    label: string;
+    value: string;
+}
+
+export interface IActionApprovalRequestContext {
+    ipAddress?: string;
+    deviceInfo?: string;
+    browser?: string;
+    platform?: string;
+    locationSummary?: string;
+    sessionId?: string;
+}
+
+export interface IActionApprovalTargetSummary {
+    targetType?: string;
+    targetId?: string;
+    targetLabel?: string;
+}
+
 export interface IActionApproval extends Document {
     actionKey: RiskyActionKey;
     module: string;
@@ -22,6 +42,11 @@ export interface IActionApproval extends Document {
     paramsSnapshot: Record<string, unknown>;
     querySnapshot: Record<string, unknown>;
     payloadSnapshot: Record<string, unknown>;
+    requestContext?: IActionApprovalRequestContext;
+    targetSummary?: IActionApprovalTargetSummary;
+    reviewSummary?: IActionApprovalReviewSummaryItem[];
+    beforeSnapshot?: Record<string, unknown>;
+    afterSnapshot?: Record<string, unknown>;
     decisionReason?: string;
     initiatedAt: Date;
     decidedAt?: Date | null;
@@ -31,6 +56,35 @@ export interface IActionApproval extends Document {
     createdAt: Date;
     updatedAt: Date;
 }
+
+const ActionApprovalReviewSummarySchema = new Schema<IActionApprovalReviewSummaryItem>(
+    {
+        label: { type: String, trim: true, default: '' },
+        value: { type: String, trim: true, default: '' },
+    },
+    { _id: false },
+);
+
+const ActionApprovalRequestContextSchema = new Schema<IActionApprovalRequestContext>(
+    {
+        ipAddress: { type: String, trim: true, default: '' },
+        deviceInfo: { type: String, trim: true, default: '' },
+        browser: { type: String, trim: true, default: '' },
+        platform: { type: String, trim: true, default: '' },
+        locationSummary: { type: String, trim: true, default: '' },
+        sessionId: { type: String, trim: true, default: '' },
+    },
+    { _id: false },
+);
+
+const ActionApprovalTargetSummarySchema = new Schema<IActionApprovalTargetSummary>(
+    {
+        targetType: { type: String, trim: true, default: '' },
+        targetId: { type: String, trim: true, default: '' },
+        targetLabel: { type: String, trim: true, default: '' },
+    },
+    { _id: false },
+);
 
 const ActionApprovalSchema = new Schema<IActionApproval>(
     {
@@ -64,6 +118,11 @@ const ActionApprovalSchema = new Schema<IActionApproval>(
         paramsSnapshot: { type: Schema.Types.Mixed, default: {} },
         querySnapshot: { type: Schema.Types.Mixed, default: {} },
         payloadSnapshot: { type: Schema.Types.Mixed, default: {} },
+        requestContext: { type: ActionApprovalRequestContextSchema, default: () => ({}) },
+        targetSummary: { type: ActionApprovalTargetSummarySchema, default: () => ({}) },
+        reviewSummary: { type: [ActionApprovalReviewSummarySchema], default: [] },
+        beforeSnapshot: { type: Schema.Types.Mixed, default: {} },
+        afterSnapshot: { type: Schema.Types.Mixed, default: {} },
         decisionReason: { type: String, default: '' },
         initiatedAt: { type: Date, default: Date.now },
         decidedAt: { type: Date, default: null },

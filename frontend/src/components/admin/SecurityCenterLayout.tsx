@@ -74,7 +74,7 @@ interface MetricCardProps {
     help?: SecurityHelpButtonProps;
 }
 
-function MetricCard({ label, value, icon: Icon, color, help }: MetricCardProps) {
+function MetricCard({ label, value, icon: Icon, color }: MetricCardProps) {
     const colorMap: Record<string, string> = {
         blue: 'from-blue-500/10 to-blue-600/5 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
         red: 'from-red-500/10 to-red-600/5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
@@ -95,10 +95,7 @@ function MetricCard({ label, value, icon: Icon, color, help }: MetricCardProps) 
                 <Icon className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
-                    {label}
-                    {help && <SecurityHelpButton {...help} />}
-                </p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{label}</p>
                 <p className="text-xl font-bold mt-0.5">{value}</p>
             </div>
         </motion.div>
@@ -285,15 +282,6 @@ function SecurityDashboard() {
                     <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-50">
                             Last Backup: <span className="font-semibold capitalize">{metrics.lastBackup.status}</span>
-                            <SecurityHelpButton
-                                title="Database Backups"
-                                content="Status of the most recent database backup job."
-                                impact="Failed backups leave your data unprotected against loss."
-                                affected="Restore workflows, audit recovery, and any data restoration process."
-                                enabledNote="A healthy backup status confirms the recovery path is still available."
-                                disabledNote="If backups fail, recovery options become unreliable."
-                                bestPractice="Schedule regular automated backups and verify restoration periodically."
-                            />
                         </p>
                         <p className="text-xs text-slate-400">
                             Type: {metrics.lastBackup.type} • Storage: {metrics.lastBackup.storage} • {new Date(metrics.lastBackup.createdAt).toLocaleString()}
@@ -310,11 +298,6 @@ function SecurityDashboard() {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5">
                     <DocumentTextIcon className="w-4 h-4" />
                     Recent Security Activity
-                    <SecurityHelpButton
-                        title="Audit Trail"
-                        content="Log of recent admin and security-related actions. Full audit logs are available in the Audit Logs tab."
-                        bestPractice="Review audit logs weekly to detect unauthorized changes."
-                    />
                 </h4>
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-auto max-h-80">
                     <table className="w-full text-xs">

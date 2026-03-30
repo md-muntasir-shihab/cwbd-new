@@ -4,7 +4,7 @@ import News from '../models/News';
 import Service from '../models/Service';
 import ServicePageConfig from '../models/ServicePageConfig';
 import Resource from '../models/Resource';
-import ResourceSettings from '../models/ResourceSettings';
+import ResourceSettings, { RESOURCE_ALLOWED_TYPES, RESOURCE_SETTINGS_DEFAULTS } from '../models/ResourceSettings';
 import ContactMessage from '../models/ContactMessage';
 import SiteSettings from '../models/Settings';
 import slugify from 'slugify';
@@ -552,12 +552,63 @@ export async function adminUpdateResourceSettings(req: Request, res: Response): 
     try {
         const input = (req.body || {}) as Record<string, unknown>;
         const allowedKeys = new Set([
-            'pageTitle', 'pageSubtitle', 'defaultThumbnailUrl', 'showFeatured', 'trackingEnabled',
-            'allowUserUploads', 'requireAdminApproval', 'maxFileSizeMB', 'allowedCategories'
+            'pageTitle',
+            'pageSubtitle',
+            'heroBadgeLabel',
+            'searchPlaceholder',
+            'defaultThumbnailUrl',
+            'publicPageEnabled',
+            'studentHubEnabled',
+            'showHero',
+            'showStats',
+            'showFeatured',
+            'featuredLimit',
+            'defaultSort',
+            'defaultType',
+            'defaultCategory',
+            'itemsPerPage',
+            'showSearch',
+            'showTypeFilter',
+            'showCategoryFilter',
+            'trackingEnabled',
+            'allowUserUploads',
+            'requireAdminApproval',
+            'maxFileSizeMB',
+            'allowedCategories',
+            'allowedTypes',
+            'openLinksInNewTab',
+            'featuredSectionTitle',
+            'emptyStateMessage',
         ]);
         const safeUpdate: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(input)) {
             if (allowedKeys.has(k)) safeUpdate[k] = v;
+        }
+        if (Array.isArray(safeUpdate.allowedCategories)) {
+            safeUpdate.allowedCategories = safeUpdate.allowedCategories
+                .map((item) => String(item || '').trim())
+                .filter(Boolean);
+        }
+        if (Array.isArray(safeUpdate.allowedTypes)) {
+            safeUpdate.allowedTypes = safeUpdate.allowedTypes
+                .map((item) => String(item || '').trim().toLowerCase())
+                .filter((item) => RESOURCE_ALLOWED_TYPES.includes(item as typeof RESOURCE_ALLOWED_TYPES[number]));
+        }
+        if (!Array.isArray(safeUpdate.allowedTypes) || (safeUpdate.allowedTypes as string[]).length === 0) {
+            delete safeUpdate.allowedTypes;
+        }
+        if (safeUpdate.defaultType !== undefined) {
+            const nextDefaultType = String(safeUpdate.defaultType || '').trim().toLowerCase();
+            safeUpdate.defaultType =
+                nextDefaultType === 'all' || RESOURCE_ALLOWED_TYPES.includes(nextDefaultType as typeof RESOURCE_ALLOWED_TYPES[number])
+                    ? nextDefaultType
+                    : RESOURCE_SETTINGS_DEFAULTS.defaultType;
+        }
+        if (safeUpdate.defaultSort !== undefined) {
+            const nextDefaultSort = String(safeUpdate.defaultSort || '').trim().toLowerCase();
+            safeUpdate.defaultSort = ['latest', 'downloads', 'views'].includes(nextDefaultSort)
+                ? nextDefaultSort
+                : RESOURCE_SETTINGS_DEFAULTS.defaultSort;
         }
         const settings = await ResourceSettings.findOneAndUpdate(
             {},

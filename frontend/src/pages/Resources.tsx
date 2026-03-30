@@ -1,28 +1,67 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    FileText, Link2, Video, Download, Eye, Search, Filter,
-    BookOpen, Image, StickyNote, Star, Share2,
-    ChevronLeft, ChevronRight, ExternalLink, CheckCircle, X,
-    Headphones, Loader2, AlertCircle,
+    AlertCircle, BookOpen, CheckCircle, ChevronLeft, ChevronRight, Download, ExternalLink, Eye,
+    FileText, Filter, Headphones, Image, Link2, Loader2, Search, Share2, Star, StickyNote, Video, X,
 } from 'lucide-react';
-import { getResources, trackAnalyticsEvent } from '../services/api';
+import {
+    getPublicResourceSettings, getResources, trackAnalyticsEvent,
+    type PublicResourceSettings, type ResourceSettingsSort, type ResourceSettingsType,
+} from '../services/api';
 import { isExternalUrl, normalizeInternalOrExternalUrl } from '../utils/url';
 
-type ResourceType = 'all' | 'pdf' | 'link' | 'video' | 'audio' | 'image' | 'note';
-type SortKey = 'latest' | 'downloads' | 'views';
-
-interface Resource {
-    _id: string; title: string; description: string;
+type ResourceType = ResourceSettingsType;
+type SortKey = ResourceSettingsSort;
+type CardResource = {
+    _id: string;
+    title: string;
+    description: string;
     slug?: string;
-    type: Exclude<ResourceType, 'all'>; category: string; tags: string[];
-    fileUrl?: string; externalUrl?: string; thumbnailUrl?: string;
-    isPublic: boolean; isFeatured: boolean;
-    views: number; downloads: number; publishDate: string; expiryDate?: string;
-}
+    type: Exclude<ResourceType, 'all'>;
+    category: string;
+    tags: string[];
+    fileUrl?: string;
+    externalUrl?: string;
+    isPublic: boolean;
+    isFeatured: boolean;
+    views: number;
+    downloads: number;
+    publishDate: string;
+    expiryDate?: string;
+};
+
+const DEFAULT_SETTINGS: PublicResourceSettings = {
+    pageTitle: 'Student Resources',
+    pageSubtitle: 'Access PDFs, question banks, video tutorials, links, and notes in one searchable library.',
+    heroBadgeLabel: 'Study Smart',
+    searchPlaceholder: 'Search resources, question banks, and notes...',
+    defaultThumbnailUrl: '',
+    publicPageEnabled: true,
+    studentHubEnabled: true,
+    showHero: true,
+    showStats: true,
+    showFeatured: true,
+    featuredLimit: 4,
+    defaultSort: 'latest',
+    defaultType: 'all',
+    defaultCategory: 'All',
+    itemsPerPage: 12,
+    showSearch: true,
+    showTypeFilter: true,
+    showCategoryFilter: true,
+    trackingEnabled: true,
+    allowedCategories: ['Question Banks', 'Study Materials', 'Official Links', 'Tips & Tricks', 'Scholarships', 'Admit Cards'],
+    allowedTypes: ['pdf', 'link', 'video', 'audio', 'image', 'note'],
+    openLinksInNewTab: true,
+    featuredSectionTitle: 'Featured Resources',
+    emptyStateMessage: 'No resources found. Try adjusting your filters or search query.',
+};
 
 const TYPE_CONFIG: Record<Exclude<ResourceType, 'all'>, {
-    label: string; icon: React.FC<{ className?: string }>; badge: string; action: string;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    badge: string;
+    action: string;
 }> = {
     pdf: { label: 'PDF', icon: FileText, badge: 'bg-danger/10 text-danger dark:bg-danger/20', action: 'Download' },
     link: { label: 'Link', icon: Link2, badge: 'bg-primary/10 text-primary dark:bg-primary/20', action: 'Visit' },
@@ -31,493 +70,278 @@ const TYPE_CONFIG: Record<Exclude<ResourceType, 'all'>, {
     image: { label: 'Image', icon: Image, badge: 'bg-success/10 text-success dark:bg-success/20', action: 'View' },
     note: { label: 'Note', icon: StickyNote, badge: 'bg-primary/5 text-primary dark:bg-primary/10', action: 'Read' },
 };
-
-const SUBJECTS = ['All', 'Question Banks', 'Study Materials', 'Official Links', 'Tips & Tricks', 'Scholarships', 'Admit Cards'];
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
     { key: 'latest', label: 'Latest' },
     { key: 'downloads', label: 'Most Downloaded' },
     { key: 'views', label: 'Most Viewed' },
 ];
-const PAGE_SIZE = 12;
 
-/* ─── Resource card ─── */
-function ResourceCard({ r, onShare, onAction, onNavigate }: { r: Resource; onShare: (r: Resource) => void; onAction: (r: Resource, action: string) => void; onNavigate?: (r: Resource) => void }) {
-    const cfg = TYPE_CONFIG[r.type];
-    const Icon = cfg.icon;
-    const detailHref = r.slug ? `/resources/${r.slug}` : '';
-    const href = detailHref || normalizeInternalOrExternalUrl(r.fileUrl || r.externalUrl || '');
-    const isExternal = !detailHref && isExternalUrl(href || '');
-    const actionLabel = detailHref ? 'View' : cfg.action;
-
+function Toast({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+    useEffect(() => {
+        const timeoutId = window.setTimeout(onDismiss, 2500);
+        return () => window.clearTimeout(timeoutId);
+    }, [onDismiss]);
     return (
-        <div className="card p-4 sm:p-5 flex flex-col gap-3 relative overflow-hidden group">
-            {/* Featured badge */}
-            {r.isFeatured && (
-                <span className="absolute top-0 right-0 inline-flex items-center gap-1 px-3 py-1 bg-accent text-white text-[9px] font-bold rounded-bl-xl">
-                    <Star className="w-2.5 h-2.5 fill-current" /> Featured
-                </span>
-            )}
-
-            {/* Type + title */}
-            <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.badge}`}>
-                    <Icon className="w-5 h-5" aria-hidden />
-                </div>
-                <div className="flex-1 min-w-0">
-                    <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1 ${cfg.badge}`}>
-                        {cfg.label}
-                    </span>
-                    <h3 onClick={() => onNavigate?.(r)} className="text-sm font-semibold dark:text-dark-text line-clamp-2 leading-snug cursor-pointer hover:text-primary transition-colors">{r.title}</h3>
-                </div>
-            </div>
-
-            {/* Description */}
-            <p className="text-xs text-text-muted dark:text-dark-text/60 line-clamp-2 flex-1 leading-relaxed">{r.description}</p>
-
-            {/* Tags */}
-            {r.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                    {r.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={`${tag}-${idx}`} className="text-[10px] px-2 py-0.5 bg-primary/5 dark:bg-primary/10 text-primary dark:text-primary-300 rounded-full">{tag}</span>
-                    ))}
-                </div>
-            )}
-
-            {/* Footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-card-border dark:border-dark-border">
-                <div className="flex items-center gap-3 text-xs text-text-muted dark:text-dark-text/50">
-                    <span className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />{r.views >= 1000 ? `${(r.views / 1000).toFixed(1)}K` : r.views}
-                    </span>
-                    {r.downloads > 0 && (
-                        <span className="flex items-center gap-1">
-                            <Download className="w-3 h-3" />{r.downloads}
-                        </span>
-                    )}
-                    <span className="text-[10px]">{new Date(r.publishDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={() => onShare(r)}
-                        className="btn-ghost p-2 min-h-[34px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Copy link">
-                        <Share2 className="w-3.5 h-3.5" />
-                    </button>
-                    {href ? (
-                        <a href={href} target={isExternal ? '_blank' : undefined}
-                            rel={isExternal ? 'noopener noreferrer' : undefined}
-                            onClick={() => onAction(r, actionLabel)}
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary dark:text-primary-300 hover:text-accent transition-colors min-h-[34px] px-2 rounded-lg hover:bg-primary/5">
-                            {detailHref ? <Eye className="w-3 h-3" /> : (r.type === 'pdf' ? <Download className="w-3 h-3" /> : r.type === 'link' ? <ExternalLink className="w-3 h-3" /> : <Eye className="w-3 h-3" />)}
-                            {actionLabel}
-                        </a>
-                    ) : (
-                        <button
-                            type="button"
-                            disabled
-                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 min-h-[34px] px-2 rounded-lg cursor-not-allowed"
-                        >
-                            <AlertCircle className="w-3 h-3" />
-                            Unavailable
-                        </button>
-                    )}
-                </div>
-            </div>
+        <div className="animate-slide-up fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-2xl bg-text px-5 py-3 text-sm font-medium text-surface shadow-elevated dark:bg-dark-text dark:text-dark-bg">
+            <CheckCircle className="h-4 w-4 text-success" /> {message}
         </div>
     );
 }
 
-/* ─── Featured card (horizontal on desktop, vertical on mobile) ─── */
-function FeaturedCard({ r, onShare, onAction, onNavigate }: { r: Resource; onShare: (r: Resource) => void; onAction: (r: Resource, action: string) => void; onNavigate?: (r: Resource) => void }) {
-    const cfg = TYPE_CONFIG[r.type];
-    const Icon = cfg.icon;
-    const detailHref = r.slug ? `/resources/${r.slug}` : '';
-    const href = detailHref || normalizeInternalOrExternalUrl(r.fileUrl || r.externalUrl || '');
-    const isExternal = !detailHref && isExternalUrl(href || '');
-    const actionLabel = detailHref ? 'View' : cfg.action;
-    return (
-        <div className="card p-4 sm:p-5 flex flex-col sm:flex-row items-start gap-4 group hover:border-accent/40 relative">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${cfg.badge}`}>
-                <Icon className="w-6 h-6" aria-hidden />
-            </div>
-            <div className="flex-1 min-w-0 w-full">
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${cfg.badge}`}>{cfg.label}</span>
-                    <span className="text-[10px] px-2 py-0.5 bg-accent/10 text-accent rounded-full font-semibold flex items-center gap-1">
-                        <Star className="w-2.5 h-2.5 fill-current" /> Featured
-                    </span>
-                    <span className="text-[10px] text-text-muted dark:text-dark-text/50 sm:ml-auto order-last sm:order-none w-full sm:w-auto mt-1 sm:mt-0">{r.category}</span>
-                </div>
-                <h3 onClick={() => onNavigate?.(r)} className="text-base sm:text-sm font-bold dark:text-dark-text line-clamp-2 sm:line-clamp-1 cursor-pointer hover:text-primary transition-colors">{r.title}</h3>
-                <p className="text-xs text-text-muted dark:text-dark-text/60 line-clamp-3 sm:line-clamp-1 mt-1 leading-relaxed">{r.description}</p>
-            </div>
-            <div className="flex items-center gap-3 mt-3 sm:mt-0 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-end pt-3 sm:pt-0 border-t sm:border-0 border-card-border dark:border-dark-border">
-                <button onClick={() => onShare(r)} className="btn-ghost p-2.5 sm:p-2 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-card-border/20 sm:bg-transparent" aria-label="Share">
-                    <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                </button>
-                {href ? (
-                    <a href={href} target={isExternal ? '_blank' : undefined} rel={isExternal ? 'noopener noreferrer' : undefined}
-                        onClick={() => onAction(r, actionLabel)}
-                        className="btn-primary py-2.5 px-5 sm:px-3 text-sm sm:text-xs gap-1.5 flex-1 sm:flex-none justify-center">
-                        {actionLabel} {detailHref ? <Eye className="w-4 h-4 sm:w-3 sm:h-3" /> : (r.type === 'link' ? <ExternalLink className="w-4 h-4 sm:w-3 sm:h-3" /> : <Download className="w-4 h-4 sm:w-3 sm:h-3" />)}
-                    </a>
-                ) : (
-                    <button
-                        type="button"
-                        disabled
-                        className="btn-outline py-2.5 px-5 sm:px-3 text-sm sm:text-xs gap-1.5 flex-1 sm:flex-none justify-center opacity-60 cursor-not-allowed"
-                    >
-                        Unavailable
-                    </button>
-                )}
-            </div>
-        </div>
-    );
-}
-
-/* ─── Skeleton ─── */
 function Skeleton() {
     return (
         <div className="card p-4 sm:p-5">
-            <div className="flex gap-3 mb-3"><div className="skeleton w-10 h-10 rounded-xl" /><div className="flex-1 space-y-2"><div className="skeleton h-3 w-1/3 rounded" /><div className="skeleton h-4 w-3/4 rounded" /></div></div>
-            <div className="skeleton h-3 w-full rounded mb-1" />
-            <div className="skeleton h-3 w-2/3 rounded mb-3" />
-            <div className="flex gap-1 mb-3"><div className="skeleton h-4 w-12 rounded-full" /><div className="skeleton h-4 w-10 rounded-full" /></div>
-            <div className="skeleton h-px w-full mb-3" />
-            <div className="flex justify-between"><div className="skeleton h-3 w-20 rounded" /><div className="skeleton h-6 w-16 rounded" /></div>
+            <div className="mb-3 flex gap-3"><div className="skeleton h-10 w-10 rounded-xl" /><div className="flex-1 space-y-2"><div className="skeleton h-3 w-1/3 rounded" /><div className="skeleton h-4 w-3/4 rounded" /></div></div>
+            <div className="skeleton mb-1 h-3 w-full rounded" /><div className="skeleton mb-3 h-3 w-2/3 rounded" />
+            <div className="mb-3 flex gap-1"><div className="skeleton h-4 w-12 rounded-full" /><div className="skeleton h-4 w-10 rounded-full" /></div>
+            <div className="skeleton mb-3 h-px w-full" /><div className="flex justify-between"><div className="skeleton h-3 w-20 rounded" /><div className="skeleton h-6 w-16 rounded" /></div>
         </div>
     );
 }
 
-/* ─── Toast ─── */
-function Toast({ msg, onDismiss }: { msg: string; onDismiss: () => void }) {
-    useEffect(() => { const t = setTimeout(onDismiss, 2500); return () => clearTimeout(t); }, [onDismiss]);
+function ResourceActionLink({
+    resource, href, detailHref, actionLabel, openLinksInNewTab, onAction,
+}: {
+    resource: CardResource;
+    href: string;
+    detailHref: string;
+    actionLabel: string;
+    openLinksInNewTab: boolean;
+    onAction: (resource: CardResource, action: string) => void;
+}) {
+    const external = !detailHref && isExternalUrl(href || '');
+    const newTab = !detailHref && openLinksInNewTab;
     return (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-text dark:bg-dark-text text-surface dark:text-dark-bg px-5 py-3 rounded-2xl shadow-elevated flex items-center gap-2 text-sm font-medium animate-slide-up">
-            <CheckCircle className="w-4 h-4 text-success" /> {msg}
+        <a
+            href={href}
+            target={external || newTab ? '_blank' : undefined}
+            rel={external || newTab ? 'noopener noreferrer' : undefined}
+            onClick={() => onAction(resource, actionLabel)}
+            className="inline-flex min-h-[34px] items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 hover:text-accent dark:text-primary-300"
+        >
+            {detailHref ? <Eye className="h-3 w-3" /> : resource.type === 'link' ? <ExternalLink className="h-3 w-3" /> : <Download className="h-3 w-3" />}
+            {actionLabel}
+        </a>
+    );
+}
+
+function ResourceCard({
+    resource, openLinksInNewTab, onShare, onAction, onNavigate,
+}: {
+    resource: CardResource;
+    openLinksInNewTab: boolean;
+    onShare: (resource: CardResource) => void;
+    onAction: (resource: CardResource, action: string) => void;
+    onNavigate: (resource: CardResource) => void;
+}) {
+    const config = TYPE_CONFIG[resource.type];
+    const Icon = config.icon;
+    const detailHref = resource.slug ? `/resources/${resource.slug}` : '';
+    const href = detailHref || normalizeInternalOrExternalUrl(resource.fileUrl || resource.externalUrl || '');
+    const actionLabel = detailHref ? 'View' : config.action;
+    return (
+        <div className="card relative flex flex-col gap-3 overflow-hidden p-4 sm:p-5 group">
+            {resource.isFeatured ? <span className="absolute right-0 top-0 inline-flex items-center gap-1 rounded-bl-xl bg-accent px-3 py-1 text-[9px] font-bold text-white"><Star className="h-2.5 w-2.5 fill-current" /> Featured</span> : null}
+            <div className="flex items-start gap-3">
+                <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${config.badge}`}><Icon className="h-5 w-5" /></div>
+                <div className="min-w-0 flex-1">
+                    <span className={`mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${config.badge}`}>{config.label}</span>
+                    <h3 onClick={() => onNavigate(resource)} className="line-clamp-2 cursor-pointer text-sm font-semibold leading-snug transition-colors hover:text-primary dark:text-dark-text">{resource.title}</h3>
+                </div>
+            </div>
+            <p className="line-clamp-2 flex-1 text-xs leading-relaxed text-text-muted dark:text-dark-text/60">{resource.description}</p>
+            {resource.tags.length > 0 ? <div className="flex flex-wrap gap-1">{resource.tags.slice(0, 3).map((tag, index) => <span key={`${tag}-${index}`} className="rounded-full bg-primary/5 px-2 py-0.5 text-[10px] text-primary dark:bg-primary/10 dark:text-primary-300">{tag}</span>)}</div> : null}
+            <div className="flex items-center justify-between border-t border-card-border pt-3 dark:border-dark-border">
+                <div className="flex items-center gap-3 text-xs text-text-muted dark:text-dark-text/50">
+                    <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{resource.views >= 1000 ? `${(resource.views / 1000).toFixed(1)}K` : resource.views}</span>
+                    {resource.downloads > 0 ? <span className="flex items-center gap-1"><Download className="h-3 w-3" />{resource.downloads}</span> : null}
+                    <span className="text-[10px]">{new Date(resource.publishDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => onShare(resource)} className="btn-ghost min-h-[34px] rounded-lg p-2 opacity-0 transition-opacity group-hover:opacity-100" aria-label="Copy link"><Share2 className="h-3.5 w-3.5" /></button>
+                    {href ? <ResourceActionLink resource={resource} href={href} detailHref={detailHref} actionLabel={actionLabel} openLinksInNewTab={openLinksInNewTab} onAction={onAction} /> : <button type="button" disabled className="inline-flex min-h-[34px] cursor-not-allowed items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-500"><AlertCircle className="h-3 w-3" />Unavailable</button>}
+                </div>
+            </div>
         </div>
     );
 }
 
-/* ─── Main Page ─── */
+function FeaturedCard(props: {
+    resource: CardResource;
+    openLinksInNewTab: boolean;
+    onShare: (resource: CardResource) => void;
+    onAction: (resource: CardResource, action: string) => void;
+    onNavigate: (resource: CardResource) => void;
+}) {
+    const { resource, openLinksInNewTab, onShare, onAction, onNavigate } = props;
+    const config = TYPE_CONFIG[resource.type];
+    const Icon = config.icon;
+    const detailHref = resource.slug ? `/resources/${resource.slug}` : '';
+    const href = detailHref || normalizeInternalOrExternalUrl(resource.fileUrl || resource.externalUrl || '');
+    const actionLabel = detailHref ? 'View' : config.action;
+    return (
+        <div className="card group flex flex-col items-start gap-4 p-4 hover:border-accent/40 sm:flex-row sm:p-5">
+            <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${config.badge}`}><Icon className="h-6 w-6" /></div>
+            <div className="min-w-0 w-full flex-1">
+                <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${config.badge}`}>{config.label}</span>
+                    <span className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent"><Star className="h-2.5 w-2.5 fill-current" /> Featured</span>
+                    <span className="order-last mt-1 w-full text-[10px] text-text-muted dark:text-dark-text/50 sm:order-none sm:ml-auto sm:mt-0 sm:w-auto">{resource.category}</span>
+                </div>
+                <h3 onClick={() => onNavigate(resource)} className="line-clamp-2 cursor-pointer text-base font-bold transition-colors hover:text-primary sm:line-clamp-1 sm:text-sm dark:text-dark-text">{resource.title}</h3>
+                <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-text-muted dark:text-dark-text/60 sm:line-clamp-1">{resource.description}</p>
+            </div>
+            <div className="mt-3 flex w-full flex-shrink-0 items-center justify-between gap-3 border-t border-card-border pt-3 sm:mt-0 sm:w-auto sm:justify-end sm:border-0 sm:pt-0 dark:border-dark-border">
+                <button type="button" onClick={() => onShare(resource)} className="btn-ghost rounded-lg bg-card-border/20 p-2.5 transition-opacity sm:bg-transparent sm:p-2 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Share"><Share2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" /></button>
+                {href ? <a href={href} target={!detailHref && openLinksInNewTab ? '_blank' : undefined} rel={!detailHref && openLinksInNewTab ? 'noopener noreferrer' : undefined} onClick={() => onAction(resource, actionLabel)} className="btn-primary flex flex-1 items-center justify-center gap-1.5 px-5 py-2.5 text-sm sm:flex-none sm:px-3 sm:text-xs">{actionLabel}{detailHref ? <Eye className="h-4 w-4 sm:h-3 sm:w-3" /> : resource.type === 'link' ? <ExternalLink className="h-4 w-4 sm:h-3 sm:w-3" /> : <Download className="h-4 w-4 sm:h-3 sm:w-3" />}</a> : <button type="button" disabled className="btn-outline flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 px-5 py-2.5 text-sm opacity-60 sm:flex-none sm:px-3 sm:text-xs">Unavailable</button>}
+            </div>
+        </div>
+    );
+}
+
+function buildCategories(resources: CardResource[], settings: PublicResourceSettings) {
+    const ordered = new Set<string>(['All']);
+    settings.allowedCategories.forEach((item) => item.trim() && ordered.add(item.trim()));
+    resources.forEach((item) => item.category?.trim() && ordered.add(item.category.trim()));
+    if (settings.defaultCategory && settings.defaultCategory !== 'All') ordered.add(settings.defaultCategory);
+    return Array.from(ordered);
+}
+
 export default function ResourcesPage() {
     const navigate = useNavigate();
-    const [resources, setResources] = useState<Resource[]>([]);
+    const defaultsApplied = useRef(false);
+    const [settings, setSettings] = useState<PublicResourceSettings>(DEFAULT_SETTINGS);
+    const [resources, setResources] = useState<CardResource[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [search, setSearch] = useState('');
     const [type, setType] = useState<ResourceType>('all');
     const [subject, setSubject] = useState('All');
-    const [currentSort, setCurrentSort] = useState<SortKey>('latest');
+    const [sort, setSort] = useState<SortKey>('latest');
     const [page, setPage] = useState(1);
     const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
     const [toast, setToast] = useState('');
 
     useEffect(() => {
         setLoading(true);
-        getResources()
-            .then((res: { data?: { resources?: Resource[] } }) => {
-                if (res.data && Array.isArray(res.data.resources)) {
-                    setResources(res.data.resources);
-                    setError(false);
-                } else {
-                    setResources([]);
-                    setError(true);
-                }
+        void Promise.all([getResources(), getPublicResourceSettings().catch(() => ({ data: { settings: DEFAULT_SETTINGS } }))])
+            .then(([resourceRes, settingsRes]) => {
+                setResources(Array.isArray(resourceRes.data?.resources) ? resourceRes.data.resources as CardResource[] : []);
+                setSettings(settingsRes.data?.settings ? { ...DEFAULT_SETTINGS, ...settingsRes.data.settings } : DEFAULT_SETTINGS);
+                setError(!Array.isArray(resourceRes.data?.resources));
             })
-            .catch((err) => {
-                console.error('Network or server error while fetching resources:', err);
+            .catch((fetchError) => {
+                console.error('ResourcesPage load error:', fetchError);
                 setResources([]);
+                setSettings(DEFAULT_SETTINGS);
                 setError(true);
             })
             .finally(() => setLoading(false));
     }, []);
 
-    // Reset page on filter change
-    const setTypeF = (v: ResourceType) => { setType(v); setPage(1); };
-    const setSubjectF = (v: string) => { setSubject(v); setPage(1); };
-    const setSearchF = (v: string) => { setSearch(v); setPage(1); };
+    useEffect(() => {
+        if (defaultsApplied.current) return;
+        defaultsApplied.current = true;
+        setType(settings.defaultType || 'all');
+        setSubject(settings.defaultCategory || 'All');
+        setSort(settings.defaultSort || 'latest');
+    }, [settings.defaultCategory, settings.defaultSort, settings.defaultType]);
 
-    const handleShare = async (r: Resource) => {
-        const url = r.externalUrl || r.fileUrl || window.location.href;
+    const categoryOptions = useMemo(() => buildCategories(resources, settings), [resources, settings]);
+    const typeOptions = useMemo<ResourceType[]>(() => ['all', ...settings.allowedTypes], [settings.allowedTypes]);
+    const now = Date.now();
+    const filtered = useMemo(() => resources
+        .filter((resource) => resource.isPublic)
+        .filter((resource) => !resource.expiryDate || new Date(resource.expiryDate).getTime() > now)
+        .filter((resource) => type === 'all' || resource.type === type)
+        .filter((resource) => subject === 'All' || resource.category === subject)
+        .filter((resource) => !settings.showSearch || !search.trim() || resource.title?.toLowerCase().includes(search.toLowerCase()) || resource.description?.toLowerCase().includes(search.toLowerCase()) || resource.tags?.some((tag) => tag.toLowerCase().includes(search.toLowerCase())))
+        .sort((a, b) => sort === 'downloads' ? b.downloads - a.downloads : sort === 'views' ? b.views - a.views : new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()), [now, resources, search, settings.showSearch, sort, subject, type]);
+    const featured = useMemo(() => settings.showFeatured && type === 'all' && subject === 'All' && (!settings.showSearch || !search.trim()) ? filtered.filter((resource) => resource.isFeatured).slice(0, settings.featuredLimit) : [], [filtered, search, settings.featuredLimit, settings.showFeatured, settings.showSearch, subject, type]);
+    const pageSize = Math.max(4, settings.itemsPerPage || 12);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+    const totals = useMemo(() => ({
+        total: resources.filter((resource) => resource.isPublic).length,
+        pdfs: resources.filter((resource) => resource.isPublic && resource.type === 'pdf').length,
+        videos: resources.filter((resource) => resource.isPublic && resource.type === 'video').length,
+        featured: resources.filter((resource) => resource.isPublic && resource.isFeatured).length,
+    }), [resources]);
+
+    useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+
+    const resetFilters = () => {
+        setSearch('');
+        setType(settings.defaultType || 'all');
+        setSubject(settings.defaultCategory || 'All');
+        setPage(1);
+    };
+    const handleShare = async (resource: CardResource) => {
+        const url = resource.slug
+            ? `${window.location.origin}/resources/${resource.slug}`
+            : normalizeInternalOrExternalUrl(resource.fileUrl || resource.externalUrl || window.location.href) || window.location.href;
         try { await navigator.clipboard.writeText(url); setToast('Link copied!'); } catch { /* ignore */ }
     };
-    const handleResourceAction = (r: Resource, action: string) => {
-        void trackAnalyticsEvent({
-            eventName: 'resource_download',
-            module: 'resources',
-            source: 'public',
-            meta: { resourceId: r._id, type: r.type, action },
-        }).catch(() => undefined);
+    const handleAction = (resource: CardResource, action: string) => {
+        if (!settings.trackingEnabled) return;
+        void trackAnalyticsEvent({ eventName: 'resource_download', module: 'resources', source: 'public', meta: { resourceId: resource._id, type: resource.type, action } }).catch(() => undefined);
     };
-    const handleNavigate = (r: Resource) => {
-        if (r.slug) navigate(`/resources/${r.slug}`);
-    };
+    const handleNavigate = (resource: CardResource) => { if (resource.slug) navigate(`/resources/${resource.slug}`); };
 
-    const now = Date.now();
-    const active = resources.filter(r =>
-        r.isPublic &&
-        (!r.expiryDate || new Date(r.expiryDate).getTime() > now) &&
-        (type === 'all' || r.type === type) &&
-        (subject === 'All' || r.category === subject) &&
-        (!search ||
-            r.title?.toLowerCase().includes(search.toLowerCase()) ||
-            r.description?.toLowerCase().includes(search.toLowerCase()) ||
-            r.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))
-        )
-    ).sort((a: any, b: any) => {
-        if (currentSort === 'downloads') return b.downloads - a.downloads;
-        if (currentSort === 'views') return b.views - a.views;
-        return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
-    });
-
-    const featured = active.filter(r => r.isFeatured).slice(0, 4);
-    const totalPages = Math.ceil(active.length / PAGE_SIZE);
-    const paginated = active.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    const typeKeys: ResourceType[] = ['all', 'pdf', 'link', 'video', 'audio', 'image', 'note'];
-
-    const totals = {
-        pdfs: resources.filter(r => r.type === 'pdf').length,
-        videos: resources.filter(r => r.type === 'video').length,
-        featured: resources.filter(r => r.isFeatured).length,
-    };
+    if (!settings.publicPageEnabled) {
+        return <div className="section-container py-16 sm:py-20"><div className="mx-auto max-w-2xl rounded-[2rem] border border-slate-200 bg-white/95 p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950/80"><BookOpen className="mx-auto h-10 w-10 text-primary" /><h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">Resources page is currently hidden</h1><p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">The resource library is temporarily unavailable from the public website.</p></div></div>;
+    }
 
     return (
         <div className="min-h-screen">
-            {toast && <Toast msg={toast} onDismiss={() => setToast('')} />}
+            {toast ? <Toast message={toast} onDismiss={() => setToast('')} /> : null}
+            {settings.showHero ? (
+                <section className="page-hero">
+                    <div className="pointer-events-none absolute inset-0 overflow-hidden"><div className="absolute left-1/2 top-20 h-96 w-96 -translate-x-1/2 rounded-full bg-accent/20 blur-3xl" /><div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-white/5 blur-2xl" /></div>
+                    <div className="section-container relative py-12 sm:py-16 lg:py-20">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm"><BookOpen className="h-4 w-4 text-accent" /><span className="text-sm text-white/90">{settings.heroBadgeLabel}</span></div>
+                        <h1 className="text-3xl font-heading font-bold sm:text-4xl lg:text-5xl">{settings.pageTitle}</h1>
+                        <p className="mb-8 mt-3 max-w-xl text-base text-white/70 sm:text-lg">{settings.pageSubtitle}</p>
+                        {settings.showSearch ? <div className="group/search relative mb-10 max-w-xl"><div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-accent/50 to-primary/50 opacity-25 blur transition duration-1000 group-focus-within/search:opacity-100 group-focus-within/search:duration-200" /><div className="relative flex items-center"><Search className="absolute left-5 h-5 w-5 text-indigo-400 transition-colors group-focus-within/search:text-accent" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-white/20 bg-white/95 py-5 pl-14 pr-4 text-base text-text shadow-2xl backdrop-blur-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/50 dark:bg-[#0f172a]/90 dark:text-white" /></div></div> : null}
+                        {settings.showStats ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[
+                            { value: loading ? '...' : `${totals.total}+`, label: 'Total Resources', icon: BookOpen },
+                            { value: loading ? '...' : totals.pdfs, label: 'PDFs', icon: FileText },
+                            { value: loading ? '...' : totals.videos, label: 'Videos', icon: Video },
+                            { value: loading ? '...' : totals.featured, label: 'Featured', icon: Star },
+                        ].map((stat) => <div key={stat.label} className="rounded-2xl bg-white/10 p-3 text-center backdrop-blur-sm transition-colors hover:bg-white/15 sm:p-4"><stat.icon className="mx-auto mb-1.5 h-5 w-5 text-accent" /><p className="text-xl font-bold sm:text-2xl">{stat.value}</p><p className="text-xs text-white/60">{stat.label}</p></div>)}</div> : null}
+                    </div>
+                </section>
+            ) : null}
 
-            {/* ── Hero ── */}
-            <section className="page-hero">
-                <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-                    <div className="absolute top-20 left-1/2 w-96 h-96 bg-accent/20 rounded-full blur-3xl -translate-x-1/2" />
-                    <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-2xl" />
-                </div>
-                <div className="section-container relative py-12 sm:py-16 lg:py-20">
-                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 mb-4">
-                        <BookOpen className="w-4 h-4 text-accent" aria-hidden />
-                        <span className="text-sm text-white/90">Study Smart</span>
-                    </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold mb-3">Student Resources</h1>
-                    <p className="text-base sm:text-lg text-white/70 max-w-xl mb-8">
-                        Access PDFs, question banks, video tutorials, links, and notes — all in one searchable library.
-                    </p>
-                    {/* Hero search */}
-                    <div className="relative max-w-xl mb-10 group/search">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-accent/50 to-primary/50 rounded-2xl blur opacity-25 group-focus-within/search:opacity-100 transition duration-1000 group-focus-within/search:duration-200"></div>
-                        <div className="relative flex items-center">
-                            <Search className="absolute left-5 w-5 h-5 text-indigo-400 group-focus-within/search:text-accent transition-colors" aria-hidden />
-                            <input type="search" placeholder="Search resources, question banks, and notes..." value={search}
-                                onChange={e => setSearchF(e.target.value)}
-                                className="w-full pl-14 pr-4 py-5 rounded-2xl bg-white/95 dark:bg-[#0f172a]/90 backdrop-blur-xl text-text dark:text-white placeholder:text-slate-400 border border-white/20 shadow-2xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-base"
-                                aria-label="Search resources" />
-                        </div>
-                    </div>
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {[
-                            { v: loading ? '…' : `${resources.length}+`, l: 'Total Resources', icon: BookOpen },
-                            { v: loading ? '…' : totals.pdfs, l: 'PDFs', icon: FileText },
-                            { v: loading ? '…' : totals.videos, l: 'Videos', icon: Video },
-                            { v: loading ? '…' : totals.featured, l: 'Featured', icon: Star },
-                        ].map(s => (
-                            <div key={s.l} className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 sm:p-4 text-center hover:bg-white/15 transition-colors">
-                                <s.icon className="w-5 h-5 mx-auto mb-1.5 text-accent" aria-hidden />
-                                <p className="text-xl sm:text-2xl font-bold">{s.v}</p>
-                                <p className="text-xs text-white/60">{s.l}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Sticky filter bar ── */}
-            <section className="bg-surface dark:bg-dark-surface border-b border-card-border dark:border-dark-border sticky top-16 z-30">
-                <div className="section-container py-2.5 space-y-2">
-                    {/* Row 1: search (sm) + filter toggle + sort */}
+            <section className="sticky top-16 z-30 border-b border-card-border bg-surface dark:border-dark-border dark:bg-dark-surface">
+                <div className="section-container space-y-2 py-2.5">
                     <div className="flex items-center gap-2">
-                        <div className="relative flex-1 max-w-xs sm:hidden">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                            <input type="search" placeholder="Search…" value={search}
-                                onChange={e => setSearchF(e.target.value)}
-                                className="input-field text-xs py-2 pl-9 min-h-[40px]" />
-                        </div>
-                        <button className="sm:hidden btn-ghost p-2.5 rounded-xl border border-card-border dark:border-dark-border min-h-[40px] flex items-center gap-2"
-                            onClick={() => setMobileFilterOpen(!mobileFilterOpen)} aria-expanded={mobileFilterOpen}>
-                            <Filter className="w-4 h-4" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Filters</span>
-                        </button>
-                        {/* Type pills — always visible lg, hidden mobile */}
-                        <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 relative after:absolute after:right-0 after:top-0 after:bottom-0 after:w-12 after:bg-gradient-to-l after:from-surface dark:after:from-dark-surface after:to-transparent after:pointer-events-none">
-                            {typeKeys.map(t => {
-                                const cfg = t === 'all' ? null : TYPE_CONFIG[t];
-                                return (
-                                    <button key={t} onClick={() => setTypeF(t)}
-                                        className={`tab-pill flex-shrink-0 text-xs gap-1 ${type === t ? 'tab-pill-active' : 'tab-pill-inactive'}`}>
-                                        {cfg ? <cfg.icon className="w-3 h-3" /> : <BookOpen className="w-3 h-3" />}
-                                        {t === 'all' ? 'All Types' : cfg!.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <select value={currentSort} onChange={e => { setCurrentSort(e.target.value as SortKey); setPage(1); }}
-                            className="input-field w-auto text-xs py-2 min-h-[40px] flex-shrink-0" aria-label="Sort">
-                            {SORT_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-                        </select>
+                        {settings.showSearch ? <div className="relative max-w-xs flex-1 sm:hidden"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="input-field min-h-[40px] py-2 pl-9 text-xs" /></div> : null}
+                        <button type="button" className="btn-ghost flex min-h-[40px] items-center gap-2 rounded-xl border border-card-border p-2.5 sm:hidden dark:border-dark-border" onClick={() => setMobileFilterOpen((current) => !current)} aria-expanded={mobileFilterOpen}><Filter className="h-4 w-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Filters</span></button>
+                        {settings.showTypeFilter ? <div className="relative hidden flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hide after:pointer-events-none after:absolute after:bottom-0 after:right-0 after:top-0 after:w-12 after:bg-gradient-to-l after:from-surface after:to-transparent dark:after:from-dark-surface sm:flex">{typeOptions.map((item) => { const config = item === 'all' ? null : TYPE_CONFIG[item]; return <button key={item} type="button" onClick={() => { setType(item); setPage(1); }} className={`tab-pill flex-shrink-0 gap-1 text-xs ${type === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{config ? <config.icon className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}{item === 'all' ? 'All Types' : config!.label}</button>; })}</div> : <div className="flex-1" />}
+                        <select value={sort} onChange={(event) => { setSort(event.target.value as SortKey); setPage(1); }} className="input-field min-h-[40px] w-auto flex-shrink-0 py-2 text-xs" aria-label="Sort resources">{SORT_OPTIONS.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select>
                     </div>
-
-                    {/* Row 2: Subject pills (desktop) */}
-                    <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto scrollbar-hide relative after:absolute after:right-0 after:top-0 after:bottom-0 after:w-16 after:bg-gradient-to-l after:from-surface dark:after:from-dark-surface after:to-transparent after:pointer-events-none">
-                        {SUBJECTS.map(s => (
-                            <button key={s} onClick={() => setSubjectF(s)}
-                                className={`tab-pill flex-shrink-0 text-xs ${subject === s ? 'tab-pill-active' : 'tab-pill-inactive'}`}>
-                                {s}
-                            </button>
-                        ))}
-                        {(type !== 'all' || subject !== 'All' || search) && (
-                            <button onClick={() => { setTypeF('all'); setSubjectF('All'); setSearchF(''); }}
-                                className="flex-shrink-0 flex items-center gap-1 text-xs text-danger hover:text-danger/80 px-2 py-1 rounded-lg hover:bg-danger/10 transition-colors ml-2">
-                                <X className="w-3 h-3" /> Clear
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Mobile collapsible filter */}
-                    {mobileFilterOpen && (
-                        <div className="sm:hidden space-y-2 pb-1">
-                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                                {typeKeys.map(t => {
-                                    const cfg = t === 'all' ? null : TYPE_CONFIG[t];
-                                    return (
-                                        <button key={t} onClick={() => { setTypeF(t); setMobileFilterOpen(false); }}
-                                            className={`tab-pill flex-shrink-0 text-xs gap-1 ${type === t ? 'tab-pill-active' : 'tab-pill-inactive'}`}>
-                                            {cfg ? <cfg.icon className="w-3 h-3" /> : <BookOpen className="w-3 h-3" />}
-                                            {t === 'all' ? 'All' : cfg!.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                                {SUBJECTS.map(s => (
-                                    <button key={s} onClick={() => { setSubjectF(s); setMobileFilterOpen(false); }}
-                                        className={`tab-pill flex-shrink-0 text-xs ${subject === s ? 'tab-pill-active' : 'tab-pill-inactive'}`}>
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    {settings.showCategoryFilter ? <div className="relative hidden items-center gap-1.5 overflow-x-auto scrollbar-hide after:pointer-events-none after:absolute after:bottom-0 after:right-0 after:top-0 after:w-16 after:bg-gradient-to-l after:from-surface after:to-transparent dark:after:from-dark-surface sm:flex">{categoryOptions.map((item) => <button key={item} type="button" onClick={() => { setSubject(item); setPage(1); }} className={`tab-pill flex-shrink-0 text-xs ${subject === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{item}</button>)}{(type !== settings.defaultType || subject !== settings.defaultCategory || search) ? <button type="button" onClick={resetFilters} className="ml-2 flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-danger transition-colors hover:bg-danger/10 hover:text-danger/80"><X className="h-3 w-3" />Clear</button> : null}</div> : null}
+                    {mobileFilterOpen ? <div className="space-y-2 pb-1 sm:hidden">{settings.showTypeFilter ? <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">{typeOptions.map((item) => { const config = item === 'all' ? null : TYPE_CONFIG[item]; return <button key={item} type="button" onClick={() => { setType(item); setPage(1); setMobileFilterOpen(false); }} className={`tab-pill flex-shrink-0 gap-1 text-xs ${type === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{config ? <config.icon className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}{item === 'all' ? 'All' : config!.label}</button>; })}</div> : null}{settings.showCategoryFilter ? <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">{categoryOptions.map((item) => <button key={item} type="button" onClick={() => { setSubject(item); setPage(1); setMobileFilterOpen(false); }} className={`tab-pill flex-shrink-0 text-xs ${subject === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{item}</button>)}</div> : null}</div> : null}
                 </div>
             </section>
 
-            <section className="section-container py-8 sm:py-10 space-y-8">
-                {/* Error notice if API failed */}
-                {error && (
-                    <div className="flex items-center gap-3 bg-warning/5 border border-warning/30 rounded-2xl px-4 py-3 text-sm text-warning">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        Showing sample resources — live data unavailable.
-                    </div>
-                )}
-
-                {/* ── Featured resources ── */}
-                {!loading && featured.length > 0 && type === 'all' && subject === 'All' && !search && (
-                    <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Star className="w-4 h-4 text-accent fill-accent" />
-                            <h2 className="text-lg font-heading font-bold dark:text-dark-text">Featured Resources</h2>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                            {featured.map(r => <FeaturedCard key={r._id} r={r} onShare={handleShare} onAction={handleResourceAction} onNavigate={handleNavigate} />)}
-                        </div>
-                    </div>
-                )}
-
-                {/* ── All resources grid ── */}
+            <section className="section-container space-y-8 py-8 sm:py-10">
+                {error ? <div className="flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning"><AlertCircle className="h-4 w-4 flex-shrink-0" />Showing fallback page state. Live resource data could not be loaded.</div> : null}
+                {featured.length > 0 ? <div><div className="mb-4 flex items-center gap-2"><Star className="h-4 w-4 fill-accent text-accent" /><h2 className="text-lg font-heading font-bold dark:text-dark-text">{settings.featuredSectionTitle}</h2></div><div className="grid grid-cols-1 gap-3 lg:grid-cols-2">{featured.map((resource) => <FeaturedCard key={resource._id} resource={resource} openLinksInNewTab={settings.openLinksInNewTab} onShare={handleShare} onAction={handleAction} onNavigate={handleNavigate} />)}</div></div> : null}
                 <div>
-                    <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                            <h2 className="text-lg font-heading font-bold dark:text-dark-text">
-                                {search ? `Results for "${search}"` : subject !== 'All' ? subject : type !== 'all' ? TYPE_CONFIG[type as Exclude<ResourceType, 'all'>].label + 's' : 'All Resources'}
-                            </h2>
-                            <p className="text-xs text-text-muted dark:text-dark-text/50 mt-0.5">
-                                {loading ? 'Loading…' : `${active.length} resource${active.length !== 1 ? 's' : ''} found`}
-                            </p>
+                            <h2 className="text-lg font-heading font-bold dark:text-dark-text">{settings.showSearch && search ? `Results for "${search}"` : subject !== 'All' ? subject : type !== 'all' ? `${TYPE_CONFIG[type as Exclude<ResourceType, 'all'>].label}s` : 'All Resources'}</h2>
+                            <p className="mt-0.5 text-xs text-text-muted dark:text-dark-text/50">{loading ? 'Loading...' : `${filtered.length} resource${filtered.length !== 1 ? 's' : ''} found`}</p>
                         </div>
-                        {/* Desktop search */}
-                        <div className="hidden sm:flex items-center gap-2">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
-                                <input type="search" placeholder="Search…" value={search}
-                                    onChange={e => setSearchF(e.target.value)}
-                                    className="input-field text-xs py-2 pl-9 min-h-[40px] w-52" />
-                                {search && (
-                                    <button onClick={() => setSearchF('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-                                        <X className="w-3.5 h-3.5 text-text-muted hover:text-danger" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+                        {settings.showSearch ? <div className="hidden items-center gap-2 sm:flex"><div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="input-field min-h-[40px] w-52 py-2 pl-9 text-xs" />{search ? <button type="button" onClick={() => { setSearch(''); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Clear resource search"><X className="h-3.5 w-3.5 text-text-muted hover:text-danger" /></button> : null}</div></div> : null}
                     </div>
-
-                    {loading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} />)}
-                        </div>
-                    ) : paginated.length === 0 ? (
-                        <div className="text-center py-16 sm:py-24">
-                            <div className="w-16 h-16 bg-primary/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <BookOpen className="w-8 h-8 text-primary/30" />
-                            </div>
-                            <h3 className="text-lg font-semibold dark:text-dark-text mb-2">No resources found</h3>
-                            <p className="text-sm text-text-muted dark:text-dark-text/50 mb-5">Try adjusting your filters or search query.</p>
-                            <button onClick={() => { setTypeF('all'); setSubjectF('All'); setSearchF(''); }}
-                                className="btn-outline gap-2 text-sm">
-                                <X className="w-4 h-4" /> Clear all filters
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {paginated.map(r => <ResourceCard key={r._id} r={r} onShare={handleShare} onAction={handleResourceAction} onNavigate={handleNavigate} />)}
-                        </div>
-                    )}
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 mt-10" role="navigation" aria-label="Pagination">
-                            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                                className="btn-ghost p-2 rounded-xl border border-card-border dark:border-dark-border disabled:opacity-40" aria-label="Previous page">
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                                const n = totalPages <= 7 ? i + 1 : page <= 4 ? i + 1 : page >= totalPages - 3 ? totalPages - 6 + i : page - 3 + i;
-                                return (
-                                    <button key={n} onClick={() => setPage(n)} aria-current={n === page ? 'page' : undefined}
-                                        className={`w-9 h-9 rounded-xl text-sm font-medium transition-all ${n === page ? 'bg-primary text-white shadow-md' : 'btn-ghost border border-card-border dark:border-dark-border'}`}>
-                                        {n}
-                                    </button>
-                                );
-                            })}
-                            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                                className="btn-ghost p-2 rounded-xl border border-card-border dark:border-dark-border disabled:opacity-40" aria-label="Next page">
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Page info */}
-                    {totalPages > 1 && (
-                        <p className="text-center text-xs text-text-muted dark:text-dark-text/40 mt-3">
-                            Page {page} of {totalPages} · {active.length} total results
-                        </p>
-                    )}
+                    {loading ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} />)}</div> : paginated.length === 0 ? <div className="py-16 text-center sm:py-24"><div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5"><BookOpen className="h-8 w-8 text-primary/30" /></div><h3 className="mb-2 text-lg font-semibold dark:text-dark-text">No resources found</h3><p className="mb-5 text-sm text-text-muted dark:text-dark-text/50">{settings.emptyStateMessage}</p><button type="button" onClick={resetFilters} className="btn-outline gap-2 text-sm"><X className="h-4 w-4" />Reset filters</button></div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{paginated.map((resource) => <ResourceCard key={resource._id} resource={resource} openLinksInNewTab={settings.openLinksInNewTab} onShare={handleShare} onAction={handleAction} onNavigate={handleNavigate} />)}</div>}
+                    {totalPages > 1 ? <><div className="mt-10 flex items-center justify-center gap-2" role="navigation" aria-label="Pagination"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} className="btn-ghost rounded-xl border border-card-border p-2 disabled:opacity-40 dark:border-dark-border" aria-label="Previous page"><ChevronLeft className="h-4 w-4" /></button>{Array.from({ length: Math.min(totalPages, 7) }, (_, index) => { const pageNumber = totalPages <= 7 ? index + 1 : page <= 4 ? index + 1 : page >= totalPages - 3 ? totalPages - 6 + index : page - 3 + index; return <button key={pageNumber} type="button" onClick={() => setPage(pageNumber)} aria-current={pageNumber === page ? 'page' : undefined} className={`h-9 w-9 rounded-xl text-sm font-medium transition-all ${pageNumber === page ? 'bg-primary text-white shadow-md' : 'btn-ghost border border-card-border dark:border-dark-border'}`}>{pageNumber}</button>; })}<button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages} className="btn-ghost rounded-xl border border-card-border p-2 disabled:opacity-40 dark:border-dark-border" aria-label="Next page"><ChevronRight className="h-4 w-4" /></button></div><p className="mt-3 text-center text-xs text-text-muted dark:text-dark-text/40">Page {page} of {totalPages} · {filtered.length} total results</p></> : null}
                 </div>
             </section>
-
-            {/* Loading overlay for spinner */}
-            {loading && (
-                <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-20">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin opacity-30" />
-                </div>
-            )}
+            {loading ? <div className="pointer-events-none fixed inset-0 z-20 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary opacity-30" /></div> : null}
         </div>
     );
 }

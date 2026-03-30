@@ -116,9 +116,9 @@ function getAnimationVariants(level: HomeAnimationLevel): Variants {
 
 function UnitDateChip({ label, value }: { label: string; value: unknown }) {
     return (
-        <div className="rounded-xl border border-slate-700/80 bg-slate-950/55 px-3 py-2">
+        <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 px-3 py-2 dark:border-slate-700/80 dark:bg-slate-950/55">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-            <p className="mt-1 text-xs font-semibold text-slate-100">
+            <p className="mt-1 text-xs font-semibold text-slate-900 dark:text-slate-100">
                 {formatUniversityDate(value, 'en-GB', { day: '2-digit', month: 'short' })}
             </p>
         </div>
@@ -240,7 +240,7 @@ const UniversityCard = memo(function UniversityCard({
         <Link
             to={detailsUrl}
             data-testid="university-card-details"
-            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-800"
+            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
         >
             View Details
         </Link>
@@ -253,12 +253,12 @@ const UniversityCard = memo(function UniversityCard({
             rel="noopener noreferrer"
             data-testid="university-card-official"
             onClick={() => sendEvent('university_official_click', { universityId: id, slug, website: officialWebsite })}
-            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-800"
+            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
         >
             Official
         </a>
     ) : (
-        <span className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-500">
+        <span className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:text-slate-500">
             Official N/A
         </span>
     );
@@ -275,7 +275,7 @@ const UniversityCard = memo(function UniversityCard({
             Apply
         </a>
     ) : (
-        <span className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-500">
+        <span className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:text-slate-500">
             Apply N/A
         </span>
     );
@@ -297,64 +297,96 @@ const UniversityCard = memo(function UniversityCard({
                 data-university-cluster={clusterGroup}
                 data-university-card-variant="classic"
             >
-                <div className="flex gap-4 p-5">
-                    <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                        <UniversityLogo
-                            name={name}
-                            shortForm={shortForm}
-                            logoUrl={logoUrl}
-                            containerClassName="h-full w-full"
-                        />
+                <div className="space-y-4 p-5">
+                    <div className="flex items-start gap-4">
+                        <div className="relative flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                            <UniversityLogo
+                                name={name}
+                                shortForm={shortForm}
+                                logoUrl={logoUrl}
+                                containerClassName="h-full w-full"
+                                fallbackTextClassName="text-[0.95rem] sm:text-[1.05rem]"
+                            />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                            <h3 className={`${universityNameSizeClass} line-clamp-2 font-bold leading-tight text-slate-900 dark:text-white`} title={name}>
+                                {name}
+                            </h3>
+
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                {shortForm && shortForm !== 'N/A' && (
+                                    <span className={`inline-flex rounded-full bg-slate-100 px-2.5 py-1 ${shortFormClass} font-bold uppercase tracking-[0.16em] text-slate-700 dark:bg-slate-800 dark:text-slate-200`} title={shortForm}>
+                                        {shortForm}
+                                    </span>
+                                )}
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${classicStatusTone}`}>
+                                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                                    {classicStatusLabel}
+                                </span>
+                                {establishedYear ? (
+                                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                                        Est. {establishedYear}
+                                    </span>
+                                ) : null}
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                                    {category}
+                                </span>
+                                {clusterGroup ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-200">
+                                        <Layers3 className="h-3 w-3" />
+                                        <span className="max-w-[13rem] truncate">{clusterGroup}</span>
+                                    </span>
+                                ) : null}
+                            </div>
+                        </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                        <h3 className={`pr-6 ${universityNameSizeClass} line-clamp-2 font-bold leading-tight text-slate-900 dark:text-white`} title={name}>
-                            {name}
-                        </h3>
-                        {shortForm && shortForm !== 'N/A' && (
-                            <p className={`${shortFormClass} mt-0.5 truncate font-bold uppercase tracking-wide text-primary/70 dark:text-primary/60`} title={shortForm}>
-                                {shortForm}
-                            </p>
-                        )}
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <span className="inline-flex items-center gap-1 text-[13px] text-slate-500 dark:text-slate-400">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {address}
-                            </span>
-                            {contactNumber ? (
-                                <span className="inline-flex items-center gap-1 text-[12px] text-slate-500 dark:text-slate-400">
-                                    <Phone className="h-3 w-3" />
-                                    {contactNumber}
-                                </span>
-                            ) : null}
-                            {establishedYear ? (
-                                <span className="text-[12px] text-slate-500 dark:text-slate-400">Est. {establishedYear}</span>
-                            ) : null}
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/90 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-950/40">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Location</p>
+                            <div className="mt-2 flex items-start gap-2 text-[13px] text-slate-600 dark:text-slate-300">
+                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span className="line-clamp-2">{mergedConfig.showAddress ? address : 'N/A'}</span>
+                            </div>
                         </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="rounded-lg bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
-                                {category}
-                            </span>
-                            {clusterGroup ? (
-                                <span className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-200">
-                                    <Layers3 className="h-3 w-3" />
-                                    <span className="max-w-[10rem] truncate">{clusterGroup}</span>
-                                </span>
-                            ) : null}
-                            <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-0.5 text-[11px] font-bold ${classicStatusTone}`}>
-                                <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                                {classicStatusLabel}
-                            </span>
+
+                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/90 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-950/40">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Contact</p>
+                            <div className="mt-2 space-y-1.5 text-[12px] text-slate-600 dark:text-slate-300">
+                                <div className="flex min-h-[1rem] items-center gap-1.5">
+                                    <Phone className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">{contactNumber || 'N/A'}</span>
+                                </div>
+                                {mergedConfig.showEmail && email ? (
+                                    <div className="flex min-h-[1rem] items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                                        <Mail className="h-3 w-3 shrink-0" />
+                                        <span className="truncate">{email}</span>
+                                    </div>
+                                ) : (
+                                    <div className="text-slate-500 dark:text-slate-400">Email N/A</div>
+                                )}
+                            </div>
                         </div>
-                        <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-                            Application: {appMeta.windowLabel}
-                            {appDurationDays !== null ? ` (${appDurationDays} days)` : ''}
-                        </p>
-                        {mergedConfig.showEmail && email ? (
-                            <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                <Mail className="h-3 w-3" />
-                                {email}
-                            </p>
-                        ) : null}
+
+                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-slate-50/90 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-950/35 sm:col-span-2">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Application</p>
+                                    <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-100">
+                                        {appMeta.windowLabel}
+                                        {appDurationDays !== null ? ` (${appDurationDays} days)` : ''}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Status</p>
+                                    <p className="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-100">{appMeta.deadlineLabel}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="px-5">
@@ -529,71 +561,99 @@ const UniversityCard = memo(function UniversityCard({
         <motion.article
             variants={variants}
             whileHover={animationLevel === 'off' ? undefined : { y: -4, transition: { duration: 0.2 } }}
-            className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/95 shadow-[0_14px_30px_rgba(4,12,24,0.26)] transition-all duration-300 hover:shadow-[0_20px_40px_rgba(4,12,24,0.30)] ${className}`}
+            className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-all duration-300 hover:shadow-[0_20px_40px_rgba(15,23,42,0.14)] dark:border-slate-700/70 dark:bg-slate-900/95 dark:shadow-[0_14px_30px_rgba(4,12,24,0.26)] dark:hover:shadow-[0_20px_40px_rgba(4,12,24,0.30)] ${className}`}
             data-university-card-id={id}
             data-university-category={category}
             data-university-cluster={clusterGroup}
             data-university-card-variant="modern"
         >
             <div className="flex gap-3 p-4 pb-3">
-                <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 p-2">
+                <div className="relative flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-700 dark:bg-slate-950">
                     <UniversityLogo
                         name={name}
                         shortForm={shortForm}
                         logoUrl={logoUrl}
                         containerClassName="h-full w-full"
+                        fallbackTextClassName="text-[0.95rem] sm:text-[1rem]"
                     />
                 </div>
 
-                <div className="min-w-0 flex-1">
-                    <h3 className={`${universityNameSizeClass} line-clamp-2 font-bold leading-tight text-white`} title={name}>
-                        {name}
-                    </h3>
-                    {shortForm && shortForm !== 'N/A' && (
-                        <p className={`${shortFormClass} mt-1 truncate font-bold uppercase tracking-wide text-cyan-300`} title={shortForm}>
-                            {shortForm}
-                        </p>
-                    )}
+                <div className="min-w-0 flex-1 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                            <h3 className={`${universityNameSizeClass} line-clamp-2 font-bold leading-tight text-slate-900 dark:text-white`} title={name}>
+                                {name}
+                            </h3>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                {shortForm && shortForm !== 'N/A' && (
+                                    <span className={`inline-flex rounded-full border border-cyan-500/15 bg-cyan-500/10 px-2.5 py-1 ${shortFormClass} font-bold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-200`} title={shortForm}>
+                                        {shortForm}
+                                    </span>
+                                )}
+                                {establishedYear ? (
+                                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                                        Est. {establishedYear}
+                                    </span>
+                                ) : null}
+                            </div>
+                        </div>
+                        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${classicStatusTone}`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {classicStatusLabel}
+                        </span>
+                    </div>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-sky-200">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-200">
                             {category}
                         </span>
                         {clusterGroup && (
                             clusterUrl ? (
                                 <Link
                                     to={clusterUrl}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-200 transition hover:bg-purple-500/20"
+                                    className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-700 transition hover:bg-purple-500/20 dark:text-purple-200"
                                 >
                                     <Layers3 className="h-3 w-3" />
                                     <span className="max-w-[10rem] truncate">{clusterGroup}</span>
                                 </Link>
                             ) : (
-                                <span className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-200">
+                                <span className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-200">
                                     <Layers3 className="h-3 w-3" />
                                     <span className="max-w-[10rem] truncate">{clusterGroup}</span>
                                 </span>
                             )
                         )}
-                        <DeadlineBadge urgencyState={appMeta.urgencyState} />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+                        {address && address !== 'N/A' && (
+                            <span className="inline-flex min-w-0 items-center gap-1">
+                                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{address}</span>
+                            </span>
+                        )}
+                        {contactNumber && (
+                            <span className="inline-flex min-w-0 items-center gap-1">
+                                <Phone className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{contactNumber}</span>
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
 
             <div className="space-y-3 px-4 pb-4">
-                <div className="flex flex-wrap items-center gap-2">
-                    <DaysLeftChip daysLeft={appMeta.daysLeft} urgencyState={appMeta.urgencyState} />
-                    <span className="text-[11px] font-semibold text-slate-400">{appMeta.deadlineLabel}</span>
-                </div>
-
-                <div className="rounded-xl border border-slate-700/80 bg-slate-950/55 p-2.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <span className="text-slate-500">Application Window</span>
-                        <span className="font-semibold text-slate-100">{appMeta.windowLabel}</span>
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Application Window</div>
+                            <div className="text-xs font-semibold text-slate-700 dark:text-slate-100">{appMeta.windowLabel}</div>
+                        </div>
+                        <DaysLeftChip daysLeft={appMeta.daysLeft} urgencyState={appMeta.urgencyState} />
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <span className="text-slate-500">Nearest Exam</span>
-                        <span className="font-semibold text-slate-100">
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <span className="font-medium text-slate-500 dark:text-slate-400">{appMeta.deadlineLabel}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-100">
                             {nearestExam ? formatUniversityDate(nearestExam, 'en-GB', { day: '2-digit', month: 'short' }) : 'N/A'}
                         </span>
                     </div>
@@ -605,7 +665,7 @@ const UniversityCard = memo(function UniversityCard({
                     <UnitDateChip label="Business" value={university.businessExamDate || university.examDateBusiness} />
                 </div>
                 {mergedConfig.showExamCentersPreview && examCenterPreview.length > 0 && (
-                    <p className="line-clamp-1 text-xs text-slate-400">
+                    <p className="line-clamp-1 text-xs text-slate-500 dark:text-slate-400">
                         Centers: {examCenterPreview.join(', ')}
                     </p>
                 )}
@@ -626,24 +686,24 @@ export default UniversityCard;
 
 export function UniversityCardSkeleton() {
     return (
-        <div className="animate-pulse rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-sm">
+        <div className="animate-pulse rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-slate-800" />
+                <div className="h-14 w-14 rounded-2xl bg-slate-200 dark:bg-slate-800" />
                 <div className="min-w-0 flex-1 space-y-2">
-                    <div className="h-4 w-3/4 rounded bg-slate-800" />
-                    <div className="h-3 w-1/3 rounded bg-slate-800" />
+                    <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-3 w-1/3 rounded bg-slate-200 dark:bg-slate-800" />
                 </div>
             </div>
-            <div className="mt-4 h-10 rounded-xl bg-slate-800" />
+            <div className="mt-4 h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
             <div className="mt-3 grid grid-cols-3 gap-2">
-                <div className="h-14 rounded-xl bg-slate-800" />
-                <div className="h-14 rounded-xl bg-slate-800" />
-                <div className="h-14 rounded-xl bg-slate-800" />
+                <div className="h-14 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                <div className="h-14 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                <div className="h-14 rounded-xl bg-slate-200 dark:bg-slate-800" />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2">
-                <div className="h-10 rounded-xl bg-slate-800" />
-                <div className="h-10 rounded-xl bg-slate-800" />
-                <div className="h-10 rounded-xl bg-slate-800" />
+                <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
+                <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
             </div>
         </div>
     );

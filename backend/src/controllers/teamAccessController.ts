@@ -10,11 +10,14 @@ import TeamApprovalRule from '../models/TeamApprovalRule';
 import TeamAuditLog from '../models/TeamAuditLog';
 import TeamInvite from '../models/TeamInvite';
 import ActiveSession from '../models/ActiveSession';
+import AuditLog from '../models/AuditLog';
+import LoginActivity from '../models/LoginActivity';
 import type { AuthRequest } from '../middlewares/auth';
 import { DEFAULT_TEAM_ROLES, TEAM_ACTIONS, TEAM_MODULES } from '../teamAccess/defaults';
 import { issueSecurityToken } from '../services/securityTokenService';
 import { sendCampusMail } from '../utils/mailer';
 import { escapeRegex } from '../utils/escapeRegex';
+import { getClientIp, getDeviceInfo } from '../utils/requestMeta';
 
 const TEAM_USER_ROLES = ['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'] as const;
 const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -175,9 +178,54 @@ async function writeAudit(
         oldValueSummary,
         newValueSummary,
         status,
-        ip: String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || ''),
-        device: String(req.headers['user-agent'] || ''),
+        ip: getClientIp(req),
+        device: getDeviceInfo(req),
     });
+}
+
+function buildActivityActor(raw: unknown): {
+    _id: string;
+    full_name?: string;
+    username?: string;
+    email?: string;
+    role?: string;
+} | undefined {
+    if (!isRecord(raw)) return undefined;
+    const id = String(raw._id || '').trim();
+    if (!id) return undefined;
+    return {
+        _id: id,
+        full_name: String(raw.full_name || '').trim() || undefined,
+        username: String(raw.username || '').trim() || undefined,
+        email: String(raw.email || '').trim() || undefined,
+        role: String(raw.role || '').trim() || undefined,
+    };
+}
+
+function buildSessionDurationMinutes(startValue: unknown, endValue: unknown): number | null {
+    const start = startValue ? new Date(String(startValue)) : null;
+    const end = endValue ? new Date(String(endValue)) : null;
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    const diffMs = end.getTime() - start.getTime();
+    if (diffMs < 0) return null;
+    return Math.max(0, Math.round(diffMs / 60000));
+}
+
+function buildSessionDeviceLabel(item: Record<string, unknown>): string {
+    const deviceName = String(item.device_name || '').trim();
+    const browser = String(item.browser || '').trim();
+    const platform = String(item.platform || '').trim();
+    const deviceType = String(item.device_type || '').trim();
+    return [deviceName, browser, platform, deviceType].filter(Boolean).join(' • ');
+}
+
+function normalizeAuditStatus(value: unknown, fallback = 'success'): string {
+    const status = String(value || '').trim().toLowerCase();
+    if (!status) return fallback;
+    if (status === 'active' || status === 'terminated') return status;
+    if (status === 'warning' || status === 'pending' || status === 'failed' || status === 'blocked') return status;
+    if (status === 'success') return 'success';
+    return fallback;
 }
 
 export async function ensureDefaultTeamRoles(): Promise<void> {
@@ -924,16 +972,173 @@ export async function teamGetActivity(req: Request, res: Response): Promise<void
         const module = String(req.query.module || '').trim();
         const action = String(req.query.action || '').trim();
 
-        const filter: Record<string, unknown> = {};
-        if (actorId && mongoose.Types.ObjectId.isValid(actorId)) filter.actorId = asObjectId(actorId);
-        if (module) filter.module = module;
-        if (action) filter.action = action;
+        const objectActorId = actorId && mongoose.Types.ObjectId.isValid(actorId) ? asObjectId(actorId) : null;
+        const teamFilter: Record<string, unknown> = {};
+        const auditFilter: Record<string, unknown> = {};
+        const loginFilter: Record<string, unknown> = {};
+        const sessionFilter: Record<string, unknown> = {};
 
-        const items = await TeamAuditLog.find(filter)
-            .populate('actorId', 'full_name username email role')
-            .sort({ createdAt: -1 })
-            .limit(300)
-            .lean();
+        if (objectActorId) {
+            teamFilter.actorId = objectActorId;
+            auditFilter.actor_id = objectActorId;
+            loginFilter.user_id = objectActorId;
+            sessionFilter.user_id = objectActorId;
+        }
+        if (module) {
+            teamFilter.module = module;
+            auditFilter.module = module;
+        }
+        if (action) {
+            teamFilter.action = action;
+            auditFilter.action = action;
+        }
+
+        const includeLoginActivity = !module || ['auth_security', 'security_logs', 'team_access_control'].includes(module);
+        const includeSessionActivity = !module || ['session_security', 'security_logs', 'auth_security', 'team_access_control'].includes(module);
+        const loginSuccessFilter = action === 'login_success' ? true : action === 'login_failed' ? false : undefined;
+        const sessionStatusFilter = action === 'session_active'
+            ? 'active'
+            : action === 'session_terminated'
+                ? 'terminated'
+                : undefined;
+
+        if (loginSuccessFilter !== undefined) {
+            loginFilter.success = loginSuccessFilter;
+        }
+        if (sessionStatusFilter) {
+            sessionFilter.status = sessionStatusFilter;
+        }
+
+        const [teamItems, auditItems, loginItems, sessionItems] = await Promise.all([
+            TeamAuditLog.find(teamFilter)
+                .populate('actorId', 'full_name username email role')
+                .sort({ createdAt: -1 })
+                .limit(160)
+                .lean(),
+            AuditLog.find(auditFilter)
+                .populate('actor_id', 'full_name username email role')
+                .sort({ timestamp: -1 })
+                .limit(160)
+                .lean(),
+            includeLoginActivity
+                ? LoginActivity.find(loginFilter)
+                    .populate('user_id', 'full_name username email role')
+                    .sort({ createdAt: -1 })
+                    .limit(120)
+                    .lean()
+                : Promise.resolve([]),
+            includeSessionActivity
+                ? ActiveSession.find(sessionFilter)
+                    .populate('user_id', 'full_name username email role')
+                    .sort({ last_activity: -1, login_time: -1 })
+                    .limit(120)
+                    .lean()
+                : Promise.resolve([]),
+        ]);
+
+        const items = [
+            ...teamItems.map((item) => {
+                const actor = buildActivityActor(item.actorId);
+                const createdAt = (item as typeof item & { createdAt?: Date }).createdAt || new Date();
+                return {
+                    _id: String(item._id),
+                    kind: 'team_audit',
+                    actorId: actor,
+                    actorName: actor?.full_name || actor?.username || 'System',
+                    actorRole: actor?.role,
+                    module: String(item.module || 'team_access_control'),
+                    action: String(item.action || 'activity'),
+                    targetType: String(item.targetType || '').trim() || undefined,
+                    targetId: String(item.targetId || '').trim() || undefined,
+                    oldValueSummary: item.oldValueSummary,
+                    newValueSummary: item.newValueSummary,
+                    status: normalizeAuditStatus(item.status),
+                    ip: String(item.ip || '').trim() || undefined,
+                    device: String(item.device || '').trim() || undefined,
+                    createdAt,
+                };
+            }),
+            ...auditItems.map((item) => {
+                const actor = buildActivityActor(item.actor_id);
+                return {
+                    _id: String(item._id),
+                    kind: 'audit_log',
+                    actorId: actor,
+                    actorName: actor?.full_name || actor?.username || 'System',
+                    actorRole: String(item.actor_role || actor?.role || '').trim() || undefined,
+                    module: String(item.module || 'system'),
+                    action: String(item.action || 'activity'),
+                    targetType: String(item.target_type || '').trim() || undefined,
+                    targetId: item.target_id ? String(item.target_id) : undefined,
+                    oldValueSummary: item.before,
+                    newValueSummary: item.after,
+                    status: normalizeAuditStatus(item.status),
+                    ip: String(item.ip_address || '').trim() || undefined,
+                    device: String(item.device || '').trim() || undefined,
+                    details: item.details,
+                    sessionId: String(item.sessionId || '').trim() || undefined,
+                    createdAt: item.timestamp,
+                };
+            }),
+            ...loginItems.map((item) => {
+                const actor = buildActivityActor(item.user_id);
+                return {
+                    _id: String(item._id),
+                    kind: 'login_activity',
+                    actorId: actor,
+                    actorName: actor?.full_name || actor?.username || item.login_identifier || 'Unknown user',
+                    actorRole: String(item.role || actor?.role || '').trim() || undefined,
+                    module: 'auth_security',
+                    action: item.success ? 'login_success' : 'login_failed',
+                    targetType: 'auth',
+                    targetId: actor?._id,
+                    status: item.success ? 'success' : 'failed',
+                    ip: String(item.ip_address || '').trim() || undefined,
+                    device: String(item.device_info || item.user_agent || '').trim() || undefined,
+                    details: {
+                        loginIdentifier: item.login_identifier,
+                        suspicious: Boolean(item.suspicious),
+                        reason: item.reason || '',
+                    },
+                    createdAt: item.createdAt,
+                };
+            }),
+            ...sessionItems.map((item) => {
+                const actor = buildActivityActor(item.user_id);
+                const sessionRecord = item as unknown as Record<string, unknown>;
+                const loginAt = item.login_time || item.createdAt;
+                const lastActivityAt = item.last_activity || item.updatedAt || loginAt;
+                return {
+                    _id: String(item._id),
+                    kind: 'session_activity',
+                    actorId: actor,
+                    actorName: actor?.full_name || actor?.username || 'Unknown user',
+                    actorRole: actor?.role,
+                    module: 'session_security',
+                    action: item.status === 'terminated' ? 'session_terminated' : 'session_active',
+                    targetType: 'session',
+                    targetId: String(item.session_id || '').trim() || undefined,
+                    status: normalizeAuditStatus(item.status, 'active'),
+                    ip: String(item.ip_address || '').trim() || undefined,
+                    device: buildSessionDeviceLabel(sessionRecord) || undefined,
+                    browser: String(item.browser || '').trim() || undefined,
+                    platform: String(item.platform || '').trim() || undefined,
+                    locationSummary: String(item.location_summary || '').trim() || undefined,
+                    sessionId: String(item.session_id || '').trim() || undefined,
+                    loginAt,
+                    lastActivityAt,
+                    durationMinutes: buildSessionDurationMinutes(loginAt, lastActivityAt),
+                    details: {
+                        riskScore: item.risk_score,
+                        riskFlags: item.risk_flags,
+                        terminatedReason: item.terminated_reason,
+                    },
+                    createdAt: lastActivityAt,
+                };
+            }),
+        ]
+            .sort((left, right) => new Date(String(right.createdAt)).getTime() - new Date(String(left.createdAt)).getTime())
+            .slice(0, 300);
 
         res.json({ items });
     } catch (error) {

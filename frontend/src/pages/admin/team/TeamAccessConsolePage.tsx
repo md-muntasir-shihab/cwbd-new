@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
+import { useAuth } from '../../../hooks/useAuth';
 import { useModuleAccess } from '../../../hooks/useModuleAccess';
 import { ADMIN_PATHS } from '../../../routes/adminPaths';
 import {
@@ -102,6 +103,23 @@ function relativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
+function formatActivityDate(value?: string): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString();
+}
+
+function humanizeActivityValue(value: string): string {
+  return String(value || '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function resolveActivityActor(item: TeamAuditItem): string {
+  return item.actorName || item.actorId?.full_name || item.actorId?.username || 'System';
+}
+
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -114,6 +132,9 @@ function StatusBadge({ status }: { status: string }) {
     success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
     denied: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    warning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    terminated: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+    blocked: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   };
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${styles[status] || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
@@ -125,6 +146,7 @@ function StatusBadge({ status }: { status: string }) {
 export default function TeamAccessConsolePage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, isLoading: authLoading } = useAuth();
   const { hasAccess } = useModuleAccess();
   const view = useMemo(() => getViewFromPath(location.pathname), [location.pathname]);
   const canCreateTeam = hasAccess('team_access_control', 'create');
@@ -280,9 +302,17 @@ export default function TeamAccessConsolePage() {
     if (!search.trim()) return activity;
     const q = search.toLowerCase();
     return activity.filter(a =>
-      (a.actorId?.full_name || a.actorId?.username || '').toLowerCase().includes(q) ||
-      a.module.toLowerCase().includes(q) ||
-      a.action.toLowerCase().includes(q)
+      resolveActivityActor(a).toLowerCase().includes(q) ||
+      String(a.actorRole || '').toLowerCase().includes(q) ||
+      String(a.module || '').toLowerCase().includes(q) ||
+      String(a.action || '').toLowerCase().includes(q) ||
+      String(a.targetType || '').toLowerCase().includes(q) ||
+      String(a.targetId || '').toLowerCase().includes(q) ||
+      String(a.ip || '').toLowerCase().includes(q) ||
+      String(a.device || '').toLowerCase().includes(q) ||
+      String(a.browser || '').toLowerCase().includes(q) ||
+      String(a.platform || '').toLowerCase().includes(q) ||
+      String(a.locationSummary || '').toLowerCase().includes(q)
     );
   }, [activity, search]);
 
@@ -293,6 +323,10 @@ export default function TeamAccessConsolePage() {
   }, [view]);
 
   useEffect(() => {
+    if (authLoading || !user) {
+      return;
+    }
+
     const run = async () => {
       try {
         if (view === 'members') await loadMembers();
@@ -307,7 +341,7 @@ export default function TeamAccessConsolePage() {
       }
     };
     void run();
-  }, [view]);
+  }, [authLoading, user, view]);
 
   async function handleCreateMember() {
     try {
@@ -711,15 +745,27 @@ export default function TeamAccessConsolePage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-slate-900 dark:text-slate-100">
-                    <span className="font-semibold">{item.actorId?.full_name || item.actorId?.username || 'System'}</span>{' '}
+                    <span className="font-semibold">{resolveActivityActor(item)}</span>{' '}
                     <span className="text-slate-500">performed</span>{' '}
-                    <span className="font-medium text-indigo-600 dark:text-indigo-400">{item.action}</span>{' '}
+                    <span className="font-medium text-indigo-600 dark:text-indigo-400">{humanizeActivityValue(item.action)}</span>{' '}
                     <span className="text-slate-500">on</span>{' '}
-                    <span className="font-medium">{item.module}</span>
+                    <span className="font-medium">{humanizeActivityValue(item.module)}</span>
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <StatusBadge status={item.status} />
-                    {item.targetType && <span className="text-xs text-slate-400">{item.targetType}{item.targetId ? ` / ${item.targetId}` : ''}</span>}
+                    {item.kind && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">{humanizeActivityValue(item.kind)}</span>}
+                    {item.actorRole && <span className="text-xs text-slate-400">{humanizeActivityValue(item.actorRole)}</span>}
+                    {item.targetType && <span className="text-xs text-slate-400">{humanizeActivityValue(item.targetType)}{item.targetId ? ` / ${item.targetId}` : ''}</span>}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                    {item.ip && <span>IP: {item.ip}</span>}
+                    {item.device && <span>{item.device}</span>}
+                    {item.browser && <span>{item.browser}</span>}
+                    {item.platform && <span>{item.platform}</span>}
+                    {item.locationSummary && <span>{item.locationSummary}</span>}
+                    {item.durationMinutes != null && <span>Duration: {item.durationMinutes}m</span>}
+                    {item.loginAt && <span>Login: {formatActivityDate(item.loginAt)}</span>}
+                    {item.lastActivityAt && <span>Last active: {formatActivityDate(item.lastActivityAt)}</span>}
                   </div>
                 </div>
                 <span className="shrink-0 text-xs text-slate-400">{relativeTime(item.createdAt)}</span>

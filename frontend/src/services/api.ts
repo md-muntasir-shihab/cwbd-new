@@ -1622,6 +1622,25 @@ export interface AdminActionApproval {
     paramsSnapshot?: Record<string, unknown>;
     querySnapshot?: Record<string, unknown>;
     payloadSnapshot?: Record<string, unknown>;
+    requestContext?: {
+        ipAddress?: string;
+        deviceInfo?: string;
+        browser?: string;
+        platform?: string;
+        locationSummary?: string;
+        sessionId?: string;
+    };
+    targetSummary?: {
+        targetType?: string;
+        targetId?: string;
+        targetLabel?: string;
+    };
+    reviewSummary?: Array<{
+        label: string;
+        value: string;
+    }>;
+    beforeSnapshot?: Record<string, unknown>;
+    afterSnapshot?: Record<string, unknown>;
     initiatedBy?: {
         _id?: string;
         username?: string;
@@ -2980,8 +2999,46 @@ export interface ContactPayload { name: string; email: string; phone?: string; s
 export const submitContact = (data: ContactPayload) => api.post('/contact', data);
 
 /* — Public Resources — */
+export type ResourceSettingsSort = 'latest' | 'downloads' | 'views';
+export type ResourceSettingsType = 'all' | 'pdf' | 'link' | 'video' | 'audio' | 'image' | 'note';
+
+export interface PublicResourceSettings {
+    pageTitle: string;
+    pageSubtitle: string;
+    heroBadgeLabel: string;
+    searchPlaceholder: string;
+    defaultThumbnailUrl: string;
+    publicPageEnabled: boolean;
+    studentHubEnabled: boolean;
+    showHero: boolean;
+    showStats: boolean;
+    showFeatured: boolean;
+    featuredLimit: number;
+    defaultSort: ResourceSettingsSort;
+    defaultType: ResourceSettingsType;
+    defaultCategory: string;
+    itemsPerPage: number;
+    showSearch: boolean;
+    showTypeFilter: boolean;
+    showCategoryFilter: boolean;
+    trackingEnabled: boolean;
+    allowedCategories: string[];
+    allowedTypes: Array<Exclude<ResourceSettingsType, 'all'>>;
+    openLinksInNewTab: boolean;
+    featuredSectionTitle: string;
+    emptyStateMessage: string;
+}
+
+export interface AdminResourceSettings extends PublicResourceSettings {
+    allowUserUploads: boolean;
+    requireAdminApproval: boolean;
+    maxFileSizeMB: number;
+}
+
 export const getResources = (params: Record<string, string | number> = {}) =>
     api.get('/resources', { params });
+export const getPublicResourceSettings = () =>
+    api.get<{ settings: PublicResourceSettings; lastUpdatedAt?: string }>('/resources/settings/public');
 
 /* — Public Dynamic Home System & Settings — */
 export const getPublicSettings = () => api.get<ApiWebsiteSettings>('/settings/public');
@@ -5017,9 +5074,9 @@ export const adminToggleResourcePublish = (id: string) =>
 export const adminToggleResourceFeatured = (id: string) =>
     api.patch(`/${ADMIN_PATH}/resources/${id}/toggle-featured`);
 export const adminGetResourceSettings = () =>
-    api.get(`/${ADMIN_PATH}/resource-settings`);
-export const adminUpdateResourceSettings = (data: Record<string, unknown>) =>
-    api.put(`/${ADMIN_PATH}/resource-settings`, data);
+    api.get<{ settings: AdminResourceSettings; message?: string }>(`/${ADMIN_PATH}/resource-settings`);
+export const adminUpdateResourceSettings = (data: Partial<AdminResourceSettings>) =>
+    api.put<{ settings: AdminResourceSettings; message: string }>(`/${ADMIN_PATH}/resource-settings`, data);
 export const getResourceBySlug = (slug: string) =>
     api.get(`/resources/${encodeURIComponent(slug)}`);
 

@@ -1,7 +1,11 @@
 import { NextFunction, Response } from 'express';
 import { AuthRequest } from './auth';
 import { RiskyActionKey } from '../models/SecuritySettings';
-import { requestApproval, shouldRequireTwoPersonApproval } from '../services/actionApprovalService';
+import {
+    buildApprovalRequestContextFromRequest,
+    requestApproval,
+    shouldRequireTwoPersonApproval,
+} from '../services/actionApprovalService';
 
 export function requireTwoPersonApproval(
     actionKey: RiskyActionKey,
@@ -39,6 +43,7 @@ export function requireTwoPersonApproval(
                     userId: req.user._id,
                     role: req.user.role,
                 },
+                requestContext: buildApprovalRequestContextFromRequest(req),
             });
 
             res.status(202).json({

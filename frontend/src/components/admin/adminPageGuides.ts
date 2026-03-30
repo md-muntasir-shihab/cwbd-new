@@ -398,7 +398,7 @@ const PAGE_GUIDES: AdminPageGuideEntry[] = [
         },
     },
     {
-        prefixes: [ADMIN_PATHS.campaignsContactCenter],
+        prefixes: [ADMIN_PATHS.subscriptionContactCenter],
         guide: {
             title: 'Subscription Contact Center',
             content: 'This screen is the canonical subscription-wise contact workspace for live audience filters, copy/export, personal outreach, presets, and logs.',
@@ -579,7 +579,7 @@ const PAGE_GUIDES: AdminPageGuideEntry[] = [
         },
     },
     {
-        prefixes: [ADMIN_PATHS.subscriptionPlans, ADMIN_PATHS.subscriptionsV2],
+        prefixes: [ADMIN_PATHS.subscriptionPlans, ADMIN_PATHS.subscriptionsV2, ADMIN_PATHS.subscriptionContactCenter],
         guide: {
             title: 'Subscription and Payments',
             content: 'This module controls plan definitions, current subscriptions, and the privileges those plans unlock across the product.',

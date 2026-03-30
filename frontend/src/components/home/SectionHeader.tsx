@@ -24,8 +24,7 @@ export default function SectionHeader({
           {Icon && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
+              animate={{ scale: 1, opacity: 1 }}
               className="relative p-2.5 rounded-xl bg-white dark:bg-gray-900 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden group"
             >
               {/* Subtle background gradient overlay */}

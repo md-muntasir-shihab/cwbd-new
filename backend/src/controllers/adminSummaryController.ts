@@ -27,91 +27,97 @@ export const adminGetDashboardSummary = async (_req: Request, res: Response): Pr
         const renewalDueUntil = new Date(now);
         renewalDueUntil.setDate(renewalDueUntil.getDate() + 7);
         const staffRoles = ['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'];
+        const activePublicResourceFilter = {
+            isPublic: true,
+            publishDate: { $lte: now },
+            $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
+        };
 
         const [
-            totalUniversities,
-            activeUniversities,
-            featuredUniversities,
+            universityStats,
             homeSettings,
-            pendingNews,
-            publishedToday,
-            liveExams,
-            upcomingExams,
+            newsStats,
+            examStats,
             totalQuestions,
-            totalActiveStudents,
-            suspendedStudents,
-            pendingPaymentStudents,
-            pendingPaymentApprovals,
-            paidToday,
-            unreadSupportTickets,
-            unreadContactMessages,
-            publicResources,
-            featuredResources,
-            totalCampaigns,
-            queuedOrProcessingCampaigns,
-            failedCampaignsToday,
-            activeSubscribers,
-            renewalDueSubscribers,
-            activePlans,
-            activeStaff,
-            pendingInvites,
-            activeRoles,
-            unreadSecurityAlerts,
-            criticalSecurityAlerts,
+            studentStats,
+            paymentStats,
+            supportStats,
+            resourceStats,
+            campaignStats,
+            subscriptionStats,
+            teamStats,
+            securityStats,
         ] = await Promise.all([
-            University.countDocuments({}),
-            University.countDocuments({ isActive: true, isArchived: { $ne: true } }),
-            University.countDocuments({ featured: true }),
+            Promise.all([
+                University.countDocuments({}),
+                University.countDocuments({ isActive: true, isArchived: { $ne: true } }),
+                University.countDocuments({ featured: true }),
+            ]).then(([total, active, featured]) => ({ total, active, featured })),
             HomeSettings.findOne().lean(),
-            News.countDocuments({ status: { $in: ['pending_review', 'draft'] } }),
-            News.countDocuments({ isPublished: true, publishDate: { $gte: startOfToday, $lt: endOfToday } }),
-            Exam.countDocuments({ isPublished: true, status: 'live' }),
-            Exam.countDocuments({ isPublished: true, status: 'scheduled' }),
+            Promise.all([
+                News.countDocuments({ status: { $in: ['pending_review', 'draft'] } }),
+                News.countDocuments({ isPublished: true, publishDate: { $gte: startOfToday, $lt: endOfToday } }),
+            ]).then(([pendingReview, publishedToday]) => ({ pendingReview, publishedToday })),
+            Promise.all([
+                Exam.countDocuments({ isPublished: true, status: 'scheduled' }),
+                Exam.countDocuments({ isPublished: true, status: 'live' }),
+            ]).then(([upcoming, live]) => ({ upcoming, live })),
             Question.countDocuments({}),
-            User.countDocuments({ role: 'student', status: 'active' }),
-            User.countDocuments({ role: 'student', status: 'suspended' }),
-            User.countDocuments({ role: 'student', status: 'pending' }),
-            ManualPayment.countDocuments({ status: 'pending' }),
-            ManualPayment.countDocuments({
-                status: 'paid',
-                $or: [
-                    { paidAt: { $gte: startOfToday, $lt: endOfToday } },
-                    { paidAt: { $exists: false }, date: { $gte: startOfToday, $lt: endOfToday } },
-                    { paidAt: null, date: { $gte: startOfToday, $lt: endOfToday } },
-                ],
-            }),
-            SupportTicket.countDocuments({
-                $or: [
-                    { unreadCountForAdmin: { $gt: 0 } },
-                    {
-                        unreadCountForAdmin: { $exists: false },
-                        status: { $in: ['open', 'in_progress'] },
-                    },
-                ],
-            }),
-            ContactMessage.countDocuments({ unreadByAdmin: true }),
-            Resource.countDocuments({
-                isPublic: true,
-                publishDate: { $lte: now },
-                $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
-            }),
-            Resource.countDocuments({
-                isPublic: true,
-                isFeatured: true,
-                publishDate: { $lte: now },
-                $or: [{ expiryDate: { $exists: false } }, { expiryDate: null }, { expiryDate: { $gt: now } }],
-            }),
-            TeamInvite.countDocuments({ status: { $in: ['pending', 'sent'] } }),
-            TeamRole.countDocuments({ isActive: true }),
-            SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false }).catch(() => 0) : Promise.resolve(0),
-            SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false, severity: 'critical' }).catch(() => 0) : Promise.resolve(0),
-            NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
-            NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: { $in: ['queued', 'processing'] } }).catch(() => 0) : Promise.resolve(0),
-            NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: 'failed', updatedAt: { $gte: startOfToday, $lt: endOfToday } }).catch(() => 0) : Promise.resolve(0),
-            UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now } }).catch(() => 0) : Promise.resolve(0),
-            UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now, $lte: renewalDueUntil } }).catch(() => 0) : Promise.resolve(0),
-            SubscriptionPlan ? SubscriptionPlan.countDocuments({ enabled: true, isArchived: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
-            User ? User.countDocuments({ role: { $in: staffRoles }, status: 'active' }).catch(() => 0) : Promise.resolve(0),
+            Promise.all([
+                User.countDocuments({ role: 'student', status: 'active' }),
+                User.countDocuments({ role: 'student', status: 'pending' }),
+                User.countDocuments({ role: 'student', status: 'suspended' }),
+            ]).then(([totalActive, pendingPayment, suspended]) => ({ totalActive, pendingPayment, suspended })),
+            Promise.all([
+                ManualPayment.countDocuments({ status: 'pending' }),
+                ManualPayment.countDocuments({
+                    status: 'paid',
+                    $or: [
+                        { paidAt: { $gte: startOfToday, $lt: endOfToday } },
+                        { paidAt: { $exists: false }, date: { $gte: startOfToday, $lt: endOfToday } },
+                        { paidAt: null, date: { $gte: startOfToday, $lt: endOfToday } },
+                    ],
+                }),
+            ]).then(([pendingApprovals, paidToday]) => ({ pendingApprovals, paidToday })),
+            Promise.all([
+                SupportTicket.countDocuments({
+                    $or: [
+                        { unreadCountForAdmin: { $gt: 0 } },
+                        {
+                            unreadCountForAdmin: { $exists: false },
+                            status: { $in: ['open', 'in_progress'] },
+                        },
+                    ],
+                }),
+                ContactMessage.countDocuments({ unreadByAdmin: true }),
+            ]).then(([unreadTickets, unreadContactMessages]) => ({
+                unreadTickets,
+                unreadContactMessages,
+                unreadMessages: unreadTickets + unreadContactMessages,
+            })),
+            Promise.all([
+                Resource.countDocuments(activePublicResourceFilter),
+                Resource.countDocuments({ ...activePublicResourceFilter, isFeatured: true }),
+            ]).then(([publicResources, featuredResources]) => ({ publicResources, featuredResources })),
+            Promise.all([
+                NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
+                NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: { $in: ['queued', 'processing'] } }).catch(() => 0) : Promise.resolve(0),
+                NotificationJob ? NotificationJob.countDocuments({ isTestSend: { $ne: true }, status: 'failed', updatedAt: { $gte: startOfToday, $lt: endOfToday } }).catch(() => 0) : Promise.resolve(0),
+            ]).then(([totalCampaigns, queuedOrProcessing, failedToday]) => ({ totalCampaigns, queuedOrProcessing, failedToday })),
+            Promise.all([
+                UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now } }).catch(() => 0) : Promise.resolve(0),
+                UserSubscription ? UserSubscription.countDocuments({ status: 'active', expiresAtUTC: { $gt: now, $lte: renewalDueUntil } }).catch(() => 0) : Promise.resolve(0),
+                SubscriptionPlan ? SubscriptionPlan.countDocuments({ enabled: true, isArchived: { $ne: true } }).catch(() => 0) : Promise.resolve(0),
+            ]).then(([activeSubscribers, renewalDue, activePlans]) => ({ activeSubscribers, renewalDue, activePlans })),
+            Promise.all([
+                User.countDocuments({ role: { $in: staffRoles }, status: 'active' }).catch(() => 0),
+                TeamInvite.countDocuments({ status: { $in: ['pending', 'sent'] } }),
+                TeamRole.countDocuments({ isActive: true }),
+            ]).then(([activeStaff, pendingInvites, activeRoles]) => ({ activeStaff, pendingInvites, activeRoles })),
+            Promise.all([
+                SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false }).catch(() => 0) : Promise.resolve(0),
+                SecurityAlertLog ? SecurityAlertLog.countDocuments({ isRead: false, severity: 'critical' }).catch(() => 0) : Promise.resolve(0),
+            ]).then(([unreadAlerts, criticalAlerts]) => ({ unreadAlerts, criticalAlerts })),
         ]);
 
         const highlightedCategories = Array.isArray(homeSettings?.highlightedCategories)
@@ -132,13 +138,11 @@ export const adminGetDashboardSummary = async (_req: Request, res: Response): Pr
             99: 'down',
         };
         const db = dbStateMap[mongoose.connection.readyState] || 'down';
-        const unreadSupportMessages = unreadSupportTickets + unreadContactMessages;
-
         res.json({
             universities: {
-                total: totalUniversities,
-                active: activeUniversities,
-                featured: featuredUniversities,
+                total: universityStats.total,
+                active: universityStats.active,
+                featured: universityStats.featured,
             },
             home: {
                 highlightedCategories,
@@ -146,58 +150,25 @@ export const adminGetDashboardSummary = async (_req: Request, res: Response): Pr
                 enabledSections,
             },
             news: {
-                pendingReview: pendingNews,
-                publishedToday,
+                pendingReview: newsStats.pendingReview,
+                publishedToday: newsStats.publishedToday,
             },
             exams: {
-                upcoming: upcomingExams,
-                live: liveExams,
+                upcoming: examStats.upcoming,
+                live: examStats.live,
             },
             questionBank: {
                 totalQuestions,
             },
-            students: {
-                totalActive: totalActiveStudents,
-                pendingPayment: pendingPaymentStudents,
-                suspended: suspendedStudents,
-            },
-            payments: {
-                pendingApprovals: pendingPaymentApprovals,
-                paidToday,
-            },
-            financeCenter: {
-                pendingApprovals: pendingPaymentApprovals,
-                paidToday,
-            },
-            subscriptions: {
-                activeSubscribers,
-                renewalDue: renewalDueSubscribers,
-                activePlans,
-            },
-            resources: {
-                publicResources,
-                featuredResources,
-            },
-            campaigns: {
-                totalCampaigns,
-                queuedOrProcessing: queuedOrProcessingCampaigns,
-                failedToday: failedCampaignsToday,
-            },
-            supportCenter: {
-                unreadMessages: unreadSupportMessages,
-                unreadTickets: unreadSupportTickets,
-                unreadContactMessages,
-            },
-            teamAccess: {
-                activeStaff,
-                pendingInvites,
-                activeRoles,
-            },
-            security: {
-                unreadAlerts: unreadSecurityAlerts,
-                criticalAlerts: criticalSecurityAlerts,
-                db,
-            },
+            students: studentStats,
+            payments: paymentStats,
+            financeCenter: paymentStats,
+            subscriptions: subscriptionStats,
+            resources: resourceStats,
+            campaigns: campaignStats,
+            supportCenter: supportStats,
+            teamAccess: teamStats,
+            security: { ...securityStats, db },
             systemStatus: {
                 db,
                 timeUTC: now.toISOString(),

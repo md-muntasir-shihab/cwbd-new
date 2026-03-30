@@ -487,7 +487,7 @@ export async function getUniversities(req: Request, res: Response): Promise<void
         const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
         const limitNum = Math.min(500, Math.max(1, parseInt(String(limit), 10) || 24));
         const dashboardConfig = await getUniversityDashboardConfig();
-        const { filter, categoryMissing } = buildUniversityFilter(req.query, { requireCategory: true, allowAllCategories: dashboardConfig.showAllCategories });
+        const { filter, categoryMissing } = buildUniversityFilter(req.query, { requireCategory: true, allowAllCategories: true });
         const taxonomy = await getActivePublicUniversityTaxonomy();
         const featuredRaw = String(req.query.featured || '').trim().toLowerCase();
         const featuredMode = ['true', '1', 'yes', 'on'].includes(featuredRaw);

@@ -74,7 +74,6 @@ export default function UniversityBrowseShell({
 
     const categories = useMemo(() => sortCategories(categoriesQuery.data || []), [categoriesQuery.data]);
     const defaultCategoryFromAdmin = String(homeSettingsQuery.data?.universityDashboard?.defaultCategory || '').trim();
-    const showAllCategories = Boolean(homeSettingsQuery.data?.universityDashboard?.showAllCategories);
     const adminDefaultSort: UniversityCardSort = resolvePublicDefaultSort(
         homeSettingsQuery.data?.universityCardConfig?.defaultSort,
     );
@@ -82,7 +81,7 @@ export default function UniversityBrowseShell({
 
     const [search, setSearch] = useState(searchFromUrl);
     const [debouncedSearch, setDebouncedSearch] = useState(searchFromUrl);
-    const [selectedCategory, setSelectedCategory] = useState(fixedCategory || categoryFromUrl || '');
+    const [selectedCategory, setSelectedCategory] = useState(fixedCategory || categoryFromUrl || 'all');
     const [selectedCluster, setSelectedCluster] = useState(fixedCluster || clusterFromUrl || '');
     const [sort, setSort] = useState<UniversityCardSort>(sortFromUrl);
     const [filterOpen, setFilterOpen] = useState(false);
@@ -156,7 +155,7 @@ export default function UniversityBrowseShell({
             return;
         }
         if (categoryFromUrl) {
-            if (categoryFromUrl.trim().toLowerCase() === 'all' && showAllCategories) {
+            if (categoryFromUrl.trim().toLowerCase() === 'all') {
                 setSelectedCategory((current) => current === 'all' ? current : 'all');
                 return;
             }
@@ -166,17 +165,8 @@ export default function UniversityBrowseShell({
                 return;
             }
         }
-        if (defaultCategoryFromAdmin && !showAllCategories) {
-            const match = categories.find((c) => c.categoryName === defaultCategoryFromAdmin);
-            if (match) {
-                setSelectedCategory((current) => current === match.categoryName ? current : match.categoryName);
-                return;
-            }
-        }
-        if (categories[0]) {
-            setSelectedCategory((current) => current === categories[0].categoryName ? current : categories[0].categoryName);
-        }
-    }, [categories, categoryFromUrl, defaultCategoryFromAdmin, showAllCategories, fixedCategory, fixedCluster]);
+        setSelectedCategory((current) => current === 'all' ? current : 'all');
+    }, [categories, categoryFromUrl, fixedCategory, fixedCluster]);
 
     const handleCategoryChange = useCallback((cat: string) => {
         if (fixedCategory) return;
@@ -190,28 +180,27 @@ export default function UniversityBrowseShell({
         if (fixedCategory || !categories.length) return;
         const normalizedCategory = selectedCategory.trim().toLowerCase();
         if (!normalizedCategory) {
-            if (categories[0]) setSelectedCategory(categories[0].categoryName);
+            setSelectedCategory('all');
             return;
         }
         if (normalizedCategory === 'all') {
-            if (!showAllCategories && categories[0]) setSelectedCategory(categories[0].categoryName);
             return;
         }
         const exists = categories.some((c) => c.categoryName === selectedCategory);
-        if (!exists && categories[0]) setSelectedCategory(categories[0].categoryName);
-    }, [categories, selectedCategory, fixedCategory, showAllCategories]);
+        if (!exists) setSelectedCategory('all');
+    }, [categories, selectedCategory, fixedCategory]);
 
     const activeCategory = useMemo(() => {
         if (fixedCategory) return fixedCategory;
         if (selectedCategory.trim()) return selectedCategory;
-        if (showAllCategories && categoryFromUrl.trim().toLowerCase() === 'all') return 'all';
+        if (categoryFromUrl.trim().toLowerCase() === 'all') return 'all';
         if (defaultCategoryFromAdmin && categories.some((item) => item.categoryName === defaultCategoryFromAdmin)) {
             return defaultCategoryFromAdmin;
         }
-        return categories[0]?.categoryName || '';
-    }, [categories, categoryFromUrl, defaultCategoryFromAdmin, fixedCategory, selectedCategory, showAllCategories]);
+        return 'all';
+    }, [categories, categoryFromUrl, defaultCategoryFromAdmin, fixedCategory, selectedCategory]);
     const activeCategoryMeta = useMemo(
-        () => categories.find((item) => item.categoryName === activeCategory) || null,
+        () => activeCategory === 'all' ? null : categories.find((item) => item.categoryName === activeCategory) || null,
         [categories, activeCategory],
     );
     const clusters = useMemo(
@@ -238,7 +227,7 @@ export default function UniversityBrowseShell({
     }, [search, selectedCluster, sort, selectedCategory, syncUrlState]);
 
     const universitiesQuery = useUniversities({
-        category: activeCategory,
+        category: activeCategory || 'all',
         clusterGroup: effectiveCluster || undefined,
         q: debouncedSearch.trim() || undefined,
         sort,

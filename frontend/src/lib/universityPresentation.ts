@@ -76,7 +76,10 @@ export function toUniversitySlug(value: string): string {
 export function buildUniversityLogoFallback(name: string, shortForm = ''): string {
     const short = pickText(shortForm);
     if (short && short.toLowerCase() !== 'n/a') {
-        return short.replace(/\s+/g, '').toUpperCase();
+        const normalizedShort = short.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+        if (normalizedShort && normalizedShort !== 'NA') {
+            return normalizedShort;
+        }
     }
     return (
         pickText(name)

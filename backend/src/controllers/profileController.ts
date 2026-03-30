@@ -138,8 +138,18 @@ export async function getProfile(req: AuthRequest, res: Response): Promise<void>
         res.json({
             user: {
                 ...user,
-                profile: profileData,
-                fullName: user.role === 'student' ? profileData?.full_name : profileData?.admin_name
+                profile: user.role === 'student'
+                    ? {
+                        ...(profileData || {}),
+                        profile_photo_url: profileData?.profile_photo_url || user.profile_photo || '',
+                    }
+                    : {
+                        ...(profileData || {}),
+                        profile_photo: profileData?.profile_photo || user.profile_photo || '',
+                    },
+                fullName: user.role === 'student'
+                    ? (profileData?.full_name || user.full_name)
+                    : (profileData?.admin_name || user.full_name),
             },
             loginHistory,
             actionHistory,
@@ -182,10 +192,36 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
             Object.assign(profile, updates);
             profile.profile_completion_percentage = computeProfileCompletion(profile.toObject() as any);
             await profile.save();
+            const normalizedFullName = typeof updates.full_name === 'string'
+                ? String(updates.full_name).trim()
+                : '';
+            const normalizedProfilePhoto = typeof updates.profile_photo_url === 'string'
+                ? String(updates.profile_photo_url).trim()
+                : undefined;
+
+            const userPatch: Record<string, unknown> = {};
+            if (normalizedFullName) {
+                userPatch.full_name = normalizedFullName;
+            }
+            if (typeof normalizedProfilePhoto === 'string') {
+                userPatch.profile_photo = normalizedProfilePhoto;
+            }
+
+            const updatedUser = Object.keys(userPatch).length > 0
+                ? await User.findByIdAndUpdate(
+                    userId,
+                    { $set: userPatch },
+                    { new: true },
+                ).select('full_name profile_photo')
+                : await User.findById(userId).select('full_name profile_photo');
 
             res.json({
                 message: 'Profile updated.',
-                profile
+                profile,
+                user: {
+                    full_name: updatedUser?.full_name || normalizedFullName || user.full_name,
+                    profile_photo: updatedUser?.profile_photo || normalizedProfilePhoto || '',
+                },
             });
         } else {
             const allowed = ['admin_name', 'profile_photo'];
@@ -194,15 +230,65 @@ export async function updateProfile(req: AuthRequest, res: Response): Promise<vo
                 if (req.body[key] !== undefined) updates[key] = req.body[key];
             }
 
-            const profile = await AdminProfile.findOneAndUpdate(
-                { user_id: userId },
-                { $set: updates },
-                { new: true }
-            );
+            const normalizedAdminName = typeof updates.admin_name === 'string'
+                ? String(updates.admin_name).trim()
+                : '';
+            const normalizedProfilePhoto = typeof updates.profile_photo === 'string'
+                ? String(updates.profile_photo).trim()
+                : undefined;
+
+            const profilePatch: Record<string, unknown> = {
+                role_level: ['superadmin', 'admin', 'moderator', 'editor', 'viewer'].includes(user.role)
+                    ? user.role
+                    : 'viewer',
+            };
+            if (typeof updates.admin_name === 'string') {
+                profilePatch.admin_name = normalizedAdminName || user.full_name || user.username;
+            }
+            if (typeof normalizedProfilePhoto === 'string') {
+                profilePatch.profile_photo = normalizedProfilePhoto;
+            }
+
+            let profile = await AdminProfile.findOne({ user_id: userId });
+            if (!profile) {
+                profile = await AdminProfile.create({
+                    user_id: userId,
+                    admin_name: String(profilePatch.admin_name || user.full_name || user.username).trim() || user.username,
+                    role_level: profilePatch.role_level,
+                    permissions: user.permissions || {},
+                    profile_photo: typeof profilePatch.profile_photo === 'string' ? profilePatch.profile_photo : '',
+                });
+            } else {
+                Object.assign(profile, profilePatch);
+                if (!profile.permissions) {
+                    profile.permissions = user.permissions || {};
+                }
+                await profile.save();
+            }
+
+            const userPatch: Record<string, unknown> = {};
+            if (normalizedAdminName) {
+                userPatch.full_name = normalizedAdminName;
+            }
+            if (typeof normalizedProfilePhoto === 'string') {
+                userPatch.profile_photo = normalizedProfilePhoto;
+            }
+
+            const updatedUser = Object.keys(userPatch).length > 0
+                ? await User.findByIdAndUpdate(
+                    userId,
+                    { $set: userPatch },
+                    { new: true },
+                ).select('full_name profile_photo')
+                : await User.findById(userId).select('full_name profile_photo');
 
             res.json({
                 message: 'Profile updated.',
-                profile
+                profile,
+                user: {
+                    full_name: updatedUser?.full_name || normalizedAdminName || user.full_name,
+                    profile_photo: updatedUser?.profile_photo || normalizedProfilePhoto || '',
+                },
             });
         }
     } catch (err) {

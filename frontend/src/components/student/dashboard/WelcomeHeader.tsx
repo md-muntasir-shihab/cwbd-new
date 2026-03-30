@@ -19,8 +19,11 @@ export default function WelcomeHeader({ header, dailyFocus, personalizedCtas, on
             <div className="relative overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-indigo-50 via-white to-sky-50 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950 p-5 md:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <button 
+                        <button
+                            type="button"
                             onClick={onProfileClick}
+                            data-testid="student-entry-trigger"
+                            aria-label="Open student access card"
                             className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full shrink-0 group transition-transform hover:scale-105 active:scale-95 cursor-pointer ${isPremium ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'ring-2 ring-indigo-500/20 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 dark:ring-indigo-400/20 hover:ring-indigo-500/50 transition-all shadow-sm'}`}
                         >
                             {header.profilePicture ? (

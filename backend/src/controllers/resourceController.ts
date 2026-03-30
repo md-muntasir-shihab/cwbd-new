@@ -1,6 +1,11 @@
 import { Request, Response } from 'express';
 import Resource from '../models/Resource';
 import mongoose from 'mongoose';
+import ResourceSettings, {
+    RESOURCE_ALLOWED_TYPES,
+    RESOURCE_SETTINGS_DEFAULTS,
+    type IResourceSettings,
+} from '../models/ResourceSettings';
 
 function isAllToken(value: unknown): boolean {
     const normalized = String(value || '').trim().toLowerCase();
@@ -35,6 +40,89 @@ function extractObjectIdFromSlug(value: string): string | null {
     if (!match) return null;
     const id = match[1];
     return mongoose.Types.ObjectId.isValid(id) ? id : null;
+}
+
+type PublicResourceSettingsResponse = {
+    pageTitle: string;
+    pageSubtitle: string;
+    heroBadgeLabel: string;
+    searchPlaceholder: string;
+    defaultThumbnailUrl: string;
+    publicPageEnabled: boolean;
+    studentHubEnabled: boolean;
+    showHero: boolean;
+    showStats: boolean;
+    showFeatured: boolean;
+    featuredLimit: number;
+    defaultSort: string;
+    defaultType: string;
+    defaultCategory: string;
+    itemsPerPage: number;
+    showSearch: boolean;
+    showTypeFilter: boolean;
+    showCategoryFilter: boolean;
+    trackingEnabled: boolean;
+    allowedCategories: string[];
+    allowedTypes: string[];
+    openLinksInNewTab: boolean;
+    featuredSectionTitle: string;
+    emptyStateMessage: string;
+};
+
+function sanitizeResourceSettings(raw?: Partial<IResourceSettings> | null): PublicResourceSettingsResponse {
+    const allowedTypes = Array.isArray(raw?.allowedTypes) && raw?.allowedTypes.length > 0
+        ? raw.allowedTypes
+            .map((item) => String(item || '').trim().toLowerCase())
+            .filter((item) => RESOURCE_ALLOWED_TYPES.includes(item as typeof RESOURCE_ALLOWED_TYPES[number]))
+        : [...RESOURCE_SETTINGS_DEFAULTS.allowedTypes];
+
+    const allowedCategories = Array.isArray(raw?.allowedCategories) && raw?.allowedCategories.length > 0
+        ? raw.allowedCategories.map((item) => String(item || '').trim()).filter(Boolean)
+        : [...RESOURCE_SETTINGS_DEFAULTS.allowedCategories];
+
+    return {
+        pageTitle: String(raw?.pageTitle || RESOURCE_SETTINGS_DEFAULTS.pageTitle).trim() || RESOURCE_SETTINGS_DEFAULTS.pageTitle,
+        pageSubtitle: String(raw?.pageSubtitle || RESOURCE_SETTINGS_DEFAULTS.pageSubtitle).trim() || RESOURCE_SETTINGS_DEFAULTS.pageSubtitle,
+        heroBadgeLabel: String(raw?.heroBadgeLabel || RESOURCE_SETTINGS_DEFAULTS.heroBadgeLabel).trim() || RESOURCE_SETTINGS_DEFAULTS.heroBadgeLabel,
+        searchPlaceholder: String(raw?.searchPlaceholder || RESOURCE_SETTINGS_DEFAULTS.searchPlaceholder).trim() || RESOURCE_SETTINGS_DEFAULTS.searchPlaceholder,
+        defaultThumbnailUrl: String(raw?.defaultThumbnailUrl || '').trim(),
+        publicPageEnabled: raw?.publicPageEnabled !== false,
+        studentHubEnabled: raw?.studentHubEnabled !== false,
+        showHero: raw?.showHero !== false,
+        showStats: raw?.showStats !== false,
+        showFeatured: raw?.showFeatured !== false,
+        featuredLimit: Math.max(0, Math.min(24, Number(raw?.featuredLimit || RESOURCE_SETTINGS_DEFAULTS.featuredLimit))),
+        defaultSort: ['latest', 'downloads', 'views'].includes(String(raw?.defaultSort || '').trim().toLowerCase())
+            ? String(raw?.defaultSort).trim().toLowerCase()
+            : RESOURCE_SETTINGS_DEFAULTS.defaultSort,
+        defaultType: String(raw?.defaultType || RESOURCE_SETTINGS_DEFAULTS.defaultType).trim().toLowerCase() || RESOURCE_SETTINGS_DEFAULTS.defaultType,
+        defaultCategory: String(raw?.defaultCategory || RESOURCE_SETTINGS_DEFAULTS.defaultCategory).trim() || RESOURCE_SETTINGS_DEFAULTS.defaultCategory,
+        itemsPerPage: Math.max(4, Math.min(48, Number(raw?.itemsPerPage || RESOURCE_SETTINGS_DEFAULTS.itemsPerPage))),
+        showSearch: raw?.showSearch !== false,
+        showTypeFilter: raw?.showTypeFilter !== false,
+        showCategoryFilter: raw?.showCategoryFilter !== false,
+        trackingEnabled: raw?.trackingEnabled !== false,
+        allowedCategories,
+        allowedTypes,
+        openLinksInNewTab: raw?.openLinksInNewTab !== false,
+        featuredSectionTitle: String(raw?.featuredSectionTitle || RESOURCE_SETTINGS_DEFAULTS.featuredSectionTitle).trim() || RESOURCE_SETTINGS_DEFAULTS.featuredSectionTitle,
+        emptyStateMessage: String(raw?.emptyStateMessage || RESOURCE_SETTINGS_DEFAULTS.emptyStateMessage).trim() || RESOURCE_SETTINGS_DEFAULTS.emptyStateMessage,
+    };
+}
+
+async function loadSanitizedResourceSettings(): Promise<PublicResourceSettingsResponse> {
+    const settings = await ResourceSettings.findOne().lean();
+    return sanitizeResourceSettings(settings as unknown as Partial<IResourceSettings> | null);
+}
+
+export async function getPublicResourceSettings(_req: Request, res: Response): Promise<void> {
+    try {
+        const settings = await loadSanitizedResourceSettings();
+        res.json({ settings, lastUpdatedAt: new Date().toISOString() });
+    } catch (err) {
+        console.error('getPublicResourceSettings error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
 }
 
 export async function getPublicResources(req: Request, res: Response): Promise<void> {
@@ -91,6 +179,11 @@ export async function getPublicResources(req: Request, res: Response): Promise<v
 
 export async function incrementResourceView(req: Request, res: Response): Promise<void> {
     try {
+        const settings = await loadSanitizedResourceSettings();
+        if (!settings.trackingEnabled) {
+            res.json({ ok: true, trackingEnabled: false });
+            return;
+        }
         await Resource.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
         res.json({ ok: true });
     } catch {
@@ -100,6 +193,11 @@ export async function incrementResourceView(req: Request, res: Response): Promis
 
 export async function incrementResourceDownload(req: Request, res: Response): Promise<void> {
     try {
+        const settings = await loadSanitizedResourceSettings();
+        if (!settings.trackingEnabled) {
+            res.json({ ok: true, trackingEnabled: false });
+            return;
+        }
         await Resource.findByIdAndUpdate(req.params.id, { $inc: { downloads: 1 } });
         res.json({ ok: true });
     } catch {
@@ -136,8 +234,13 @@ export async function getPublicResourceBySlug(req: Request, res: Response): Prom
             return;
         }
 
-        // Fire-and-forget view increment
-        Resource.findByIdAndUpdate(resource._id, { $inc: { views: 1 } }).catch(() => undefined);
+        // Respect tracking toggle before incrementing detail-page views.
+        loadSanitizedResourceSettings()
+            .then((settings) => {
+                if (!settings.trackingEnabled) return;
+                return Resource.findByIdAndUpdate(resource!._id, { $inc: { views: 1 } }).catch(() => undefined);
+            })
+            .catch(() => undefined);
 
         // Fetch up to 4 related resources from same category
         const relatedResources = await Resource.find({

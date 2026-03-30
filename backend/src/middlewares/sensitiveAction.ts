@@ -5,7 +5,11 @@ import AuditLog from '../models/AuditLog';
 import User from '../models/User';
 import { AuthRequest } from './auth';
 import { RiskyActionKey } from '../models/SecuritySettings';
-import { requestApproval, shouldRequireTwoPersonApproval } from '../services/actionApprovalService';
+import {
+    buildApprovalRequestContextFromRequest,
+    requestApproval,
+    shouldRequireTwoPersonApproval,
+} from '../services/actionApprovalService';
 import { getSecuritySettingsSnapshot } from '../services/securityCenterService';
 import { consumeBackupCode, verifyTotpCode } from '../services/twoFactorService';
 import { createSecurityAlert } from '../controllers/securityAlertController';
@@ -173,6 +177,7 @@ export function requireSensitiveAction(options: SensitiveActionOptions) {
                         userId: String(req.user._id),
                         role: String(req.user.role || ''),
                     },
+                    requestContext: buildApprovalRequestContextFromRequest(req),
                 });
 
                 res.status(202).json({

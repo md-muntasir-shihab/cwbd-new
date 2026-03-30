@@ -63,16 +63,27 @@ export interface TeamApprovalRuleItem {
 
 export interface TeamAuditItem {
   _id: string;
+  kind?: 'team_audit' | 'audit_log' | 'login_activity' | 'session_activity' | string;
   actorId?: { _id: string; full_name?: string; username?: string; email?: string; role?: string };
+  actorName?: string;
+  actorRole?: string;
   module: string;
   action: string;
   targetType?: string;
   targetId?: string;
   oldValueSummary?: Record<string, unknown>;
   newValueSummary?: Record<string, unknown>;
-  status: 'success' | 'failed' | 'blocked';
+  status: string;
   ip?: string;
   device?: string;
+  browser?: string;
+  platform?: string;
+  locationSummary?: string;
+  sessionId?: string;
+  loginAt?: string;
+  lastActivityAt?: string;
+  durationMinutes?: number | null;
+  details?: Record<string, unknown> | string;
   createdAt: string;
 }
 
@@ -100,7 +111,9 @@ export interface TeamSecurityOverview {
   };
 }
 
-const BASE = '/admin';
+const RAW_ADMIN_PATH = String(import.meta.env.VITE_ADMIN_PATH || 'campusway-secure-admin').trim();
+const ADMIN_PATH = RAW_ADMIN_PATH.replace(/^\/+|\/+$/g, '') || 'campusway-secure-admin';
+const BASE = `/${ADMIN_PATH}`;
 
 export const teamApi = {
   getMembers: (params?: Record<string, unknown>) => api.get<{ items: TeamMemberItem[] }>(`${BASE}/team/members`, { params }),

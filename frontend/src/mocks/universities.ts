@@ -219,7 +219,7 @@ export function mockGetUniversities(params: Record<string, string | number | und
   const limit = Number(params.limit || 300);
 
   let filtered = mockUniversities.filter((u) => u.isActive);
-  if (category) filtered = filtered.filter((u) => u.category === category);
+  if (category && category.toLowerCase() !== 'all') filtered = filtered.filter((u) => u.category === category);
   if (clusterGroup) filtered = filtered.filter((u) => u.clusterGroup === clusterGroup);
   if (q) filtered = filtered.filter((u) => u.name.toLowerCase().includes(q) || u.shortForm.toLowerCase().includes(q));
 

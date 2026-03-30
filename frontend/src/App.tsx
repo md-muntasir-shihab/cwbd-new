@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './hooks/useTheme';
@@ -6,98 +6,12 @@ import { AuthProvider } from './hooks/useAuth';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomeModern';
-import UniversitiesPage from './pages/Universities';
-import UniversityDetailsPage from './pages/UniversityDetails';
-import UniversityCategoryBrowsePage from './pages/UniversityCategoryBrowse';
-import UniversityClusterBrowsePage from './pages/UniversityClusterBrowse';
-import NewsPage from './pages/News';
-import SingleNewsPage from './pages/SingleNews';
-import { ExamsListPage } from './pages/exams/ExamsListPage';
-import { ExamRunnerPage } from './pages/exams/ExamRunnerPage';
-import { ExamResultPage } from './pages/exams/ExamResultPage';
-import { ExamSolutionsPage } from './pages/exams/ExamSolutionsPage';
-import ResourcesPage from './pages/Resources';
-import ResourceDetail from './pages/ResourceDetail';
-import AdminSettingsResourcesPage from './pages/AdminSettingsResources';
-import ContactPage from './pages/Contact';
-import HelpCenterPage from './pages/HelpCenter';
-import HelpArticlePage from './pages/HelpArticle';
-import SubscriptionPlansPage from './pages/SubscriptionPlans';
-import SubscriptionPlanDetailPage from './pages/SubscriptionPlanDetail';
-import SubscriptionPlanCheckoutPage from './pages/SubscriptionPlanCheckout';
 import LoginPage from './pages/Login';
 import AdminSecretLoginPage from './pages/AdminSecretLogin';
 import OtpVerificationPage from './pages/OtpVerification';
-import AboutPage from './pages/About';
-import TermsPage from './pages/Terms';
-import PrivacyPage from './pages/Privacy';
-import ProfilePage from './pages/Profile';
-import CertificateVerifyPage from './pages/CertificateVerify';
 import AdminAccessDeniedPage from './pages/AdminAccessDenied';
-import AdminSubscriptionPlansPage from './pages/AdminSubscriptionPlans';
-import AdminHomeSettingsPage from './pages/AdminHomeSettings';
-import AdminUniversitySettingsPage from './pages/AdminUniversitySettings';
-import AdminSettingsCenterPage from './pages/AdminSettingsCenter';
-import AdminSettingsReportsPage from './pages/AdminSettingsReports';
-import AdminSettingsBannersPage from './pages/AdminSettingsBanners';
-import AdminCampaignBannersPage from './pages/AdminCampaignBanners';
-import AdminSettingsSecurityPage from './pages/AdminSettingsSecurity';
-import AdminSettingsLogsPage from './pages/AdminSettingsLogs';
-import AdminSettingsSitePage from './pages/AdminSettingsSite';
-import AdminSettingsProfilePage from './pages/AdminSettingsProfile';
-import AdminSettingsNotificationsPage from './pages/AdminSettingsNotifications';
-import AdminSettingsAnalyticsPage from './pages/AdminSettingsAnalytics';
-import AdminSettingsNewsPage from './pages/AdminSettingsNews';
-import AdminReportsPage from './pages/AdminReports';
-import AdminGuardShell from './components/admin/AdminGuardShell';
-import AdminNewsConsole from './pages/admin-news/AdminNewsConsole';
-import FinanceLayout from './components/admin/finance/FinanceLayout';
-import StudentManagementLayout from './components/admin/students/StudentManagementLayout';
-import FinanceDashboardPage from './components/admin/finance/FinanceDashboardPage';
-import FinanceTransactionsPage from './components/admin/finance/FinanceTransactionsPage';
-import FinanceInvoicesPage from './components/admin/finance/FinanceInvoicesPage';
-import FinanceBudgetsPage from './components/admin/finance/FinanceBudgetsPage';
-import FinanceRecurringPage from './components/admin/finance/FinanceRecurringPage';
-import FinanceVendorsPage from './components/admin/finance/FinanceVendorsPage';
-import FinanceRefundsPage from './components/admin/finance/FinanceRefundsPage';
-import FinanceExportPage from './components/admin/finance/FinanceExportPage';
-import FinanceImportPage from './components/admin/finance/FinanceImportPage';
-import FinanceAuditLogPage from './components/admin/finance/FinanceAuditLogPage';
-import FinanceSettingsPage from './components/admin/finance/FinanceSettingsPage';
-import FinanceExpensesPage from './components/admin/finance/FinanceExpensesPage';
-import {
-    AdminDashboardPage,
-    AdminUniversitiesPage,
-    AdminExamsPage,
-    AdminQuestionBankPage,
-    AdminResourcesPage,
-    AdminSupportCenterPage,
-    AdminStudentsMgmtPage,
-    AdminStudentCreatePage,
-    AdminStudentImportExportPage,
-    AdminStudentCrmTimelinePage,
-    AdminStudentWeakTopicsPage,
-    AdminStudentMgmtDetailPage,
-    AdminStudentGroupsV2Page,
-    AdminStudentGroupDetailPage,
-    AdminNotificationCenterEmbeddedPage,
-    AdminProfileRequestsPage,
-    AdminStudentSettingsPage,
-    AdminStudentSettingsEmbeddedPage,
-    AdminContactPage,
-    AdminSubscriptionsV2Page,
-} from './pages/AdminCorePages';
-import CampaignConsolePage from './pages/admin/campaigns/CampaignConsolePage';
-import SubscriptionContactCenterPage from './pages/admin/campaigns/SubscriptionContactCenterPage';
-import AdminHelpCenterPage from './pages/admin/help-center/AdminHelpCenterPage';
-import TeamAccessConsolePage from './pages/admin/team/TeamAccessConsolePage';
-import MemberDetailPage from './pages/admin/team/MemberDetailPage';
-import RoleDetailPage from './pages/admin/team/RoleDetailPage';
-import ActionApprovalsPage from './pages/admin/approvals/ActionApprovalsPage';
 import NotFoundPage from './pages/NotFound';
 import ForceLogoutModal from './components/auth/ForceLogoutModal';
-import ChairmanLoginPage from './pages/chairman/ChairmanLogin';
-import ChairmanDashboardPage from './pages/chairman/ChairmanDashboard';
 import {
     ADMIN_ACCESS_DENIED,
     ADMIN_DASHBOARD,
@@ -109,31 +23,124 @@ import {
     legacyAdminToSecret,
 } from './lib/appRoutes';
 import { ADMIN_PATHS, LEGACY_ADMIN_PATH_REDIRECTS } from './routes/adminPaths';
-
-// Student Portal Moduels
-import StudentLayout from './pages/student/StudentLayout';
-import StudentRegister from './pages/student/StudentRegister';
-import StudentForgotPassword from './pages/student/StudentForgotPassword';
-import StudentResetPassword from './pages/student/StudentResetPassword';
-import StudentDashboard from './pages/student/StudentDashboard';
-import StudentProfile from './pages/student/StudentProfile';
-import StudentSecurity from './pages/student/StudentSecurity';
-import StudentApplications from './pages/student/StudentApplications';
-import StudentExamsHub from './pages/student/StudentExamsHub';
-import StudentExamDetail from './pages/student/StudentExamDetail';
-import StudentResults from './pages/student/StudentResults';
-import StudentResultDetail from './pages/student/StudentResultDetail';
-import StudentPayments from './pages/student/StudentPayments';
-import StudentNotifications from './pages/student/StudentNotifications';
-import StudentResources from './pages/student/StudentResources';
-import StudentSupport from './pages/student/StudentSupport';
-import StudentSupportThread from './pages/student/StudentSupportThread';
+import {
+    AdminCampaignBannersPage,
+    AdminContactPage,
+    AdminDashboardPage,
+    AdminExamsPage,
+    AdminHelpCenterPage,
+    AdminHomeSettingsPage,
+    AdminNewsConsole,
+    AdminNotificationCenterEmbeddedPage,
+    AdminProfileRequestsPage,
+    AdminQuestionBankPage,
+    AdminReportsPage,
+    AdminResourcesPage,
+    AdminSettingsAnalyticsPage,
+    AdminSettingsBannersPage,
+    AdminSettingsCenterPage,
+    AdminSettingsLogsPage,
+    AdminSettingsNewsPage,
+    AdminSettingsNotificationsPage,
+    AdminSettingsProfilePage,
+    AdminSettingsReportsPage,
+    AdminSettingsResourcesPage,
+    AdminSettingsSecurityPage,
+    AdminSettingsSitePage,
+    AdminStudentCreatePage,
+    AdminStudentGroupDetailPage,
+    AdminStudentGroupsV2Page,
+    AdminStudentImportExportPage,
+    AdminStudentCrmTimelinePage,
+    AdminStudentMgmtDetailPage,
+    AdminStudentSettingsEmbeddedPage,
+    AdminStudentSettingsPage,
+    AdminStudentWeakTopicsPage,
+    AdminStudentsMgmtPage,
+    AdminSubscriptionPlansPage,
+    AdminSubscriptionsV2Page,
+    AdminSupportCenterPage,
+    AdminUniversitiesPage,
+    AdminUniversitySettingsPage,
+    ActionApprovalsPage,
+    CampaignConsolePage,
+    FinanceAuditLogPage,
+    FinanceBudgetsPage,
+    FinanceDashboardPage,
+    FinanceExpensesPage,
+    FinanceExportPage,
+    FinanceImportPage,
+    FinanceInvoicesPage,
+    FinanceLayout,
+    FinanceRecurringPage,
+    FinanceRefundsPage,
+    FinanceSettingsPage,
+    FinanceTransactionsPage,
+    FinanceVendorsPage,
+    MemberDetailPage,
+    RoleDetailPage,
+    StudentManagementLayout,
+    SubscriptionContactCenterPage,
+    TeamAccessConsolePage,
+} from './adminRouteComponents';
+import {
+    AboutPage,
+    CertificateVerifyPage,
+    ChairmanDashboardPage,
+    ChairmanLoginPage,
+    ContactPage,
+    ExamResultPage,
+    ExamRunnerPage,
+    ExamSolutionsPage,
+    ExamsListPage,
+    HelpArticlePage,
+    HelpCenterPage,
+    NewsPage,
+    PrivacyPage,
+    ProfilePage,
+    ResourceDetail,
+    ResourcesPage,
+    SingleNewsPage,
+    StudentApplications,
+    StudentDashboard,
+    StudentExamDetail,
+    StudentExamsHub,
+    StudentForgotPassword,
+    StudentLayout,
+    StudentNotifications,
+    StudentPayments,
+    StudentProfile,
+    StudentRegister,
+    StudentResetPassword,
+    StudentResources,
+    StudentResultDetail,
+    StudentResults,
+    StudentSecurity,
+    StudentSupport,
+    StudentSupportThread,
+    SubscriptionPlanCheckoutPage,
+    SubscriptionPlanDetailPage,
+    SubscriptionPlansPage,
+    TermsPage,
+    UniversitiesPage,
+    UniversityCategoryBrowsePage,
+    UniversityClusterBrowsePage,
+    UniversityDetailsPage,
+} from './publicStudentRouteComponents';
 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: { staleTime: 60_000, retry: 1, refetchOnWindowFocus: false },
     },
 });
+
+function RouteLoadingFallback() {
+    return (
+        <div className="flex min-h-[40vh] items-center justify-center px-4 text-sm font-medium text-slate-500 dark:text-slate-400">
+            Loading page...
+        </div>
+    );
+}
 
 /** App shells that should NOT render the public navbar/footer */
 const FULL_SCREEN_PREFIXES = ['/exam/take/', '/campusway-secure-admin', '/admin-dashboard', '/admin', '/__cw_admin__', '/chairman', '/login', '/otp-verify'];
@@ -343,7 +350,8 @@ export default function App() {
                 <AuthProvider>
                     <BrowserRouter>
                         <AppLayout>
-                            <Routes>
+                            <Suspense fallback={<RouteLoadingFallback />}>
+                                <Routes>
                                 <Route path="/" element={<HomePage />} />
                                 <Route path="/universities" element={<UniversitiesPage />} />
                                 <Route path="/universities/category/:categorySlug" element={<UniversityCategoryBrowsePage />} />
@@ -538,7 +546,8 @@ export default function App() {
                                 </Route>
 
                                 <Route path="*" element={<NotFoundPage />} />
-                            </Routes>
+                                </Routes>
+                            </Suspense>
                         </AppLayout>
                     </BrowserRouter>
                 </AuthProvider>

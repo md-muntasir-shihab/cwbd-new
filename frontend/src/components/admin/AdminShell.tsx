@@ -60,6 +60,7 @@ export default function AdminShell({ title, description, children }: AdminShellP
             ]);
         },
     });
+    const profilePhoto = String(user?.profile_photo || '').trim();
 
     const visibleMenuItems = useMemo(() => {
         return ADMIN_MENU_ITEMS.filter((item) => {
@@ -341,8 +342,12 @@ export default function AdminShell({ title, description, children }: AdminShellP
                     <div className={`border-t border-slate-200 bg-slate-50/70 p-3 dark:border-indigo-500/10 dark:bg-slate-950/65 ${collapsed ? 'flex flex-col items-center gap-2' : ''}`}>
                         {!collapsed && (
                             <div className="mb-3 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-3 py-3 dark:border-indigo-500/10 dark:bg-slate-900/55">
-                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
-                                    {(user?.fullName || user?.username || 'A').charAt(0).toUpperCase()}
+                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
+                                    {profilePhoto ? (
+                                        <img src={profilePhoto} alt={user?.fullName || user?.username || 'Admin'} className="h-full w-full object-cover" />
+                                    ) : (
+                                        (user?.fullName || user?.username || 'A').charAt(0).toUpperCase()
+                                    )}
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{user?.fullName || user?.username || 'Admin'}</p>
@@ -351,8 +356,12 @@ export default function AdminShell({ title, description, children }: AdminShellP
                             </div>
                         )}
                         {collapsed && (
-                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">
-                                {(user?.fullName || user?.username || 'A').charAt(0).toUpperCase()}
+                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">
+                                {profilePhoto ? (
+                                    <img src={profilePhoto} alt={user?.fullName || user?.username || 'Admin'} className="h-full w-full object-cover" />
+                                ) : (
+                                    (user?.fullName || user?.username || 'A').charAt(0).toUpperCase()
+                                )}
                             </div>
                         )}
                         <button
@@ -453,8 +462,12 @@ export default function AdminShell({ title, description, children }: AdminShellP
                                     className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-2 py-1 text-xs dark:border-slate-700"
                                     onClick={() => navigate(ADMIN_PATHS.adminProfile)}
                                 >
-                                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">
-                                        {(user?.fullName || user?.username || 'A').slice(0, 1).toUpperCase()}
+                                    <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white">
+                                        {profilePhoto ? (
+                                            <img src={profilePhoto} alt={user?.fullName || user?.username || 'Admin'} className="h-full w-full object-cover" />
+                                        ) : (
+                                            (user?.fullName || user?.username || 'A').slice(0, 1).toUpperCase()
+                                        )}
                                     </span>
                                     <span className="hidden max-w-[110px] truncate sm:inline text-slate-700 dark:text-slate-300">{user?.fullName || user?.username || 'Admin'}</span>
                                 </button>

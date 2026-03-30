@@ -4,6 +4,7 @@ import { Check, ChevronDown, Copy, Download, ExternalLink, Eye, History, Mail, M
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
+import { useAuth } from '../../../hooks/useAuth';
 import {
   createSubscriptionContactCenterPreset,
   deleteSubscriptionContactCenterPreset,
@@ -20,13 +21,13 @@ import {
 } from '../../../api/adminNotificationCampaignApi';
 import { assignSubscription, createAudienceSegment, expireSubscriptionNow, extendSubscription, toggleAutoRenew } from '../../../api/adminStudentApi';
 import { ADMIN_PATHS } from '../../../routes/adminPaths';
-import { adminGetSubscriptionPlans, type AdminSubscriptionPlan } from '../../../services/api';
 import { downloadFile } from '../../../utils/download';
 
 type CenterTab = 'overview' | 'members' | 'outreach' | 'export' | 'presets' | 'logs';
 type ContactScope = 'phones' | 'emails' | 'combined' | 'guardian' | 'student_guardian' | 'raw';
 type ExportFormat = 'clipboard' | 'xlsx' | 'csv' | 'txt' | 'json';
 type SubscriptionActionMode = 'assign' | 'extend' | 'expire' | 'autoRenew';
+type ContactCenterPlanOption = { id: string; name: string; code?: string };
 
 const CENTER_TABS: Array<{ key: CenterTab; label: string }> = [
   { key: 'overview', label: 'Overview' },
@@ -122,7 +123,7 @@ function trimFilterPayload(filters: SubscriptionContactCenterFilters): Subscript
 function ManageSubscriptionModal(props: {
   open: boolean;
   members: SubscriptionContactCenterMember[];
-  plans: AdminSubscriptionPlan[];
+  plans: ContactCenterPlanOption[];
   submitting: boolean;
   mode: SubscriptionActionMode;
   setMode: (mode: SubscriptionActionMode) => void;
@@ -184,7 +185,7 @@ function ManageSubscriptionModal(props: {
             >
               <option value="">Select a plan</option>
               {plans.map((plan) => (
-                <option key={String(plan._id || plan.id)} value={String(plan._id || plan.id)}>{plan.name}</option>
+                <option key={plan.id} value={plan.id}>{plan.name}</option>
               ))}
             </select>
             <textarea
@@ -242,6 +243,7 @@ function ManageSubscriptionModal(props: {
 export default function SubscriptionContactCenterPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user, isLoading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = normalizeTab(searchParams.get('tab'));
   const [page, setPage] = useState(1);
@@ -269,31 +271,30 @@ export default function SubscriptionContactCenterPage() {
     () => trimFilterPayload({ ...filters, selectedUserIds: selectedIds }),
     [filters, selectedIds],
   );
+  const authReady = Boolean(user) && !authLoading;
 
   const overviewQuery = useQuery({
     queryKey: ['subscription-contact-center-overview', filters],
     queryFn: () => getSubscriptionContactCenterOverview(trimFilterPayload(filters)),
+    enabled: authReady,
   });
 
   const membersQuery = useQuery({
     queryKey: ['subscription-contact-center-members', filters, page],
     queryFn: () => getSubscriptionContactCenterMembers({ ...trimFilterPayload(filters), page, limit: 25 }),
+    enabled: authReady,
   });
 
   const presetsQuery = useQuery({
     queryKey: ['subscription-contact-center-presets'],
     queryFn: getSubscriptionContactCenterPresets,
+    enabled: authReady,
   });
 
   const logsQuery = useQuery({
     queryKey: ['subscription-contact-center-logs'],
     queryFn: () => getSubscriptionContactCenterLogs({ page: 1, limit: 30 }),
-    enabled: tab === 'logs',
-  });
-
-  const plansQuery = useQuery({
-    queryKey: ['admin-subscription-plans-lite'],
-    queryFn: async () => (await adminGetSubscriptionPlans()).data.items ?? [],
+    enabled: authReady && tab === 'logs',
   });
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -328,6 +329,14 @@ export default function SubscriptionContactCenterPage() {
   const totalMemberCount = membersQuery.data?.summary.totalMembers || 0;
   const totalSelectedOrVisible = selectedIds.length || totalMemberCount;
   const planOptions = useMemo(() => (filterOptions?.plans || []).filter((plan) => plan.id), [filterOptions?.plans]);
+  const availablePlans = useMemo<ContactCenterPlanOption[]>(
+    () => planOptions.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      code: plan.code,
+    })),
+    [planOptions],
+  );
 
   useEffect(() => {
     if (!canViewGuardian && (scope === 'guardian' || scope === 'student_guardian')) {
@@ -853,11 +862,11 @@ export default function SubscriptionContactCenterPage() {
           {toast.message}
         </div>
       )}
-      <ManageSubscriptionModal
-        open={manageOpen}
-        members={manageMembers}
-        plans={plansQuery.data || []}
-        submitting={subscriptionMutation.isPending}
+        <ManageSubscriptionModal
+          open={manageOpen}
+          members={manageMembers}
+          plans={availablePlans}
+          submitting={subscriptionMutation.isPending}
         mode={manageMode}
         setMode={setManageMode}
         assignDraft={assignDraft}

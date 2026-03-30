@@ -20,7 +20,8 @@ function fmt(n: number | undefined | null) {
 }
 
 function monthKey(offset = 0) {
-    const d = new Date();
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth(), 1);
     d.setMonth(d.getMonth() + offset);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }

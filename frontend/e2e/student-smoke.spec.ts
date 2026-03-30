@@ -6,8 +6,9 @@ test.describe('Student Smoke', () => {
         const tracker = attachHealthTracker(page);
         await loginAsStudent(page);
 
+        await page.getByTestId('student-entry-trigger').click();
         await expect(page.getByTestId('student-entry-card')).toBeVisible();
-        await expect(page.getByText(/Student Access Card/i)).toBeVisible();
+        await expect(page.getByTestId('student-entry-card').getByText(/Profile Readiness/i)).toBeVisible();
         await expect(page.getByText(/My Subscription/i).first()).toBeVisible();
         await expect(page.locator('text=Profile Completion').first()).toBeVisible();
 

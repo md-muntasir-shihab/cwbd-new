@@ -1,0 +1,64 @@
+ M backend/.e2e-security-backup.json
+ M backend/src/controllers/adminSummaryController.ts
+ M backend/src/controllers/authController.ts
+ M backend/src/controllers/cmsController.ts
+ M backend/src/controllers/profileController.ts
+ M backend/src/controllers/resourceController.ts
+ M backend/src/controllers/teamAccessController.ts
+ M backend/src/controllers/universityController.ts
+ M backend/src/middlewares/sensitiveAction.ts
+ M backend/src/middlewares/twoPersonApproval.ts
+ M backend/src/models/ActionApproval.ts
+ M backend/src/models/ResourceSettings.ts
+ M backend/src/routes/publicRoutes.ts
+ M backend/src/server.ts
+ M backend/src/services/actionApprovalService.ts
+ M frontend/e2e/student-portal-theme-responsive.spec.ts
+ M frontend/e2e/student-smoke.spec.ts
+ M frontend/src/App.tsx
+ M frontend/src/components/admin/AdminProfilePanel.tsx
+ M frontend/src/components/admin/AdminShell.tsx
+ M frontend/src/components/admin/DashboardHome.tsx
+ M frontend/src/components/admin/SecurityCenterLayout.tsx
+ M frontend/src/components/admin/adminPageGuides.ts
+ M frontend/src/components/admin/finance/FinanceDashboardPage.tsx
+ M frontend/src/components/home/SectionHeader.tsx
+ M frontend/src/components/home/cards/DeadlineCard.tsx
+ M frontend/src/components/home/cards/UpcomingExamCard.tsx
+ M frontend/src/components/student/dashboard/WelcomeHeader.tsx
+ M frontend/src/components/subscription/PlanDetailsDrawer.tsx
+ M frontend/src/components/ui/AchievementPopupCard.tsx
+ M frontend/src/components/university/CategoryChipRow.tsx
+ M frontend/src/components/university/DefaultLogo.tsx
+ M frontend/src/components/university/UniversityBrowseShell.tsx
+ M frontend/src/components/university/UniversityCard.tsx
+ M frontend/src/hooks/useUniversityQueries.ts
+ M frontend/src/lib/universityPresentation.ts
+ M frontend/src/mocks/universities.ts
+ M frontend/src/pages/AdminSettingsResources.tsx
+ M frontend/src/pages/HomeModern.tsx
+ M frontend/src/pages/News.tsx
+ M frontend/src/pages/Resources.tsx
+ M frontend/src/pages/SubscriptionPlans.tsx
+ M frontend/src/pages/admin/approvals/ActionApprovalsPage.tsx
+ M frontend/src/pages/admin/campaigns/SubscriptionContactCenterPage.tsx
+ M frontend/src/pages/admin/team/TeamAccessConsolePage.tsx
+ M frontend/src/pages/student/StudentLayout.tsx
+ M frontend/src/pages/student/StudentResources.tsx
+ M frontend/src/routes/adminPaths.ts
+ M frontend/src/services/api.ts
+ M frontend/src/services/teamAccessApi.ts
+ M frontend/vite.config.ts
+?? backend/tests/admin/action-approval.review.test.ts
+?? backend/tests/admin/dashboard-summary.controller.test.ts
+?? backend/tests/admin/resource-settings.contract.test.ts
+?? backend_diff.txt
+?? frontend/e2e/student-admin-hubs-regression.spec.ts
+?? frontend/src/adminRouteComponents.tsx
+?? frontend/src/components/subscription/subscriptionContent.ts
+?? frontend/src/pages/admin-core/
+?? frontend/src/publicStudentRouteComponents.tsx
+?? server_err.txt
+?? server_out.txt
+?? status.txt
+?? status_cmd.txt

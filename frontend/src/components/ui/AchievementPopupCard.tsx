@@ -53,7 +53,7 @@ export default function AchievementPopupCard({
             <div className={`relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-indigo-950 p-8 text-white shadow-[0_0_80px_rgba(79,70,229,0.4)] transition-all duration-500 transform ${visible ? 'scale-100 translate-y-0 opacity-100' : 'scale-90 translate-y-8 opacity-0'}`}>
                 
                 {/* Background effects */}
-                <div className="absolute inset-0 bg-[url('https://api.campusway.com/assets/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.12)_1px,transparent_0)] [background-size:18px_18px] opacity-[0.18] mix-blend-overlay"></div>
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[120px] bg-gradient-to-b from-indigo-500/40 to-transparent blur-3xl opacity-50"></div>
                 <div className="absolute bottom-[-20%] left-[-10%] w-[150%] h-[50%] bg-gradient-to-t from-fuchsia-600/30 to-transparent blur-3xl rounded-full opacity-60"></div>
                 

@@ -39,8 +39,9 @@ test.describe('Student Portal Theme + Responsive Matrix', () => {
                 await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
                 await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+                await page.getByTestId('student-entry-trigger').click();
                 await expect(page.getByTestId('student-entry-card')).toBeVisible({ timeout: 15000 });
-                await expect(page.getByText(/Student Access Card/i)).toBeVisible();
+                await expect(page.getByTestId('student-entry-card').getByText(/Profile Readiness/i)).toBeVisible();
                 await expectNoCriticalHorizontalOverflow(page, `/dashboard ${theme} ${viewport.width}`);
 
                 await page.goto('/profile', { waitUntil: 'domcontentloaded' });

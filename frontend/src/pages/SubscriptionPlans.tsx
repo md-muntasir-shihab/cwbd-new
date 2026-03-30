@@ -11,11 +11,13 @@ import type { SubscriptionPlanPublic } from '../services/api';
 import PlanCard from '../components/subscription/PlanCard';
 import PlanDetailsDrawer from '../components/subscription/PlanDetailsDrawer';
 import {
+    resolveSubscriptionPlanContactTarget,
     resolveSubscriptionPlanTarget,
     shouldOpenSubscriptionPlanTargetInNewTab,
 } from '../components/subscription/subscriptionAction';
 import SubscriptionComparisonTable from '../components/subscription/SubscriptionComparisonTable';
 import SubscriptionFaqBlock from '../components/subscription/SubscriptionFaqBlock';
+import { isExternalUrl } from '../utils/url';
 
 type PlanFilter = 'all' | 'free' | 'paid';
 
@@ -32,11 +34,33 @@ export default function SubscriptionPlansPage() {
     const plans = plansQuery.data?.items || [];
     const settings = plansQuery.data?.settings;
     const currentPlanId = mySubscriptionQuery.data?.planId || undefined;
+    const allowFreePlans = settings?.allowFreePlans !== false;
+    const detailsDrawerEnabled = settings?.sectionToggles?.detailsDrawer !== false;
+    const filterOptions = (allowFreePlans ? ['all', 'free', 'paid'] : ['all', 'paid']) as PlanFilter[];
+
+    const availablePlans = useMemo(() => {
+        const basePlans = allowFreePlans
+            ? plans
+            : plans.filter((plan) => !(plan.isFree || plan.type === 'free'));
+
+        if (settings?.showFeaturedFirst) {
+            return [...basePlans].sort((left, right) => {
+                if (Boolean(left.isFeatured) === Boolean(right.isFeatured)) {
+                    return Number(left.displayOrder || 100) - Number(right.displayOrder || 100);
+                }
+                return left.isFeatured ? -1 : 1;
+            });
+        }
+
+        return basePlans;
+    }, [allowFreePlans, plans, settings?.showFeaturedFirst]);
+
+    const effectiveFilter = allowFreePlans ? filter : (filter === 'free' ? 'all' : filter);
 
     const filteredPlans = useMemo(() => {
         const term = search.trim().toLowerCase();
-        return plans.filter((plan) => {
-            if (filter !== 'all' && plan.type !== filter) return false;
+        return availablePlans.filter((plan) => {
+            if (effectiveFilter !== 'all' && plan.type !== effectiveFilter) return false;
             if (!term) return true;
             return [
                 plan.name,
@@ -45,11 +69,32 @@ export default function SubscriptionPlansPage() {
                 ...(plan.visibleFeatures || []),
             ].filter(Boolean).some((value) => String(value).toLowerCase().includes(term));
         });
-    }, [filter, plans, search]);
+    }, [availablePlans, effectiveFilter, search]);
 
     const handlePrimaryAction = (plan: SubscriptionPlanPublic) => {
         const target = resolveSubscriptionPlanTarget(plan);
         if (shouldOpenSubscriptionPlanTargetInNewTab(plan)) {
+            window.open(target, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        navigate(target);
+    };
+
+    const handleViewDetails = (plan: SubscriptionPlanPublic) => {
+        if (detailsDrawerEnabled) {
+            setActivePlan(plan);
+            return;
+        }
+
+        const planIdentifier = plan.id || plan._id || plan.slug || plan.code;
+        if (planIdentifier) {
+            navigate(`/subscription-plans/${planIdentifier}`);
+        }
+    };
+
+    const handleDismissToContact = (plan: SubscriptionPlanPublic) => {
+        const target = resolveSubscriptionPlanContactTarget(plan);
+        if (isExternalUrl(target)) {
             window.open(target, '_blank', 'noopener,noreferrer');
             return;
         }
@@ -62,6 +107,14 @@ export default function SubscriptionPlansPage() {
         <div className="bg-[radial-gradient(circle_at_top,_rgba(236,72,153,0.12),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.16),_transparent_34%)] py-8 sm:py-10">
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
                 <section className="relative overflow-hidden rounded-[2.4rem] border border-slate-200/80 bg-white/92 px-6 py-8 shadow-[0_26px_70px_rgba(15,23,42,0.10)] dark:border-slate-800 dark:bg-slate-950/86 sm:px-8 sm:py-10">
+                    {settings?.headerBannerUrl ? (
+                        <img
+                            src={settings.headerBannerUrl}
+                            alt="Subscription page banner"
+                            className="absolute inset-0 h-full w-full object-cover opacity-[0.12]"
+                        />
+                    ) : null}
+                    <div className="absolute inset-0 bg-white/65 dark:bg-slate-950/70" />
                     <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_center,_rgba(6,182,212,0.18),_transparent_58%)] lg:block" />
                     <div className="relative z-10 grid gap-6 lg:grid-cols-[1.4fr,0.8fr] lg:items-end">
                         <div className="space-y-4">
@@ -106,13 +159,13 @@ export default function SubscriptionPlansPage() {
                 <section className="rounded-[2rem] border border-slate-200/80 bg-white/92 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-slate-800 dark:bg-slate-950/86">
                     <div className="grid gap-3 lg:grid-cols-[auto,1fr]">
                         <div className="flex flex-wrap gap-2">
-                            {(['all', 'free', 'paid'] as PlanFilter[]).map((option) => (
+                            {filterOptions.map((option) => (
                                 <button
                                     key={option}
                                     type="button"
                                     onClick={() => setFilter(option)}
                                     className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                                        filter === option
+                                        effectiveFilter === option
                                             ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
                                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
                                     }`}
@@ -172,7 +225,7 @@ export default function SubscriptionPlansPage() {
                                 plan={plan}
                                 currencyLabel={settings?.currencyLabel || plan.currency || 'BDT'}
                                 onPrimaryAction={handlePrimaryAction}
-                                onViewDetails={setActivePlan}
+                                onViewDetails={handleViewDetails}
                                 isCurrentPlan={Boolean(currentPlanId && currentPlanId === plan.id)}
                             />
                         ))}
@@ -185,15 +238,20 @@ export default function SubscriptionPlansPage() {
                     </section>
                 ) : null}
 
-                {!hasHardLoadError ? <SubscriptionComparisonTable plans={plans} settings={settings} /> : null}
-                {!hasHardLoadError ? <SubscriptionFaqBlock settings={settings} /> : null}
+                {!hasHardLoadError && settings?.sectionToggles?.comparisonTable !== false ? (
+                    <SubscriptionComparisonTable plans={availablePlans} settings={settings} />
+                ) : null}
+                {!hasHardLoadError && settings?.sectionToggles?.faqBlock !== false ? (
+                    <SubscriptionFaqBlock settings={settings} />
+                ) : null}
             </div>
 
             <PlanDetailsDrawer
                 open={Boolean(activePlan)}
                 plan={activePlan}
+                defaultBannerUrl={settings?.defaultPlanBannerUrl}
                 onClose={() => setActivePlan(null)}
-                onDismissToContact={() => navigate('/contact')}
+                onDismissToContact={handleDismissToContact}
                 onPrimaryAction={handlePrimaryAction}
             />
         </div>

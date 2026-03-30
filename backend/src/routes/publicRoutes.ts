@@ -28,7 +28,13 @@ import {
 } from '../controllers/authController';
 import { getUniversities, getUniversityBySlug, getUniversityCategories } from '../controllers/universityController';
 import { getFeaturedUniversityClusters, getPublicUniversityClusterMembers } from '../controllers/universityClusterController';
-import { getPublicResources, incrementResourceView, incrementResourceDownload, getPublicResourceBySlug } from '../controllers/resourceController';
+import {
+    getPublicResources,
+    incrementResourceView,
+    incrementResourceDownload,
+    getPublicResourceBySlug,
+    getPublicResourceSettings,
+} from '../controllers/resourceController';
 import { getActiveBanners } from '../controllers/bannerController';
 import { getHomeConfig } from '../controllers/homeConfigController';
 import { getSiteSettings } from '../controllers/cmsController';
@@ -175,6 +181,7 @@ router.get('/banners', getActiveBanners);
 router.get('/banners/active', getActiveBanners);
 router.get('/home-config', getHomeConfig);
 /* ── Public — Resources ── */
+router.get('/resources/settings/public', getPublicResourceSettings);
 router.get('/resources', getPublicResources);
 router.get('/resources/:slug', getPublicResourceBySlug);
 router.post('/resources/:id/view', incrementResourceView);
