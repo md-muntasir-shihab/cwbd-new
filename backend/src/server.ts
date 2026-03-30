@@ -377,7 +377,8 @@ app.use((err: Error & { status?: number }, req: express.Request, res: express.Re
 async function start() {
     validateRequiredEnv();
     await connectDB();
-    const communicationMigrationResult = await runCommunicationCenterMigration();
+    try {
+        const communicationMigrationResult = await runCommunicationCenterMigration();
     console.log('[startup] communication migration completed', communicationMigrationResult);
 
     // First-boot setup (controlled by ALLOW_DEFAULT_SETUP env)
@@ -395,6 +396,7 @@ async function start() {
 
     // Seed default Chart-of-Account entries (idempotent)
     await seedDefaultChartOfAccounts();
+    } catch(err) { console.error('[startup] Core data/cron sync failed. MongoDB might be down. Keeping container ALIVE:', err); }
 
     const server = app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`🚀 CampusWay Backend running on port ${PORT}`);
