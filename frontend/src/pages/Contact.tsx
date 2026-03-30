@@ -408,7 +408,7 @@ export default function ContactPage() {
             <motion.section {...sectionMotion(2)} className="space-y-3">
                 <h2 className="text-xl font-bold text-text dark:text-dark-text sm:text-2xl">Social Links</h2>
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    {socialItems.map((item) => {
+                    {socialItems.filter((item) => item.enabled).map((item) => {
                         const isEnabled = item.enabled;
                         return (
                             <div key={item.id} className="card-flat p-3">

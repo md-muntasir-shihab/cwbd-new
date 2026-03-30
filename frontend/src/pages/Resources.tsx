@@ -306,7 +306,7 @@ export default function ResourcesPage() {
                         <div className="absolute -inset-1 bg-gradient-to-r from-accent/50 to-primary/50 rounded-2xl blur opacity-25 group-focus-within/search:opacity-100 transition duration-1000 group-focus-within/search:duration-200"></div>
                         <div className="relative flex items-center">
                             <Search className="absolute left-5 w-5 h-5 text-indigo-400 group-focus-within/search:text-accent transition-colors" aria-hidden />
-                            <input type="search" placeholder="Search 5,000+ university resources, question banks, and notes..." value={search}
+                            <input type="search" placeholder="Search resources, question banks, and notes..." value={search}
                                 onChange={e => setSearchF(e.target.value)}
                                 className="w-full pl-14 pr-4 py-5 rounded-2xl bg-white/95 dark:bg-[#0f172a]/90 backdrop-blur-xl text-text dark:text-white placeholder:text-slate-400 border border-white/20 shadow-2xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-base"
                                 aria-label="Search resources" />

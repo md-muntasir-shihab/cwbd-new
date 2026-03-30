@@ -58,7 +58,7 @@ function buildApplicationMeta(startRaw: unknown, endRaw: unknown, closingSoonDay
         return {
             urgencyState: 'unknown' as UrgencyState,
             daysLeft: null as number | null,
-            windowLabel: 'Application: N/A',
+            windowLabel: 'N/A',
             deadlineLabel: 'Apply by N/A',
         };
     }

@@ -8,7 +8,7 @@ interface DaysLeftChipProps {
 
 export default function DaysLeftChip({ daysLeft, urgencyState, className = '' }: DaysLeftChipProps) {
     if (urgencyState === 'unknown') {
-        return <span className={`text-[11px] text-slate-500 dark:text-slate-400 ${className}`}>Application: N/A</span>;
+        return <span className={`text-[11px] text-slate-500 dark:text-slate-400 ${className}`}>N/A</span>;
     }
     if (urgencyState === 'closed') {
         return <span className={`text-[11px] font-semibold text-rose-600 dark:text-rose-400 ${className}`}>Closed</span>;
