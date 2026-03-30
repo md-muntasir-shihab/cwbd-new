@@ -30,7 +30,15 @@ async function createIndexWithWarning(
         await operation;
         return null;
     } catch (error: any) {
-        const message = `[${label}] ${String(error?.message || error || 'Unknown index creation error')}`;
+        const rawMessage = String(error?.message || error || 'Unknown index creation error');
+        const normalizedMessage = rawMessage.toLowerCase();
+        if (
+            normalizedMessage.includes('already exists with a different name')
+            || normalizedMessage.includes('equivalent index already exists')
+        ) {
+            return null;
+        }
+        const message = `[${label}] ${rawMessage}`;
         console.warn('[migrate-communication-center-v1] index warning', message);
         return message;
     }

@@ -1,83 +1,62 @@
-# CampusWay — Project Overview
+# CampusWay Project Overview
 
-## What Is CampusWay
+## Workspace Summary
 
-CampusWay is a full-stack, secure, multi-role admission and academic management platform for prospective students, enrolled students, university administrators, and operations staff in Bangladesh.
+CampusWay is a multi-surface education platform workspace with:
+- a public website
+- a student portal
+- an admin panel
+- communication, campaign, subscription, news, and support workflows
+- MongoDB-backed backend services
+- Firebase hosting/storage/App Check readiness
+- Azure backend deployment and observability readiness
 
-It supports:
-- University listings, categories, clusters, and featured content
-- Student profiles, subscriptions, exams, results, and notifications
-- Admin control over all content, users, subscriptions, campaigns, and settings
-- A communication hub for targeted notifications, campaigns, templates, providers, and smart triggers
-- A subscription contact center for audience management and outreach
-- News, notices, and RSS content distribution
-- Support tickets, contact messages, and profile approval queues
-- Finance management (transactions, invoices, budgets, vendors)
-- Team and access control with role-based permissions
+## Active Runtime Surfaces
 
----
+| Surface | Location | Default Port | Status |
+|---|---|---:|---|
+| Backend API | `backend/` | 5003 | Active and primary |
+| Vite frontend | `frontend/` | 5175 | Active and primary |
+| Next hybrid frontend | `frontend-next/` | 3000 | Active but narrower |
+| MongoDB | `.local-mongo/` | 27017 | Local dependency |
 
-## Core Stack
+## Current Auth Reality
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Node.js 22, Express 4, TypeScript 5, Mongoose 8 |
-| Frontend | React 19, Vite 6, TypeScript 5, Tailwind CSS 3: |
-| Auth | Custom JWT (backend) + Firebase SDK (frontend-side) |
-| Database | MongoDB (local `.local-mongo/` for dev, Azure-hosted for prod) |
-| Hosting | Azure App Service (backend), Firebase Hosting (frontend) |
-| Security | Helmet, HPP, rate limiting, express-mongo-sanitize, AES-256-GCM encryption |
-| CI/CD | GitHub Actions (Azure deploy + CodeQL) + Dependabot |
-| Testing | Jest + Supertest (backend), Playwright (E2E) |
+- Authoritative auth: backend-issued JWT access + refresh flow
+- Firebase Auth: not the current primary login system
+- Firebase App Check: available as an env-gated hardening layer for selected anonymous/public write routes
 
----
+## Current Tooling Decisions
 
-## User Roles
+- Package management stays per app with `npm`
+- Playwright is the only browser/E2E stack
+- Storybook is intentionally deferred
+- Chromatic is intentionally deferred
+- GitHub MCP and Figma MCP remain optional/documented, not checked-in live auth configs
+- Stitch MCP remains deferred until a concrete target is supplied
 
-| Role | Access Level |
-|------|-------------|
-| Super Admin | Full system access including security, finance, config |
-| Admin | Full operational access, user/content management |
-| Moderator | Content approval, news, notices, resources |
-| Editor | Publishing only, no deletion |
-| Chairman | Read-only strategic dashboard |
-| Student | Student portal (dashboard, profile, exams, results, support) |
+## Verified Bootstrap Baseline
 
----
+- `backend` build passes
+- `backend` `npm run test:home` passes
+- `frontend` lint passes with warnings only
+- `frontend` build passes
+- `frontend-next` build passes
+- Playwright public smoke is established as the main browser readiness gate
 
-## Key Ports (Local Dev)
+## Legacy and Non-Primary Areas
 
-| Service | Port |
-|---------|------|
-| Backend API | 5003 (or 5000, set by env) |
-| Frontend Vite | 5175 |
-| Frontend Next | 3000 (placeholder) |
-| MongoDB | 27017 |
+These exist in the repo but are not part of the active runtime path:
+- `client/`
+- `server/`
+- `CAMPUSWAY001-main/`
+- root screenshot/binary capture artifacts already ignored by `.gitignore`
 
----
+## Next Phase Readiness
 
-## Phase Readiness
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 0 | Bootstrap, environment, tooling, docs | IN PROGRESS |
-| Phase 1 | Core website structure, public/student/admin foundation | READY WHEN P0 DONE |
-| Phase 2 | Communication hub, campaign, subscription center, triggers | STRUCTURALLY BUILT — NEEDS AUDIT |
-| Phase 3 | Security hardening, runtime testing, final QA, release gate | PENDING |
-
----
-
-## Repository Structure Quick Reference
-
-```
-/backend         Express + TypeScript API (port 5003)
-/frontend        React + Vite SPA (port 5175)
-/frontend-next   Next.js 15 placeholder (port 3000)
-/.github         GitHub Actions CI/CD workflows
-/docs            Internal developer documentation
-/.local-mongo    Local MongoDB data directory
-```
-
-See `STRUCTURE_MAP.md` for full architectural detail.
-See `ROUTE_MAP.md` for all frontend routes.
-See `MODULE_MAP.md` for backend module breakdown.
+| Phase | Status | Notes |
+|---|---|---|
+| Phase 1 | Ready | Workspace, docs, runtime, and core test gates are prepared |
+| Phase 2 | Ready with known gaps | Communication and audience flows need deeper runtime verification |
+| Phase 3 | Ready with known gaps | Security hardening, release gate, and cloud-side enforcement still need follow-through |
+| Final Full Testing | Ready to start | Browser stack, smoke paths, docs, and seed expectations are in place |

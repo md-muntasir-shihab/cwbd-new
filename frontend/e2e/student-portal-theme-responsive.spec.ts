@@ -1,30 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { loginAsStudent } from './helpers';
-
-const VIEWPORTS = [
-    { width: 360, height: 780 },
-    { width: 390, height: 844 },
-    { width: 768, height: 1024 },
-    { width: 1024, height: 900 },
-] as const;
-
-const THEMES = ['light', 'dark'] as const;
-
-async function applyTheme(page: Parameters<typeof test>[0]['page'], theme: 'light' | 'dark') {
-    await page.evaluate((nextTheme) => {
-        window.localStorage.setItem('campusway_theme', nextTheme);
-        if (nextTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, theme);
-}
-
-async function expectNoCriticalHorizontalOverflow(page: Parameters<typeof test>[0]['page'], hint: string) {
-    const overflowPx = await page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth));
-    expect(overflowPx, `${hint}: horizontal overflow detected`).toBeLessThanOrEqual(24);
-}
+import {
+    applyTheme,
+    expectNoCriticalHorizontalOverflow,
+    RESPONSIVE_VIEWPORTS,
+    THEMES,
+} from './responsiveTheme';
 
 test.describe('Student Portal Theme + Responsive Matrix', () => {
     test('dashboard, profile, security, and support remain usable across required breakpoints in light/dark', async ({ page }) => {
@@ -35,7 +16,7 @@ test.describe('Student Portal Theme + Responsive Matrix', () => {
         for (const theme of THEMES) {
             await applyTheme(page, theme);
 
-            for (const viewport of VIEWPORTS) {
+            for (const viewport of RESPONSIVE_VIEWPORTS) {
                 await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
                 await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
@@ -53,7 +34,8 @@ test.describe('Student Portal Theme + Responsive Matrix', () => {
                 await expectNoCriticalHorizontalOverflow(page, `/profile/security ${theme} ${viewport.width}`);
 
                 await page.goto('/support', { waitUntil: 'domcontentloaded' });
-                await expect(page.getByRole('heading', { name: /Support/i }).first()).toBeVisible({ timeout: 15000 });
+                await page.getByText(/Loading page\.\.\./i).waitFor({ state: 'hidden', timeout: 15000 }).catch(() => undefined);
+                await expect(page.getByRole('heading', { name: /Support & Help|Support/i }).first()).toBeVisible({ timeout: 15000 });
                 await expectNoCriticalHorizontalOverflow(page, `/support ${theme} ${viewport.width}`);
             }
         }

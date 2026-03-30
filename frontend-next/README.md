@@ -1,39 +1,47 @@
 # CampusWay Next Hybrid Frontend
 
-This app is the incremental Next.js migration target for:
+`frontend-next/` is the incremental Next.js migration track. It stays runnable and testable, but it is not the primary product surface yet.
 
-- `/admin-dashboard`
+## Current Route Targets
+
+- `/`
+- `/news`
 - `/student`
+- `/admin-dashboard`
 
-It reuses the existing backend APIs (`Express + Mongo`) and does not break the current Vite frontend.
-
-## Local run
-
-1. Copy env:
+## Local Setup
 
 ```bash
 cp .env.example .env.local
-```
-
-2. Install deps:
-
-```bash
 npm install
-```
-
-3. Start:
-
-```bash
 npm run dev
 ```
 
-4. Open:
+Default local URL: `http://localhost:3000`
 
-- `http://localhost:3000/admin-dashboard`
-- `http://localhost:3000/student`
+## Required Environment
 
-## Notes
+```bash
+NEXT_PUBLIC_API_BASE=http://localhost:5003
+NEXT_PUBLIC_ADMIN_PATH=campusway-secure-admin
+```
 
-- Uses `campusway-token` from browser localStorage for authenticated calls.
-- API base can be changed via `NEXT_PUBLIC_API_BASE`.
-- Admin path can be changed via `NEXT_PUBLIC_ADMIN_PATH`.
+- `NEXT_PUBLIC_API_BASE` must point at the Express backend.
+- `NEXT_PUBLIC_ADMIN_PATH` must match the backend `ADMIN_SECRET_PATH`.
+
+## Smoke Test
+
+The checked-in Playwright smoke entrypoint for this app lives in `frontend/`:
+
+```bash
+cd ../frontend
+npm run e2e:next-smoke
+```
+
+This builds `frontend-next`, starts it on port `3000`, and verifies the key hybrid routes.
+
+## Current Behavior
+
+- The hybrid app reuses the existing backend APIs.
+- Auth token handoff is still based on the current JWT/browser storage flow.
+- This app should remain runnable while the broader Vite app continues as the main QA target.

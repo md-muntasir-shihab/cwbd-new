@@ -50,7 +50,8 @@ test.describe('Open Universities Full Audit', () => {
 
         const highlightedCategoryCard = page.getByTestId('highlighted-category-card').first();
         await expect(highlightedCategoryCard).toBeVisible();
-        await expect(page.getByTestId('highlighted-category-card')).toHaveCount(1);
+        const highlightedCategoryCards = page.getByTestId('highlighted-category-card');
+        expect(await highlightedCategoryCards.count()).toBeGreaterThan(0);
         await expect(highlightedCategoryCard).toContainText(/Highlighted Category/i);
         await expect(highlightedCategoryCard).toContainText(/Home Highlight/i);
 

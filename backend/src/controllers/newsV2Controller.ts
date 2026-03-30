@@ -2558,7 +2558,7 @@ async function syncNoticeNotification(params: {
                 publishAt: params.startAt,
                 expireAt: params.endAt || null,
                 isActive: params.isActive,
-                linkUrl: '/news',
+                linkUrl: '/support',
                 sourceType: 'notice',
                 sourceId: params.noticeId,
                 targetRoute: '/support',

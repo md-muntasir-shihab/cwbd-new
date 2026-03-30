@@ -65,7 +65,7 @@ test.describe('Communication Hub', () => {
     test('should consolidate legacy notification routes into Campaign Hub views', async ({ page }) => {
         await page.goto('/__cw_admin__/notification-center', { waitUntil: 'domcontentloaded' });
         await expect(page).toHaveURL(/\/__cw_admin__\/campaigns\?view=notifications/);
-        await expect(page.getByText(/Targeted notification operations/i)).toBeVisible();
+        await expect(page.getByRole('heading', { name: /Notification operations studio/i })).toBeVisible();
 
         await page.goto('/__cw_admin__/notifications/triggers', { waitUntil: 'domcontentloaded' });
         await expect(page).toHaveURL(/\/__cw_admin__\/campaigns\?view=triggers/);

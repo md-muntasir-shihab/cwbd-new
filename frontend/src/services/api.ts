@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getFirebaseAppCheckToken } from '../lib/firebase';
 import { promptForSensitiveActionProof } from '../utils/sensitiveAction';
 
 const RAW_ADMIN_PATH = String(import.meta.env.VITE_ADMIN_PATH || 'campusway-secure-admin').trim();
@@ -27,6 +28,35 @@ function resolveApiUrl(pathAfterApi: string): string {
     const normalizedBase = API_BASE_URL.replace(/\/+$/, '');
     const normalizedPath = pathAfterApi.startsWith('/') ? pathAfterApi : `/${pathAfterApi}`;
     return `${normalizedBase}${normalizedPath}`;
+}
+
+const APP_CHECK_PROTECTED_PATTERNS = [
+    /^\/auth\/register$/,
+    /^\/auth\/forgot-password$/,
+    /^\/auth\/verify-2fa$/,
+    /^\/auth\/resend-otp$/,
+    /^\/contact(?:\/messages)?$/,
+    /^\/help-center\/[^/]+\/feedback$/,
+    /^\/content-blocks\/[^/]+\/(?:impression|click)$/,
+    /^\/events\/track$/,
+    /^\/news\/share\/track$/,
+];
+
+function shouldAttachAppCheckHeader(
+    method: string | undefined,
+    requestUrl: string | undefined,
+): boolean {
+    const normalizedMethod = String(method || 'GET').trim().toUpperCase();
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(normalizedMethod)) {
+        return false;
+    }
+
+    const normalizedUrl = String(requestUrl || '')
+        .replace(/^https?:\/\/[^/]+/i, '')
+        .replace(/^\/api/, '')
+        .split('?')[0];
+
+    return APP_CHECK_PROTECTED_PATTERNS.some((pattern) => pattern.test(normalizedUrl));
 }
 
 const api = axios.create({
@@ -308,10 +338,16 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 // Attach JWT token to every request
 api.interceptors.request.use(
-    (config) => {
+    async (config) => {
         const token = readAccessToken();
         if (token) config.headers.Authorization = `Bearer ${token}`;
         config.headers['X-Browser-Fingerprint'] = ensureBrowserFingerprint();
+        if (shouldAttachAppCheckHeader(config.method, config.url)) {
+            const appCheckToken = await getFirebaseAppCheckToken();
+            if (appCheckToken) {
+                config.headers['X-Firebase-AppCheck'] = appCheckToken;
+            }
+        }
         return config;
     },
     (error) => Promise.reject(error)
@@ -2459,16 +2495,32 @@ export interface StudentHubPaymentsResponse {
     lastUpdatedAt: string;
 }
 
+export type StudentNotificationKind =
+    | 'support'
+    | 'profile'
+    | 'payment'
+    | 'subscription'
+    | 'exam'
+    | 'notice'
+    | 'system';
+
 export interface StudentHubNotificationItem {
     _id: string;
     title: string;
     body: string;
-    type: 'exam' | 'payment' | 'system';
+    messagePreview: string;
+    kind: StudentNotificationKind;
+    type: string;
     category: string;
+    sourceType: string;
+    sourceId: string;
+    priority: 'normal' | 'high' | 'urgent';
     isRead: boolean;
     createdAt: string;
     publishAt: string;
     linkUrl?: string;
+    targetRoute?: string;
+    targetEntityId?: string;
 }
 
 export interface StudentHubNotificationsResponse {
@@ -2512,11 +2564,21 @@ export interface StudentSupportTicketItem {
     updatedAt: string;
 }
 
+export type AdminActionableAlertGroup = 'support' | 'contact' | 'approvals' | 'finance' | 'system';
+
 export interface AdminActionableAlertItem {
     _id: string;
     title: string;
     message: string;
+    type: string;
     category: 'general' | 'exam' | 'update';
+    messagePreview: string;
+    sourceType: string;
+    sourceId: string;
+    targetRoute: string;
+    targetEntityId: string;
+    priority: 'normal' | 'high' | 'urgent';
+    group: AdminActionableAlertGroup;
     publishAt: string;
     createdAt: string;
     linkUrl?: string;
@@ -3115,7 +3177,7 @@ export const getStudentMeResults = () => api.get<{
 }>('/students/me/results');
 export const getStudentMeResultByExam = (examId: string) => api.get('/students/me/results/' + examId);
 export const getStudentMePayments = () => api.get<StudentHubPaymentsResponse>('/students/me/payments');
-export const getStudentMeNotifications = (type?: 'exam' | 'payment' | 'system' | 'all') =>
+export const getStudentMeNotifications = (type?: StudentNotificationKind | 'all') =>
     api.get<StudentHubNotificationsResponse>('/students/me/notifications', { params: type ? { type } : {} });
 export const markStudentMeNotificationsRead = (ids?: string[]) =>
     api.post<{ updated: number }>('/students/me/notifications/mark-read', ids?.length ? { ids } : {});
@@ -4343,7 +4405,12 @@ export const adminUpdateSupportTicketStatus = (id: string, data: {
 export const adminReplySupportTicket = (id: string, message: string) =>
     api.post<{ item: AdminSupportTicketItem; message: string }>(`/${ADMIN_PATH}/support-tickets/${id}/reply`, { message });
 
-export const adminGetActionableAlerts = (params: { page?: number; limit?: number } = {}) =>
+export const adminGetActionableAlerts = (params: {
+    page?: number;
+    limit?: number;
+    filter?: 'unread';
+    group?: AdminActionableAlertGroup | 'all';
+} = {}) =>
     api.get<{ items: AdminActionableAlertItem[]; total: number; unreadCount: number; page: number; pages: number }>(
         `/${ADMIN_PATH}/alerts/feed`,
         { params },

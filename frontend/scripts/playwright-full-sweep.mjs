@@ -31,6 +31,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const slug = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'check';
 const ensure = async (p) => fs.mkdir(p, { recursive: true });
 
+function getSpawnSpec(cmd, args = []) {
+    if (IS_WIN && /\.(cmd|bat)$/i.test(String(cmd || ''))) {
+        return {
+            cmd: process.env.ComSpec || 'cmd.exe',
+            args: ['/d', '/s', '/c', cmd, ...args],
+        };
+    }
+
+    return { cmd, args };
+}
+
 async function free(port) {
     return new Promise((resolve) => {
         const s = net.createServer();
@@ -41,7 +52,8 @@ async function free(port) {
 }
 
 function spawnCmd(cmd, args, opts = {}) {
-    return spawn(cmd, args, { shell: true, stdio: ['ignore', 'pipe', 'pipe'], ...opts });
+    const spec = getSpawnSpec(cmd, args);
+    return spawn(spec.cmd, spec.args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 }
 
 async function run(cmd, args, opts = {}) {

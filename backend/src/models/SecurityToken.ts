@@ -50,7 +50,7 @@ const SecurityTokenSchema = new Schema<ISecurityToken>(
         meta: { type: Schema.Types.Mixed, default: {} },
         attempts: { type: Number, default: 0, min: 0 },
         maxAttempts: { type: Number, default: 5, min: 1, max: 50 },
-        expiresAt: { type: Date, required: true, index: true },
+        expiresAt: { type: Date, required: true },
         consumedAt: { type: Date, default: null },
         invalidatedAt: { type: Date, default: null },
         replacedByTokenId: { type: Schema.Types.ObjectId, ref: 'SecurityToken', default: null },

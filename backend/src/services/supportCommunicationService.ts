@@ -385,8 +385,8 @@ async function notifyAdminsForTicket(ticket: LeanSupportTicket, type: 'support_t
 async function notifyStudentForAdminReply(ticket: LeanSupportTicket): Promise<void> {
     await createStudentNotification({
         title: 'Support reply received',
-        message: `${ticket.ticketNo}: An admin replied to your support ticket`,
-        messagePreview: ticket.latestMessagePreview || buildMessagePreview(ticket.message),
+        message: `${ticket.ticketNo} - ${ticket.subject}`,
+        messagePreview: `Admin replied: ${ticket.latestMessagePreview || buildMessagePreview(ticket.message)}`,
         linkUrl: `/support/${String(ticket._id)}`,
         category: 'update',
         targetRole: 'student',

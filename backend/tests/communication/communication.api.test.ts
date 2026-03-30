@@ -44,6 +44,10 @@ import {
     studentGetSupportTickets,
     studentReplySupportTicket,
 } from '../../src/controllers/supportController';
+import {
+    getStudentMeNotifications,
+    markStudentNotificationsRead,
+} from '../../src/controllers/studentHubController';
 import { authenticate, authorize, authorizePermission, optionalAuthenticate } from '../../src/middlewares/auth';
 import { runCommunicationCenterMigration } from '../../src/scripts/migrate-communication-center-v1';
 
@@ -76,6 +80,8 @@ function buildApp() {
     app.get('/api/student/support-tickets/:id', authenticate, studentGetSupportTicketById);
     app.post('/api/student/support-tickets', authenticate, studentCreateSupportTicket);
     app.post('/api/student/support-tickets/:id/reply', authenticate, studentReplySupportTicket);
+    app.get('/api/students/me/notifications', authenticate, getStudentMeNotifications);
+    app.post('/api/students/me/notifications/mark-read', authenticate, markStudentNotificationsRead);
 
     app.get('/api/admin/contact-messages', authenticate, authorize('superadmin', 'admin', 'moderator'), adminGetContactMessages);
     app.get('/api/admin/contact-messages/:id', authenticate, authorize('superadmin', 'admin', 'moderator'), adminGetContactMessageById);
@@ -528,6 +534,16 @@ describe('Unified communication backend', () => {
         expect(studentNotification).toBeTruthy();
         expect(studentNotification?.targetEntityId).toBe(String(createdTicket._id));
 
+        const studentSupportFeed = await request(app)
+            .get('/api/students/me/notifications')
+            .set(authHeader(studentToken))
+            .query({ type: 'support' })
+            .expect(200);
+        expect(studentSupportFeed.body.items.length).toBeGreaterThanOrEqual(1);
+        expect(studentSupportFeed.body.items[0].kind).toBe('support');
+        expect(studentSupportFeed.body.items[0].sourceType).toBe('support_ticket');
+        expect(studentSupportFeed.body.items[0].targetRoute).toBe('/support');
+
         const studentDetailResponse = await request(app)
             .get(`/api/support/tickets/${createdTicket._id}`)
             .set(authHeader(studentToken))
@@ -544,6 +560,22 @@ describe('Unified communication backend', () => {
         expect(studentReplyResponse.body.item.messages).toHaveLength(3);
         expect(studentReplyResponse.body.item.unreadCountForAdmin).toBe(1);
         expect(studentReplyResponse.body.item.threadState).toBe('pending');
+
+        const statusUpdateResponse = await request(app)
+            .post(`/api/admin/support-tickets/${createdTicket._id}/status`)
+            .set(authHeader(adminToken))
+            .send({ status: 'resolved' })
+            .expect(200);
+        expect(statusUpdateResponse.body.item.status).toBe('resolved');
+
+        const afterStatusFeed = await request(app)
+            .get('/api/students/me/notifications')
+            .set(authHeader(studentToken))
+            .query({ type: 'support' })
+            .expect(200);
+        const statusAlert = afterStatusFeed.body.items.find((item: { type?: string }) => item.type === 'support_status_changed');
+        expect(statusAlert).toBeTruthy();
+        expect(statusAlert.kind).toBe('support');
 
         const supportReplyAlert = await Notification.findOne({
             type: 'support_reply_new',
@@ -630,11 +662,29 @@ describe('Unified communication backend', () => {
         expect(feedResponse.body.unreadCount).toBe(3);
         expect(feedResponse.body.items[0]).toHaveProperty('targetRoute');
         expect(feedResponse.body.items[0]).toHaveProperty('targetEntityId');
+        expect(feedResponse.body.items[0]).toHaveProperty('group');
         const profileApprovalItem = feedResponse.body.items.find(
             (item: { type?: string }) => item.type === 'profile_update_request',
         );
         expect(profileApprovalItem?.targetRoute).toBe('/__cw_admin__/student-management/profile-requests');
         expect(profileApprovalItem?.targetEntityId).toBe(String(legacyRequestId));
+        expect(profileApprovalItem?.group).toBe('approvals');
+
+        const supportOnlyFeed = await request(app)
+            .get('/api/admin/alerts/feed')
+            .set(authHeader(superadminToken))
+            .query({ group: 'support' })
+            .expect(200);
+        expect(supportOnlyFeed.body.items).toHaveLength(1);
+        expect(supportOnlyFeed.body.items[0].group).toBe('support');
+
+        const contactOnlyFeed = await request(app)
+            .get('/api/admin/alerts/feed')
+            .set(authHeader(superadminToken))
+            .query({ group: 'contact' })
+            .expect(200);
+        expect(contactOnlyFeed.body.items).toHaveLength(1);
+        expect(contactOnlyFeed.body.items[0].group).toBe('contact');
 
         const unreadCountResponse = await request(app)
             .get('/api/admin/notifications/unread-count')

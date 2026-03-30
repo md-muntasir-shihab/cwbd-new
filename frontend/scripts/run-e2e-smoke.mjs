@@ -16,6 +16,17 @@ const START_BACKEND = process.env.E2E_START_BACKEND !== 'false';
 const START_FRONTEND = process.env.E2E_START_FRONTEND !== 'false';
 const REUSE_EXISTING = process.env.E2E_REUSE_EXISTING === 'true';
 
+function getSpawnSpec(cmd, args = []) {
+    if (isWindows && /\.(cmd|bat)$/i.test(String(cmd || ''))) {
+        return {
+            cmd: process.env.ComSpec || 'cmd.exe',
+            args: ['/d', '/s', '/c', cmd, ...args],
+        };
+    }
+
+    return { cmd, args };
+}
+
 async function isPortFree(port) {
     return new Promise((resolve) => {
         const server = net.createServer();
@@ -39,9 +50,9 @@ async function findAvailablePort(startPort, maxAttempts = 50) {
 
 function run(cmd, args, options = {}) {
     return new Promise((resolve) => {
-        const child = spawn(cmd, args, {
+        const spec = getSpawnSpec(cmd, args);
+        const child = spawn(spec.cmd, spec.args, {
             stdio: 'inherit',
-            shell: true,
             ...options,
         });
         child.on('close', (code) => resolve(code ?? 1));
@@ -75,10 +86,10 @@ async function waitForUrl(url, timeoutMs = 90_000) {
 }
 
 function startBackendDevServer(backendPort, baseUrl) {
-    return spawn(NPM_BIN, ['run', 'dev'], {
+    const spec = getSpawnSpec(NPM_BIN, ['run', 'dev']);
+    return spawn(spec.cmd, spec.args, {
         cwd: '../backend',
         stdio: 'inherit',
-        shell: true,
         env: {
             ...process.env,
             PORT: String(backendPort),
@@ -88,13 +99,13 @@ function startBackendDevServer(backendPort, baseUrl) {
 }
 
 function startFrontendDevServer(frontendPort, backendOrigin) {
+    const spec = getSpawnSpec(NPM_BIN, ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(frontendPort)]);
     return spawn(
-        NPM_BIN,
-        ['run', 'dev', '--', '--host', '127.0.0.1', '--port', String(frontendPort)],
+        spec.cmd,
+        spec.args,
         {
             cwd: process.cwd(),
             stdio: 'inherit',
-            shell: true,
             env: {
                 ...process.env,
                 VITE_API_PROXY_TARGET: backendOrigin,
@@ -110,7 +121,6 @@ async function stopChild(child) {
         await new Promise((resolve) => {
             const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], {
                 stdio: 'ignore',
-                shell: true,
             });
             killer.once('close', () => resolve(undefined));
             killer.once('error', () => resolve(undefined));

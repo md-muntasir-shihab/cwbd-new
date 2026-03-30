@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import ExcelJS from 'exceljs';
 import AuditLog from '../models/AuditLog';
 import ExpenseEntry from '../models/ExpenseEntry';
-import ManualPayment from '../models/ManualPayment';
+import ManualPayment, { type IManualPayment } from '../models/ManualPayment';
 import StaffPayout from '../models/StaffPayout';
 import StudentDueLedger from '../models/StudentDueLedger';
 import StudentProfile from '../models/StudentProfile';
@@ -15,6 +15,7 @@ import { addFinanceStreamClient, broadcastFinanceEvent } from '../realtime/finan
 import { getRuntimeSettingsSnapshot } from '../services/runtimeSettingsService';
 import { ensureSecureUploadUrl } from '../services/secureUploadService';
 import { getClientIp } from '../utils/requestMeta';
+import { createStudentNotification } from '../services/adminAlertService';
 import { createIncomeFromPayment } from '../services/financeCenterService';
 import { activateSubscriptionFromPayment, recomputeStudentDueLedger } from '../services/subscriptionLifecycleService';
 import { escapeRegex } from '../utils/escapeRegex';
@@ -202,6 +203,40 @@ async function createAudit(req: AuthRequest, action: string, details?: Record<st
         target_type: 'finance',
         ip_address: getClientIp(req),
         details: details || {},
+    });
+}
+
+async function notifyStudentPaymentStatus(input: {
+    payment: IManualPayment;
+    status: 'paid' | 'rejected';
+    remarks?: string;
+    actorId?: string | mongoose.Types.ObjectId | null;
+}): Promise<void> {
+    const studentId = String(input.payment.studentId || '').trim();
+    if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) return;
+
+    const amountLabel = Number(input.payment.amount || 0).toFixed(2);
+    const statusLabel = input.status === 'paid' ? 'approved' : 'rejected';
+    const message = input.status === 'paid'
+        ? `Your payment of ${amountLabel} BDT was approved.`
+        : String(input.remarks || 'Your payment submission was rejected. Please review the remarks and resubmit if needed.');
+
+    await createStudentNotification({
+        title: input.status === 'paid' ? 'Payment approved' : 'Payment rejected',
+        message,
+        type: input.status === 'paid' ? 'payment_verified' : 'payment_rejected',
+        messagePreview: String(input.remarks || `${String(input.payment.method || 'manual')} payment review completed`).trim(),
+        linkUrl: '/payments',
+        category: 'update',
+        sourceType: 'manual_payment',
+        sourceId: String(input.payment._id),
+        targetRoute: '/payments',
+        targetEntityId: String(input.payment._id),
+        priority: input.status === 'paid' ? 'normal' : 'high',
+        targetRole: 'student',
+        targetUserIds: [studentId],
+        createdBy: input.actorId || null,
+        dedupeKey: `payment_status:${String(input.payment._id)}:${input.status}`,
     });
 }
 
@@ -645,6 +680,12 @@ export async function adminApprovePayment(req: AuthRequest, res: Response): Prom
         if (status === 'paid') {
             await settleSuccessfulPayment(payment, asObjectId(req.user!._id));
         }
+        await notifyStudentPaymentStatus({
+            payment,
+            status,
+            remarks: String(remarks || '').trim(),
+            actorId: req.user!._id,
+        });
 
         await createAudit(req, `payment_${status}`, {
             paymentId: String(payment._id),

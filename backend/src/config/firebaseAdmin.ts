@@ -1,4 +1,5 @@
 import { App, cert, getApps, initializeApp } from 'firebase-admin/app';
+import { AppCheck, getAppCheck } from 'firebase-admin/app-check';
 import { getStorage } from 'firebase-admin/storage';
 
 function hasServiceAccountConfig(): boolean {
@@ -41,4 +42,10 @@ export function getFirebaseStorageBucket() {
     const app = getFirebaseAdminApp();
     if (!app) return null;
     return getStorage(app).bucket();
+}
+
+export function getFirebaseAppCheckService(): AppCheck | null {
+    const app = getFirebaseAdminApp();
+    if (!app) return null;
+    return getAppCheck(app);
 }

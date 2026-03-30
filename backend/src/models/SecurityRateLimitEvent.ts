@@ -34,7 +34,7 @@ const SecurityRateLimitEventSchema = new Schema<ISecurityRateLimitEvent>(
         count: { type: Number, default: 0, min: 0 },
         maxAllowed: { type: Number, required: true, min: 1 },
         windowStartedAt: { type: Date, required: true },
-        windowExpiresAt: { type: Date, required: true, index: true },
+        windowExpiresAt: { type: Date, required: true },
         lastSeenAt: { type: Date, default: Date.now },
         metadata: { type: Schema.Types.Mixed, default: {} },
     },

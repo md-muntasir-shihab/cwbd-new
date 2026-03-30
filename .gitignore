@@ -87,3 +87,4 @@ backend/*.log
 backend/*.err.log
 backend/*.out.log
 backend/tmp-*
+backend/.e2e-security-backup.json

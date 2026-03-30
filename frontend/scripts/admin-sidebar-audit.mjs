@@ -23,6 +23,17 @@ const SHOTS = path.join(OUT, 'screenshots');
 const warnings = [];
 const results = [];
 
+function getSpawnSpec(cmd, args = []) {
+    if (IS_WIN && /\.(cmd|bat)$/i.test(String(cmd || ''))) {
+        return {
+            cmd: process.env.ComSpec || 'cmd.exe',
+            args: ['/d', '/s', '/c', cmd, ...args],
+        };
+    }
+
+    return { cmd, args };
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const menuLabels = [
@@ -73,7 +84,8 @@ async function free(port) {
 }
 
 function spawnCmd(cmd, args, opts = {}) {
-    return spawn(cmd, args, { shell: true, stdio: ['ignore', 'pipe', 'pipe'], ...opts });
+    const spec = getSpawnSpec(cmd, args);
+    return spawn(spec.cmd, spec.args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
 }
 
 async function run(cmd, args, opts = {}) {

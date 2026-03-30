@@ -37,7 +37,10 @@ type QueryAlertsInput = {
     limit?: number;
     unread?: boolean;
     type?: string;
+    group?: string;
 };
+
+type ActionableAlertGroup = 'support' | 'contact' | 'approvals' | 'finance' | 'system';
 
 type ActionableAlertRow = {
     _id: mongoose.Types.ObjectId;
@@ -157,6 +160,47 @@ function buildActionableFilter(userId: mongoose.Types.ObjectId, role: AlertAudie
     return filter;
 }
 
+function deriveActionableAlertGroup(item: Pick<ActionableAlertRow, 'type' | 'sourceType' | 'targetRoute' | 'linkUrl'>): ActionableAlertGroup {
+    const type = String(item.type || '').trim().toLowerCase();
+    const sourceType = String(item.sourceType || '').trim().toLowerCase();
+    const targetRoute = String(item.targetRoute || '').trim().toLowerCase();
+    const linkUrl = String(item.linkUrl || '').trim().toLowerCase();
+
+    if (
+        type === 'support_ticket_new'
+        || type === 'support_reply_new'
+        || type === 'support_status_changed'
+        || sourceType === 'support_ticket'
+        || targetRoute.includes('/support-center')
+        || linkUrl.includes('/support-center')
+    ) {
+        return 'support';
+    }
+    if (type === 'contact_new' || sourceType === 'contact' || targetRoute.includes('/contact') || linkUrl.includes('/contact')) {
+        return 'contact';
+    }
+    if (
+        type === 'profile_update_request'
+        || sourceType === 'profile_update_request'
+        || targetRoute.includes('/profile-requests')
+        || linkUrl.includes('/profile-requests')
+    ) {
+        return 'approvals';
+    }
+    if (
+        type === 'payment_review'
+        || type === 'payment_verified'
+        || type === 'payment_rejected'
+        || sourceType === 'manual_payment'
+        || sourceType === 'payment'
+        || targetRoute.includes('/finance')
+        || linkUrl.includes('/finance')
+    ) {
+        return 'finance';
+    }
+    return 'system';
+}
+
 async function createAlertDocument(
     input: CreateAlertInput,
     defaultRole: NotificationTargetRole,
@@ -230,8 +274,12 @@ export async function queryAdminAlerts(input: QueryAlertsInput) {
         }).lean<Array<{ notificationId: mongoose.Types.ObjectId }>>()
         : [];
     const readSet = new Set(readRows.map((row) => String(row.notificationId)));
-    const unreadRows = allRows.filter((row) => !readSet.has(String(row._id)));
-    const selectedRows = input.unread ? unreadRows : allRows;
+    const normalizedGroup = String(input.group || '').trim().toLowerCase();
+    const groupFilteredRows = normalizedGroup && normalizedGroup !== 'all'
+        ? allRows.filter((row) => deriveActionableAlertGroup(row) === normalizedGroup)
+        : allRows;
+    const unreadRows = groupFilteredRows.filter((row) => !readSet.has(String(row._id)));
+    const selectedRows = input.unread ? unreadRows : groupFilteredRows;
     const pagedRows = selectedRows.slice(skip, skip + limit);
 
     const items = pagedRows.map((item) => {
@@ -255,6 +303,7 @@ export async function queryAdminAlerts(input: QueryAlertsInput) {
             createdAt: item.createdAt,
             isRead: readSet.has(String(item._id)),
             targetRole: item.targetRole,
+            group: deriveActionableAlertGroup(item),
         };
     });
 

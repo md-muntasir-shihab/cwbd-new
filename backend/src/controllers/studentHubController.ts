@@ -11,6 +11,7 @@ import Notification from '../models/Notification';
 import Resource from '../models/Resource';
 import StudentNotificationRead from '../models/StudentNotificationRead';
 import UserSubscription from '../models/UserSubscription';
+import { createAdminAlert } from '../services/adminAlertService';
 import {
     getExamHistoryAndProgress,
     getStudentDashboardHeader,
@@ -70,10 +71,99 @@ function hasAnyIntersection(left: string[], right: string[]): boolean {
     return left.some((item) => rightSet.has(item));
 }
 
-function pickNotificationCategory(raw: unknown): 'exam' | 'payment' | 'system' {
-    const category = String(raw || '').trim().toLowerCase();
-    if (category === 'exam') return 'exam';
-    if (category === 'payment') return 'payment';
+type StudentNotificationKind =
+    | 'support'
+    | 'profile'
+    | 'payment'
+    | 'subscription'
+    | 'exam'
+    | 'notice'
+    | 'system';
+
+type StudentNotificationFilter = StudentNotificationKind | 'all';
+
+function parseTargetMetaFromLink(linkUrl: string): { targetRoute: string; targetEntityId: string } {
+    const raw = String(linkUrl || '').trim();
+    if (!raw) return { targetRoute: '', targetEntityId: '' };
+
+    const [pathname, query = ''] = raw.split('?');
+    const params = new URLSearchParams(query);
+    const targetEntityId = String(
+        params.get('ticketId')
+        || params.get('focus')
+        || params.get('id')
+        || params.get('requestId')
+        || params.get('paymentId')
+        || params.get('notificationId')
+        || params.get('sourceId')
+        || ''
+    ).trim();
+
+    return {
+        targetRoute: pathname || '',
+        targetEntityId,
+    };
+}
+
+function deriveStudentNotificationKind(input: {
+    type?: unknown;
+    category?: unknown;
+    sourceType?: unknown;
+    linkUrl?: unknown;
+    targetRoute?: unknown;
+}): StudentNotificationKind {
+    const type = String(input.type || '').trim().toLowerCase();
+    const category = String(input.category || '').trim().toLowerCase();
+    const sourceType = String(input.sourceType || '').trim().toLowerCase();
+    const linkUrl = String(input.linkUrl || '').trim().toLowerCase();
+    const targetRoute = String(input.targetRoute || '').trim().toLowerCase();
+
+    if (
+        sourceType === 'support_ticket'
+        || type === 'support_ticket_new'
+        || type === 'support_reply_new'
+        || type === 'support_status_changed'
+        || linkUrl.startsWith('/support/')
+        || targetRoute === '/support'
+    ) {
+        return 'support';
+    }
+    if (
+        sourceType === 'profile_update_request'
+        || type === 'profile_update_request'
+        || targetRoute === '/profile'
+        || linkUrl === '/profile'
+        || linkUrl.startsWith('/profile?')
+    ) {
+        return 'profile';
+    }
+    if (
+        sourceType === 'manual_payment'
+        || sourceType === 'payment'
+        || type === 'payment_review'
+        || type === 'payment_verified'
+        || type === 'payment_rejected'
+        || targetRoute === '/payments'
+        || linkUrl === '/payments'
+        || linkUrl.startsWith('/payments?')
+    ) {
+        return 'payment';
+    }
+    if (
+        sourceType === 'subscription'
+        || sourceType === 'subscription_lifecycle'
+        || targetRoute === '/subscription-plans'
+        || linkUrl === '/subscription-plans'
+        || linkUrl.startsWith('/subscription-plans?')
+    ) {
+        return 'subscription';
+    }
+    if (sourceType === 'notice') {
+        return 'notice';
+    }
+    if (category === 'exam' || sourceType.includes('exam')) {
+        return 'exam';
+    }
     return 'system';
 }
 
@@ -512,7 +602,7 @@ export async function getStudentMeNotifications(req: AuthRequest, res: Response)
         const studentId = ensureStudent(req, res);
         if (!studentId) return;
 
-        const type = String(req.query.type || '').trim().toLowerCase();
+        const type = String(req.query.type || '').trim().toLowerCase() as StudentNotificationFilter;
         const now = new Date();
         const filter: Record<string, unknown> = {
             isActive: true,
@@ -536,21 +626,39 @@ export async function getStudentMeNotifications(req: AuthRequest, res: Response)
         }).lean();
         const readSet = new Set(reads.map((item) => String(item.notificationId)));
 
-        const items = rows
-            .map((item) => ({
+        const allItems = rows.map((item) => {
+            const fallbackMeta = parseTargetMetaFromLink(String(item.linkUrl || ''));
+            const targetRoute = String(item.targetRoute || fallbackMeta.targetRoute || '').trim();
+            const targetEntityId = String(item.targetEntityId || fallbackMeta.targetEntityId || '').trim();
+            return {
                 _id: String(item._id),
                 title: item.title,
                 body: item.message,
-                type: pickNotificationCategory(item.category),
-                category: item.category,
+                messagePreview: String(item.messagePreview || item.message || '').trim(),
+                kind: deriveStudentNotificationKind({
+                    type: item.type,
+                    category: item.category,
+                    sourceType: item.sourceType,
+                    linkUrl: item.linkUrl,
+                    targetRoute,
+                }),
+                type: String(item.type || '').trim(),
+                category: String(item.category || '').trim(),
+                sourceType: String(item.sourceType || '').trim(),
+                sourceId: String(item.sourceId || '').trim(),
+                priority: String(item.priority || 'normal').trim(),
                 isRead: readSet.has(String(item._id)),
                 createdAt: item.createdAt,
                 publishAt: item.publishAt || item.createdAt,
                 linkUrl: item.linkUrl || '',
-            }))
-            .filter((item) => !type || type === 'all' || item.type === type);
+                targetRoute,
+                targetEntityId,
+            };
+        });
+        const items = allItems.filter((item) => !type || type === 'all' || item.kind === type);
+        const unreadCount = allItems.filter((item) => !item.isRead).length;
 
-        res.json({ items, unreadCount: items.filter((item) => !item.isRead).length, lastUpdatedAt: new Date().toISOString() });
+        res.json({ items, unreadCount, lastUpdatedAt: new Date().toISOString() });
     } catch (error) {
         console.error('getStudentMeNotifications error:', error);
         res.status(500).json({ message: 'Server error' });
@@ -728,8 +836,25 @@ export async function studentSubmitPaymentProof(req: AuthRequest, res: Response)
             recordedBy: studentId, // Initially recorded by student
         });
 
-        // Notify admins
-        // notification logic here (optional but good)
+        const normalizedMethod = String(method || 'manual').trim() || 'manual';
+        await createAdminAlert({
+            title: 'Payment proof submitted',
+            message: `A student submitted a ${normalizedMethod} payment proof for review.`,
+            type: 'payment_review',
+            messagePreview: `Amount: ${Number(amount).toFixed(2)} BDT`,
+            linkUrl: `/__cw_admin__/finance/transactions?paymentId=${String(payment._id)}`,
+            category: 'update',
+            sourceType: 'manual_payment',
+            sourceId: String(payment._id),
+            targetRoute: '/__cw_admin__/finance/transactions',
+            targetEntityId: String(payment._id),
+            priority: 'high',
+            actorUserId: studentId,
+            actorNameSnapshot: String(req.user?.fullName || req.user?.username || req.user?.email || 'Student').trim(),
+            targetRole: 'admin',
+            createdBy: studentId,
+            dedupeKey: `payment_review:${String(payment._id)}`,
+        });
 
         res.status(201).json({
             message: 'Payment proof submitted. Waiting for admin approval.',

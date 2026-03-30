@@ -3131,8 +3131,13 @@ export async function adminApproveProfileUpdateRequest(req: AuthRequest, res: Re
         await createStudentNotification({
             title: 'Profile update approved',
             message: 'Your profile update request was approved.',
+            messagePreview: 'Your updated profile is now live.',
             linkUrl: '/profile',
             category: 'update',
+            sourceType: 'profile_update_request',
+            sourceId: String(request._id),
+            targetRoute: '/profile',
+            targetEntityId: String(request._id),
             targetUserIds: [request.student_id],
             createdBy: req.user?._id,
         });
@@ -3165,8 +3170,13 @@ export async function adminRejectProfileUpdateRequest(req: AuthRequest, res: Res
         await createStudentNotification({
             title: 'Profile update rejected',
             message: String(feedback || 'Your requested changes were rejected by admin.'),
+            messagePreview: String(feedback || 'Please review the rejected fields and submit again.'),
             linkUrl: '/profile',
             category: 'update',
+            sourceType: 'profile_update_request',
+            sourceId: String(request._id),
+            targetRoute: '/profile',
+            targetEntityId: String(request._id),
             targetUserIds: [request.student_id],
             createdBy: req.user?._id,
         });

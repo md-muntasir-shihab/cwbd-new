@@ -35,6 +35,7 @@ export async function adminGetActionableAlerts(req: AuthRequest, res: Response):
             limit,
             unread: String(req.query.filter || '').trim().toLowerCase() === 'unread',
             type: String(req.query.type || '').trim(),
+            group: String(req.query.group || '').trim(),
         });
 
         res.json(result);

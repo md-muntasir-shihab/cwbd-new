@@ -6,8 +6,14 @@ export type NotificationType =
     | 'contact_new'
     | 'support_ticket_new'
     | 'support_reply_new'
+    | 'support_status_changed'
     | 'profile_update_request'
     | 'payment_review'
+    | 'payment_verified'
+    | 'payment_rejected'
+    | 'campaign_failure'
+    | 'provider_failure'
+    | 'trigger_failure'
     | 'system_alert'
     | '';
 export type NotificationPriority = 'normal' | 'high' | 'urgent';
@@ -45,7 +51,21 @@ const NotificationSchema = new Schema<INotification>({
     message: { type: String, required: true, trim: true },
     type: {
         type: String,
-        enum: ['contact_new', 'support_ticket_new', 'support_reply_new', 'profile_update_request', 'payment_review', 'system_alert', ''],
+        enum: [
+            'contact_new',
+            'support_ticket_new',
+            'support_reply_new',
+            'support_status_changed',
+            'profile_update_request',
+            'payment_review',
+            'payment_verified',
+            'payment_rejected',
+            'campaign_failure',
+            'provider_failure',
+            'trigger_failure',
+            'system_alert',
+            '',
+        ],
         default: '',
         index: true,
     },

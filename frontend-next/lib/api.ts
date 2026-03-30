@@ -17,7 +17,7 @@ import {
   TicketRow,
 } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5003';
 const ADMIN_PATH = process.env.NEXT_PUBLIC_ADMIN_PATH || 'campusway-secure-admin';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH';

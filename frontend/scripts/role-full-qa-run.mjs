@@ -123,6 +123,17 @@ const CONTEXT_DEFS = {
 const DEFAULT_FONT_ASSERT_MODE = String(process.env.E2E_FONT_ASSERT_MODE || 'state-aware').trim().toLowerCase() || 'state-aware';
 const DEFAULT_ADMIN_BUTTON_DEPTH = String(process.env.E2E_ADMIN_BUTTON_DEPTH || 'full-commit').trim().toLowerCase() || 'full-commit';
 
+function getSpawnSpec(cmd, args = []) {
+    if (IS_WIN && /\.(cmd|bat)$/i.test(String(cmd || ''))) {
+        return {
+            cmd: process.env.ComSpec || 'cmd.exe',
+            args: ['/d', '/s', '/c', cmd, ...args],
+        };
+    }
+
+    return { cmd, args };
+}
+
 function pickPasses() {
     if (!PASSES_ENV) return PASS_DEFS;
     const requested = new Set(PASSES_ENV.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean));
@@ -140,8 +151,8 @@ function sleep(ms) {
 }
 
 function spawnCmd(cmd, args, options = {}) {
-    return spawn(cmd, args, {
-        shell: true,
+    const spec = getSpawnSpec(cmd, args);
+    return spawn(spec.cmd, spec.args, {
         stdio: ['ignore', 'pipe', 'pipe'],
         ...options,
     });

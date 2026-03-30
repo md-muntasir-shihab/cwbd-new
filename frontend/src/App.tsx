@@ -402,7 +402,7 @@ export default function App() {
                                 <Route path={adminUi('universities/import')} element={<AdminUniversitiesPage />} />
                                 <Route path={adminUi('universities/export')} element={<AdminUniversitiesPage />} />
                                 <Route path={adminUi('universities/:id/edit')} element={<AdminUniversitiesPage />} />
-                                <Route path={ADMIN_PATHS.news} element={<Navigate to={adminUi('news/dashboard')} replace />} />
+                                <Route path={ADMIN_PATHS.news} element={<Navigate to={adminUi('news/pending')} replace />} />
                                 <Route path={adminUi('news/*')} element={<AdminNewsConsole />} />
                                 <Route path={ADMIN_PATHS.exams} element={<AdminExamsPage />} />
                                 <Route path={ADMIN_PATHS.questionBank} element={<AdminQuestionBankPage />} />

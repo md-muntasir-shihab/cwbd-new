@@ -137,24 +137,25 @@ import {
     trackContentBlockClick,
 } from '../controllers/contentBlockController';
 import { getPublicSystemStatus } from '../controllers/securityAlertController';
+import { requireAppCheck } from '../middlewares/appCheck';
 
 const router = Router();
 const examAccessMiddlewares = [authenticate, requireAuthStudent] as const;
 
 /* ── Auth ── */
-router.post('/auth/register', loginRateLimiter, enforceRegistrationPolicy, register);
+router.post('/auth/register', requireAppCheck, loginRateLimiter, enforceRegistrationPolicy, register);
 router.post('/auth/login', loginRateLimiter, login);
 router.post('/auth/admin/login', adminLoginRateLimiter, loginAdmin);
 router.post('/auth/chairman/login', loginRateLimiter, loginChairman);
 router.post('/auth/refresh', refresh);
 router.post('/auth/logout', authenticate, logout);
 router.get('/auth/verify', verifyEmail);
-router.post('/auth/forgot-password', forgotPassword);
+router.post('/auth/forgot-password', requireAppCheck, forgotPassword);
 router.post('/auth/reset-password', resetPassword);
 router.get('/auth/me', authenticate, getMe);
 router.post('/auth/change-password', authenticate, changePassword);
-router.post('/auth/verify-2fa', verify2fa);
-router.post('/auth/resend-otp', resendOtp);
+router.post('/auth/verify-2fa', requireAppCheck, verify2fa);
+router.post('/auth/resend-otp', requireAppCheck, resendOtp);
 router.get('/auth/session-check', authenticate, checkSession);
 router.get('/auth/session-stream', authenticate, sessionStream);
 router.get('/auth/security/sessions', authenticate, getMySecuritySessions);
@@ -220,19 +221,19 @@ router.get('/news/featured', getPublicFeaturedNews);
 router.get('/news/trending', getTrendingNews);
 router.get('/news/categories', getPublicNewsCategories);
 router.get('/news/:slug', getPublicNewsV2BySlug);
-router.post('/news/share/track', trackPublicNewsV2Share);
-router.post('/events/track', optionalAuthenticate, trackEvent);
+router.post('/news/share/track', requireAppCheck, trackPublicNewsV2Share);
+router.post('/events/track', requireAppCheck, optionalAuthenticate, trackEvent);
 
 /* ── Public — Help Center ── */
 router.get('/help-center', getPublicHelpCenter);
 router.get('/help-center/search', searchPublicHelpArticles);
 router.get('/help-center/:slug', getPublicHelpArticle);
-router.post('/help-center/:slug/feedback', submitHelpArticleFeedback);
+router.post('/help-center/:slug/feedback', requireAppCheck, submitHelpArticleFeedback);
 
 /* ── Public — Content Blocks ── */
 router.get('/content-blocks', getPublicContentBlocks);
-router.post('/content-blocks/:id/impression', trackContentBlockImpression);
-router.post('/content-blocks/:id/click', trackContentBlockClick);
+router.post('/content-blocks/:id/impression', requireAppCheck, trackContentBlockImpression);
+router.post('/content-blocks/:id/click', requireAppCheck, trackContentBlockClick);
 
 /* ── Public — System Status ── */
 router.get('/system/status', getPublicSystemStatus as any);
@@ -244,7 +245,7 @@ router.get('/service-categories', getServiceCategories);
 router.get('/services/:id', getServiceDetails);
 
 /* ── Public — Contact Submit ── */
-router.post('/contact', contactRateLimiter, optionalAuthenticate, submitPublicContactMessage);
+router.post('/contact', requireAppCheck, contactRateLimiter, optionalAuthenticate, submitPublicContactMessage);
 
 /* ── Protected — Student Exam Portal ── */
 router.get('/exams/public-list', optionalAuthenticate, getPublicExamList);

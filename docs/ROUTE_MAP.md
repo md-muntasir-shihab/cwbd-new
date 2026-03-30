@@ -1,141 +1,129 @@
-# CampusWay — Frontend Route Map
+# Route Map
 
-All routes are defined in `frontend/src/App.tsx`. Admin routes use the `/__cw_admin__/` prefix.
+## Frontend surfaces
 
----
+### Public routes
+- `/`
+- `/universities`
+- `/university/:slug`
+- `/categories`
+- `/clusters`
+- `/exam-portal`
+- `/news`
+- `/news/:slug`
+- `/resources`
+- `/resources/:slug`
+- `/subscription-plans`
+- `/contact`
+- `/help-center`
+- `/about`
+- `/terms`
+- `/privacy`
+- `/login`
+- `/otp-verify`
 
-## Public Routes
+### Student routes
+- `/dashboard`
+- `/exams`
+- `/exams/:id`
+- `/results`
+- `/results/:examId`
+- `/payments`
+- `/notifications`
+- `/profile`
+- `/support`
+- `/student/exams-hub`
+- `/student/resources`
+- `/student/security`
+- `/student/applications`
+- `/student/profile`
+- `/student/dashboard`
 
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/` | `HomeModern` | Homepage |
-| `/universities` | `Universities` | University listing |
-| `/universities/category/:categorySlug` | `UniversityCategoryBrowse` | Category filter |
-| `/universities/cluster/:clusterSlug` | `UniversityClusterBrowse` | Cluster filter |
-| `/university/:slug` | `UniversityDetails` | University detail |
-| `/universities/:slug` | `UniversityDetails` | Alias |
-| `/news` | `News` | News listing |
-| `/news/:slug` | `SingleNews` | News article |
-| `/exams` | `ExamsListPage` | Public exam list |
-| `/exam/:examId` | `ExamRunnerPage` | Exam runner |
-| `/exam/:examId/result` | `ExamResultPage` | Exam result |
-| `/exam/:examId/solutions` | `ExamSolutionsPage` | Exam solutions |
-| `/certificate/verify/:certificateId` | `CertificateVerify` | Certificate check |
-| `/resources` | `Resources` | Resources listing |
-| `/resources/:slug` | `ResourceDetail` | Resource detail |
-| `/contact` | `Contact` | Contact page |
-| `/help-center` | `HelpCenter` | Help center index |
-| `/help-center/:slug` | `HelpArticle` | Help article |
-| `/subscription-plans` | `SubscriptionPlans` | Plans listing |
-| `/subscription-plans/:planId` | `SubscriptionPlanDetail` | Plan detail |
-| `/subscription-plans/checkout/:slug` | `SubscriptionPlanCheckout` | Checkout |
-| `/about` | `About` | About page (stub) |
-| `/terms` | `Terms` | Terms page (stub) |
-| `/privacy` | `Privacy` | Privacy page (stub) |
-| `/pricing` | Redirect → `/subscription-plans` | Legacy redirect |
-| `/services` | Redirect → `/subscription-plans` | Legacy redirect |
-| `/subscription` | Redirect → `/subscription-plans` | Legacy redirect |
-| `/subscriptions` | Redirect → `/subscription-plans` | Legacy redirect |
+### Admin routes
+- `/__cw_admin__/login`
+- `/__cw_admin__/dashboard`
+- `/__cw_admin__/universities`
+- `/__cw_admin__/news/*`
+- `/__cw_admin__/exams`
+- `/__cw_admin__/question-bank/*`
+- `/__cw_admin__/student-management/*`
+- `/__cw_admin__/subscriptions/plans`
+- `/__cw_admin__/finance/*`
+- `/__cw_admin__/resources`
+- `/__cw_admin__/reports`
+- `/__cw_admin__/settings`
+- `/__cw_admin__/settings/home-control`
+- `/__cw_admin__/settings/university-settings`
+- `/__cw_admin__/settings/site-settings`
+- `/__cw_admin__/settings/banner-manager`
+- `/__cw_admin__/settings/security-center`
+- `/__cw_admin__/settings/system-logs`
+- `/__cw_admin__/settings/reports`
+- `/__cw_admin__/settings/notifications`
+- `/__cw_admin__/settings/analytics`
+- `/__cw_admin__/settings/news`
+- `/__cw_admin__/settings/resource-settings`
+- `/__cw_admin__/settings/admin-profile`
+- `/__cw_admin__/campaigns/*`
+- `/__cw_admin__/team/*`
+- `/__cw_admin__/help-center`
+- `/__cw_admin__/contact`
 
----
+### Legacy redirects still supported
+- `/campusway-secure-admin`
+- `/campusway-secure-admin/*`
+- `/admin-dashboard`
+- `/admin/*`
+- `/student`
+- `/student/login`
+- `/student/results/:examId`
 
-## Auth Routes
+## Next hybrid routes
+- `/`
+- `/news`
+- `/news/[slug]`
+- `/student`
+- `/admin-dashboard`
 
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/login` | `Login` | Student login |
-| `/student/register` | `StudentRegister` | Student registration |
-| `/student/forgot-password` | `StudentForgotPassword` | Forgot password |
-| `/student/reset-password` | `StudentResetPassword` | Reset password |
-| `/otp-verify` | `OtpVerification` | OTP verification |
-| `/chairman/login` | `ChairmanLogin` | Chairman login |
-| `/profile-center` | `Profile` | Legacy profile redirect |
+These are runtime-smoked through the separate `frontend-next` app. They are not yet a full replacement for the Vite app.
 
----
+## Backend route groups
 
-## Student Portal Routes (inside `StudentLayout`)
+### Public API
+- `/api/health`
+- `/api/home`
+- `/api/public/*`
+- `/api/auth/*`
+- `/api/news*`
+- `/api/resources*`
+- `/api/contact`
+- `/api/help-center/*`
+- `/api/content-blocks/*`
+- `/api/events/track`
 
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/dashboard` | `StudentDashboard` | Student dashboard |
-| `/profile` | `StudentProfile` | Student profile |
-| `/profile/security` | `StudentSecurity` | Security settings |
-| `/results` | `StudentResults` | Results list |
-| `/results/:examId` | `StudentResultDetail` | Result detail |
-| `/payments` | `StudentPayments` | Payments (stub) |
-| `/notifications` | `StudentNotifications` | Notifications |
-| `/support` | `StudentSupport` | Support tickets |
-| `/support/:ticketId` | `StudentSupportThread` | Ticket thread |
-| `/student/resources` | `StudentResources` | Resources |
-| `/student/exams-hub` | `StudentExamsHub` | Exams hub |
-| `/exams/:examId` | `StudentExamDetail` | Exam detail |
-| `/student/applications` | `StudentApplications` | Applications |
+Primary file: `backend/src/routes/publicRoutes.ts`
 
----
+### Student API
+- `/api/student/*`
+- `/api/students/me/*`
+- `/api/exams/*`
+- `/api/results/*`
+- `/api/payments/*`
+- `/api/support/*`
 
-## Admin Routes (prefix: `/__cw_admin__/`)
+Primary file: `backend/src/routes/studentRoutes.ts`
 
-| Path | Page/Component |
-|------|---------------|
-| `/__cw_admin__/dashboard` | Admin Dashboard |
-| `/__cw_admin__/universities` | University Management |
-| `/__cw_admin__/news/*` | News Console (tabbed) |
-| `/__cw_admin__/exams` | Exams Management |
-| `/__cw_admin__/question-bank` | Question Bank |
-| `/__cw_admin__/student-management/*` | Student Management OS |
-| `/__cw_admin__/student-management/list` | Student List |
-| `/__cw_admin__/student-management/create` | Create Student |
-| `/__cw_admin__/student-management/groups` | Student Groups |
-| `/__cw_admin__/student-management/groups/:id` | Group Detail |
-| `/__cw_admin__/student-management/profile-requests` | Profile Approvals |
-| `/__cw_admin__/subscriptions/plans` | Subscription Plans |
-| `/__cw_admin__/subscriptions/v2` | Subscriptions V2 |
-| `/__cw_admin__/resources` | Resources |
-| `/__cw_admin__/support-center` | Support Center |
-| `/__cw_admin__/contact` | Contact Messages |
-| `/__cw_admin__/help-center` | Help Center Admin |
-| `/__cw_admin__/finance/*` | Finance Center |
-| `/__cw_admin__/campaigns/dashboard` | Campaign Console |
-| `/__cw_admin__/campaigns/contact-center` | Subscription Contact Center |
-| `/__cw_admin__/campaigns/templates` | Campaign Templates |
-| `/__cw_admin__/campaigns/settings` | Campaign Settings (Providers) |
-| `/__cw_admin__/campaigns/logs` | Campaign Logs |
-| `/__cw_admin__/campaigns/new` | New Campaign |
-| `/__cw_admin__/team/members` | Team Members |
-| `/__cw_admin__/team/roles` | Team Roles |
-| `/__cw_admin__/team/permissions` | Permissions |
-| `/__cw_admin__/approvals` | Action Approvals |
-| `/__cw_admin__/settings` | Settings Center |
-| `/__cw_admin__/settings/home-control` | Home Control |
-| `/__cw_admin__/settings/university-settings` | University Settings |
-| `/__cw_admin__/settings/banner-manager` | Banner Manager |
-| `/__cw_admin__/settings/site-settings` | Site Settings |
-| `/__cw_admin__/settings/security-center` | Security Center |
-| `/__cw_admin__/settings/system-logs` | System Logs |
-| `/__cw_admin__/settings/notifications` | Notification Settings |
-| `/__cw_admin__/settings/news` | News Settings |
-| `/__cw_admin__/settings/resource-settings` | Resource Settings |
-| `/__cw_admin__/settings/admin-profile` | Admin Profile |
-| `/__cw_admin__/reports` | Reports |
+### Admin API
+- `/api/campusway-secure-admin/*`
 
----
+Primary files:
+- `backend/src/routes/adminRoutes.ts`
+- `backend/src/routes/adminStudentMgmtRoutes.ts`
+- `backend/src/routes/adminStudentSecurityRoutes.ts`
+- `backend/src/routes/adminNotificationRoutes.ts`
+- `backend/src/routes/adminProviderRoutes.ts`
 
-## Admin Login Path
+### Webhooks
+- `/api/webhooks/*`
 
-The admin login path is configurable via `ADMIN_SECRET_PATH` env variable.
-Default: `/campusway-secure-admin` (redirects to `/__cw_admin__/...`).
-
-> **Security note**: The `/__cw_admin__/` prefix is the actual admin route. The `campusway-secure-admin` path was a legacy path and redirects cleanly.
-
----
-
-## Legacy Redirects
-
-Many legacy paths (e.g., `/admin/*`, `/admin-dashboard`, `/campusway-secure-admin/*`) redirect to the canonical `/__cw_admin__/` paths via `LegacyAdminRedirect`.
-
-## Chairman Dashboard
-
-| Path | Component |
-|------|-----------|
-| `/chairman/login` | `ChairmanLogin` |
-| `/chairman/dashboard` | `ChairmanDashboard` |
+Primary file: `backend/src/routes/webhookRoutes.ts`

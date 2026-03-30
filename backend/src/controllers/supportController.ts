@@ -257,8 +257,11 @@ export async function adminUpdateSupportTicketStatus(req: AuthRequest, res: Resp
         if (requestedStatus && mongoose.Types.ObjectId.isValid(studentId)) {
             await createStudentNotification({
                 title: 'Support ticket updated',
-                message: `${item.ticketNo}: Status changed to ${String(item.status).replace('_', ' ')}`,
-                messagePreview: item.latestMessagePreview,
+                message: `${item.ticketNo} - ${item.subject}: Status changed to ${String(item.status).replace('_', ' ')}`,
+                type: 'support_status_changed',
+                messagePreview: item.latestMessagePreview
+                    ? `Latest update: ${item.latestMessagePreview}`
+                    : undefined,
                 linkUrl: `/support/${String(item._id)}`,
                 category: 'update',
                 targetRole: 'student',

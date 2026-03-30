@@ -155,7 +155,7 @@ test.describe('Campaign Hub Browser Audit', () => {
 
     await runCheckpoint(page, results, '16-notifications', async () => {
       await page.goto('/__cw_admin__/campaigns?view=notifications', { waitUntil: 'domcontentloaded' });
-      await expect(page.getByText(/Targeted notification operations/i)).toBeVisible();
+      await expect(page.getByRole('heading', { name: /Notification operations studio/i })).toBeVisible();
     });
 
     await expectPageHealthy(page, tracker);

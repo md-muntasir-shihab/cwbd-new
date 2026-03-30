@@ -3,12 +3,13 @@ import ReactDOM from 'react-dom/client';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import './styles/index.css';
-import { initFirebaseClient } from './lib/firebase';
+import { initFirebaseAppCheck, initFirebaseClient } from './lib/firebase';
 import { registerAllMocks } from './mocks/registerMocks';
 
 import { HelmetProvider } from 'react-helmet-async';
 
 initFirebaseClient();
+void initFirebaseAppCheck();
 registerAllMocks();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
