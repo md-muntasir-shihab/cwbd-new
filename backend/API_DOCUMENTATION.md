@@ -1,5 +1,7 @@
 # CampusWay Exam System API Documentation
 
+> Operational note (2026-03-31): this file was updated to trigger backend Azure CI/CD redeploy validation.
+
 ## Base URLs
 - Public API: `/api`
 - Admin API: `/api/{ADMIN_SECRET_PATH}` (default: `/api/campusway-secure-admin`)
