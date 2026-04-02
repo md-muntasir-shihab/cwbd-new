@@ -23,7 +23,7 @@ export async function enforceSiteAccess(req: Request, res: Response, next: NextF
         const security = await getSecuritySettingsSnapshot(false);
         const isAuthRoute = req.path.startsWith('/api/auth') || req.path.startsWith('/auth');
         const isAdminApiRoute = req.path.startsWith('/api/admin') || req.path.includes('/campusway-secure-admin');
-        if (!security.siteAccess.maintenanceMode || isAuthRoute || isAdminApiRoute) {
+        if (!security.siteAccess.maintenanceMode || isHealthRoute || isAuthRoute || isAdminApiRoute) {
             next();
             return;
         }
