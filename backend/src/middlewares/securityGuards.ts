@@ -15,7 +15,7 @@ function isMutatingMethod(method: string): boolean {
 export async function enforceSiteAccess(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const security = await getSecuritySettingsSnapshot(false);
-        const isHealthRoute = req.path === '/health';
+        const isHealthRoute = req.path === '/health' || req.path === '/api/health';
         const isAuthRoute = req.path.startsWith('/api/auth') || req.path.startsWith('/auth');
         const isAdminApiRoute = req.path.startsWith('/api/admin') || req.path.includes('/campusway-secure-admin');
         if (!security.siteAccess.maintenanceMode || isHealthRoute || isAuthRoute || isAdminApiRoute) {
