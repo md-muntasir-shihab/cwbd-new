@@ -3,6 +3,14 @@ import { ApiWebsiteSettings, getPublicSettings } from '../services/api';
 import { queryKeys } from '../lib/queryKeys';
 
 const WEBSITE_SETTINGS_CACHE_KEY = 'cw_public_website_settings_cache';
+const IS_MOCK_MODE = String(import.meta.env.VITE_USE_MOCK_API || '').toLowerCase() === 'true';
+const MOCK_SETTINGS: ApiWebsiteSettings = {
+    websiteName: 'CampusWay',
+    logoUrl: '',
+    contactEmail: 'support@campusway.local',
+    contactPhone: '',
+    motto: 'Plan. Explore. Achieve.',
+};
 
 function normalizeSettingsPayload(raw: unknown): ApiWebsiteSettings | null {
     if (typeof raw !== 'object' || raw === null) return null;
@@ -31,6 +39,7 @@ export function useWebsiteSettings() {
     return useQuery<ApiWebsiteSettings | null>({
         queryKey: queryKeys.websiteSettings,
         queryFn: async () => {
+            if (IS_MOCK_MODE) return MOCK_SETTINGS;
             try {
                 const { data } = await getPublicSettings();
                 const normalized = normalizeSettingsPayload(data);

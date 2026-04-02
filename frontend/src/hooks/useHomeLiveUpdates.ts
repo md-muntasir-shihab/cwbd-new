@@ -4,6 +4,7 @@ import { getHomeStreamUrl } from '../services/api';
 import { queryKeys } from '../lib/queryKeys';
 
 const HOME_REFRESH_POLL_MS = 10000;
+const IS_MOCK_MODE = String(import.meta.env.VITE_USE_MOCK_API || '').toLowerCase() === 'true';
 
 export default function useHomeLiveUpdates(enabled = true): void {
     const queryClient = useQueryClient();
@@ -11,6 +12,8 @@ export default function useHomeLiveUpdates(enabled = true): void {
     const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
+        if (IS_MOCK_MODE) return;
+
         if (!enabled) {
             if (refreshTimerRef.current) {
                 clearInterval(refreshTimerRef.current);
