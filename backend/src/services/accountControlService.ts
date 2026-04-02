@@ -69,7 +69,7 @@ export interface CreateStudentResult {
     sendResult?: { sent: number; failed: number };
 }
 
-const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5173';
+const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5175';
 
 function newRandomPassword(length = 24): string {
     return crypto.randomBytes(length).toString('base64url').slice(0, length);

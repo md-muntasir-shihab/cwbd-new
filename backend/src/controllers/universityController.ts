@@ -27,6 +27,11 @@ import {
     normalizeUniversityCategory,
     normalizeUniversityCategoryStrict,
 } from '../utils/universityCategories';
+import {
+    buildPublicUniversityExclusionQuery,
+    combineMongoFilters,
+    sanitizePublicFixtureText,
+} from '../utils/publicFixtureFilters';
 
 type UniversityStatusFilter = 'active' | 'inactive' | 'archived' | 'all';
 
@@ -238,8 +243,8 @@ function buildUniversityMutationPayload(
 
     const name = String(input.name || '').trim();
     const shortForm = String(input.shortForm || '').trim();
-    const shortDescription = String(input.shortDescription || '').trim();
-    const description = String(input.description || '').trim();
+    const shortDescription = sanitizePublicFixtureText(input.shortDescription);
+    const description = sanitizePublicFixtureText(input.description);
     const website = String(input.website || input.websiteUrl || '').trim();
     const admissionWebsite = String(input.admissionWebsite || input.admissionUrl || '').trim();
     const established = Number(input.establishedYear ?? input.established ?? 0);
@@ -611,12 +616,13 @@ export async function getUniversities(req: Request, res: Response): Promise<void
 
         filter.isActive = true;
         if (featuredMode) filter.featured = true;
+        const publicFilter = combineMongoFilters(filter, buildPublicUniversityExclusionQuery());
 
         const sortOption = featuredMode
             ? ({ featuredOrder: 1, name: 1 } as Record<string, 1 | -1>)
             : normalizeSort(sortBy, sortOrder, sort);
-        const total = await University.countDocuments(filter);
-        const rows = await University.find(filter)
+        const total = await University.countDocuments(publicFilter);
+        const rows = await University.find(publicFilter)
             .select(PUBLIC_UNIVERSITY_LIST_PROJECTION)
             .sort(sortOption)
             .skip((pageNum - 1) * limitNum)
@@ -641,11 +647,15 @@ export async function getUniversities(req: Request, res: Response): Promise<void
 export async function getUniversityCategories(_req: Request, res: Response): Promise<void> {
     try {
         await backfillUniversityTaxonomyIfNeeded();
+        const publicUniversityMatch = combineMongoFilters(
+            { isActive: true, isArchived: { $ne: true } },
+            buildPublicUniversityExclusionQuery(),
+        );
         const [categoryDocs, activeClusters, rows] = await Promise.all([
             UniversityCategory.find({ isActive: true }).select('name').sort({ homeOrder: 1, name: 1 }).lean(),
             UniversityCluster.find({ isActive: true }).select('name').lean(),
             University.aggregate([
-                { $match: { isActive: true, isArchived: { $ne: true } } },
+                { $match: publicUniversityMatch },
                 { $group: { _id: '$category', count: { $sum: 1 }, clusterGroups: { $addToSet: '$clusterGroup' } } },
             ]),
         ]);

@@ -21,7 +21,7 @@ import Exam from '../models/Exam';
 import Question from '../models/Question';
 
 const INFO_FILE = path.resolve(process.cwd(), 'INITIAL_ACCESS_INFO.txt');
-const ADMIN_PANEL_PATH = process.env.ADMIN_SECRET_PATH || 'campusway-secure-admin-2024';
+const ADMIN_PANEL_PATH = String(process.env.ADMIN_UI_PATH || '__cw_admin__').trim().replace(/^\/+/, '');
 
 /* ── Random password: 16 chars, letters + numbers + symbols ── */
 function generatePassword(): string {
@@ -161,7 +161,7 @@ export async function runDefaultSetup(): Promise<void> {
     /* ──────────────────────────────────────────
      4. WRITE INITIAL_ACCESS_INFO.txt
     ────────────────────────────────────────── */
-    const domain = process.env.APP_DOMAIN || 'http://localhost:5173';
+    const domain = String(process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5175').trim().replace(/\/$/, '');
     const content = `
 ====================================================
   CAMPUSWAY — INITIAL ACCESS INFORMATION

@@ -51,9 +51,9 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5003;
 const ADMIN_SECRET_PATH = process.env.ADMIN_SECRET_PATH || 'campusway-secure-admin';
-const DEFAULT_CORS_ORIGINS = ['http://localhost:5173', 'http://localhost:5175', 'http://localhost:3000'];
+const DEFAULT_CORS_ORIGINS = ['http://localhost:5175', 'http://localhost:3000'];
 const APP_VERSION = process.env.npm_package_version || '1.0.0';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 const DISABLE_RATE_LIMIT =

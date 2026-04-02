@@ -15,6 +15,7 @@ import Banner from '../models/Banner';
 import SiteSettings from '../models/Settings';
 import { addHomeStreamClient, broadcastHomeStreamEvent } from '../realtime/homeStream';
 import { getAggregatedHomeData as getStrictAggregatedHomeData } from './homeAggregateController';
+import { PUBLIC_BRAND_ASSETS, resolveStoredBrandAsset } from '../utils/brandAssets';
 
 const DEFAULT_SOCIAL_LINKS = {
     facebook: '',
@@ -52,22 +53,23 @@ const DEFAULT_PRICING_UI = {
     thousandSeparator: true,
 };
 
-const CANONICAL_BRAND_ASSETS = {
-    logo: '/uploads/logo-1773555868748-118876447.webp',
-    favicon: '/uploads/favicon-1773555868749-501330119.webp',
-} as const;
+const CANONICAL_BRAND_ASSETS = PUBLIC_BRAND_ASSETS;
 
-const LEGACY_BRAND_PATHS = new Set(['', '/logo.png', '/favicon.ico']);
+const LEGACY_BRAND_PATHS = new Set(['', PUBLIC_BRAND_ASSETS.logo, PUBLIC_BRAND_ASSETS.favicon]);
 const BRAND_UPLOAD_PATTERN = /^(logo|favicon|icon)[-_].+/i;
-
-function getCanonicalBrandValue(currentValue: unknown, fallbackValue: string) {
-    const normalized = String(currentValue || '').trim();
-    return LEGACY_BRAND_PATHS.has(normalized) ? fallbackValue : normalized;
-}
 
 function getLocalUploadAsset(value: unknown): string | null {
     const normalized = String(value || '').trim();
     return normalized.startsWith('/uploads/') ? normalized : null;
+}
+
+async function resolveBrandSettingsAssets(settings: { logo?: unknown; favicon?: unknown }) {
+    const [logo, favicon] = await Promise.all([
+        resolveStoredBrandAsset(settings.logo, 'logo'),
+        resolveStoredBrandAsset(settings.favicon, 'favicon'),
+    ]);
+
+    return { logo, favicon };
 }
 
 async function cleanupBrandLikeUploads(activeAssets: Array<string | null | undefined>) {
@@ -104,8 +106,7 @@ const ensureConfigs = async () => {
         favicon: CANONICAL_BRAND_ASSETS.favicon,
     });
     let settingsUpdated = false;
-    const nextLogo = getCanonicalBrandValue(settings.logo, CANONICAL_BRAND_ASSETS.logo);
-    const nextFavicon = getCanonicalBrandValue(settings.favicon, CANONICAL_BRAND_ASSETS.favicon);
+    const { logo: nextLogo, favicon: nextFavicon } = await resolveBrandSettingsAssets(settings);
     if (settings.logo !== nextLogo) {
         settings.logo = nextLogo;
         settingsUpdated = true;
@@ -281,8 +282,7 @@ export const updateSettings = async (req: Request, res: Response) => {
         );
 
         if (settings) {
-            const nextLogo = getCanonicalBrandValue(settings.logo, CANONICAL_BRAND_ASSETS.logo);
-            const nextFavicon = getCanonicalBrandValue(settings.favicon, CANONICAL_BRAND_ASSETS.favicon);
+            const { logo: nextLogo, favicon: nextFavicon } = await resolveBrandSettingsAssets(settings);
             if (settings.logo !== nextLogo || settings.favicon !== nextFavicon) {
                 settings.logo = nextLogo;
                 settings.favicon = nextFavicon;

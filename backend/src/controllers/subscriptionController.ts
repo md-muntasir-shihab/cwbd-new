@@ -14,6 +14,10 @@ import {
     syncUserSubscriptionCache,
 } from '../services/subscriptionLifecycleService';
 import { buildSecureUploadUrl, registerSecureUpload } from '../services/secureUploadService';
+import {
+    buildPublicSubscriptionPlanExclusionQuery,
+    combineMongoFilters,
+} from '../utils/publicFixtureFilters';
 
 type ExportType = 'csv' | 'xlsx';
 type PlanMutationResult = {
@@ -179,11 +183,11 @@ function getPlanLookupQuery(identifier: string): Record<string, unknown> {
 }
 
 function buildPublicPlanFilter(): Record<string, unknown> {
-    return {
+    return combineMongoFilters({
         isArchived: { $ne: true },
         showOnPricingPage: { $ne: false },
         $or: [{ enabled: true }, { isActive: true }],
-    };
+    }, buildPublicSubscriptionPlanExclusionQuery());
 }
 
 function planToDto(plan: Record<string, unknown>) {
@@ -854,10 +858,7 @@ export async function getHomeSubscriptionPlans(req: AuthRequest, res: Response):
             ensureHomeSettings(),
             WebsiteSettings.findOne().lean(),
             ensureSubscriptionSettings(),
-            SubscriptionPlan.find({
-                isArchived: { $ne: true },
-                $or: [{ enabled: true }, { isActive: true }],
-            })
+            SubscriptionPlan.find(buildPublicPlanFilter())
                 .sort(PLAN_SORT)
                 .lean(),
             req.user?._id ? User.findById(req.user._id).select('subscription').lean() : Promise.resolve(null),

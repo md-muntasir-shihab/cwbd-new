@@ -11,6 +11,10 @@ import {
     reconcileUniversityClusterAssignments,
     syncUniversityClusterSharedConfig,
 } from '../services/universitySyncService';
+import {
+    buildPublicClusterExclusionQuery,
+    combineMongoFilters,
+} from '../utils/publicFixtureFilters';
 
 function normalizeClusterSlug(name: string, fallbackSlug?: string): string {
     const slug = slugify(name || fallbackSlug || '', { lower: true, strict: true });
@@ -417,7 +421,10 @@ export async function getFeaturedUniversityClusters(req: Request, res: Response)
     try {
         await backfillUniversityTaxonomyIfNeeded();
         const limit = Math.min(20, Math.max(1, Number(req.query.limit || 8)));
-        const clusters = await UniversityCluster.find({ isActive: true, homeVisible: true })
+        const clusters = await UniversityCluster.find(combineMongoFilters(
+            { isActive: true, homeVisible: true },
+            buildPublicClusterExclusionQuery(),
+        ))
             .select('name slug description homeOrder dates')
             .sort({ homeOrder: 1, name: 1 })
             .limit(limit)

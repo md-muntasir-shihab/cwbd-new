@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { PUBLIC_BRAND_ASSETS } from '../utils/brandAssets';
 
-const DEFAULT_CANONICAL_LOGO = '/uploads/logo-1773555868748-118876447.webp';
-const DEFAULT_CANONICAL_FAVICON = '/uploads/favicon-1773555868749-501330119.webp';
+const DEFAULT_CANONICAL_LOGO = PUBLIC_BRAND_ASSETS.logo;
+const DEFAULT_CANONICAL_FAVICON = PUBLIC_BRAND_ASSETS.favicon;
 
 export type StaticPageTone = 'neutral' | 'info' | 'success' | 'warning' | 'accent';
 

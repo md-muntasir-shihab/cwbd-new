@@ -9,7 +9,7 @@
 ----------------------------------------------------
 🌐  ADMIN PANEL URL
 ----------------------------------------------------
-  http://localhost:5173/campusway-secure-admin
+  http://localhost:5175/__cw_admin__/login
 
 ----------------------------------------------------
 👑  SUPER ADMIN LOGIN
@@ -21,7 +21,7 @@
 ----------------------------------------------------
 📘  TEST STUDENT LOGIN
 ----------------------------------------------------
-  Login URL : http://localhost:5173/login
+  Login URL : http://localhost:5175/login
   Email     : student@campusway.com
   Password  : admin123
   Role      : student

@@ -4190,6 +4190,15 @@ function buildShareUrl(baseUrl: string, slug: string, settings: NewsV2SettingsCo
     return `${url}?${params.toString()}`;
 }
 
+function resolvePublicNewsBaseUrl(req: Request): string {
+    const configuredBaseUrl = String(process.env.APP_DOMAIN || process.env.FRONTEND_URL || '').trim();
+    if (configuredBaseUrl) {
+        return configuredBaseUrl.replace(/\/$/, '');
+    }
+
+    return `${req.protocol}://${req.get('host') || 'localhost:5175'}`.replace(/\/$/, '');
+}
+
 function buildShareText(
     channel: 'whatsapp' | 'facebook' | 'messenger' | 'telegram',
     settings: NewsV2SettingsConfig,
@@ -4463,7 +4472,7 @@ export async function getPublicNewsV2List(req: Request, res: Response): Promise<
             .limit(limit)
             .select('-content -fullContent -rssRawContent')
             .lean();
-        const host = `${req.protocol}://${req.get('host') || 'localhost'}`;
+        const host = resolvePublicNewsBaseUrl(req);
         res.json({
             items: items.map((item) => {
                 return buildPublicNewsOutput(item as unknown as Record<string, unknown>, host, settings);
@@ -4522,7 +4531,7 @@ export async function getPublicNewsV2BySlug(req: Request, res: Response): Promis
             .limit(5)
             .select('-content -fullContent -rssRawContent')
             .lean();
-        const host = `${req.protocol}://${req.get('host') || 'localhost'}`;
+        const host = resolvePublicNewsBaseUrl(req);
         const withFallback = buildPublicNewsOutput(item as unknown as Record<string, unknown>, host, settings);
         res.json({
             item: withFallback,

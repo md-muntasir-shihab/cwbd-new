@@ -26,7 +26,7 @@ import { findValidSecurityToken, incrementSecurityTokenAttempts, invalidateSecur
 const IS_PROD_AUTH = process.env.NODE_ENV === 'production';
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-jwt-secret-for-production-please-change-immediately-cw';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.REFRESH_SECRET || 'fallback-refresh-secret-for-production-please-change-immediately-cw';
-const APP_DOMAIN = process.env.APP_DOMAIN || 'http://localhost:5173';
+const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5175';
 const ADMIN_UI_PATH = process.env.ADMIN_UI_PATH || '__cw_admin__';
 
 type LoginPortal = 'student' | 'admin' | 'chairman';

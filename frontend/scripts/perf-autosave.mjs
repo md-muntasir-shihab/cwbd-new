@@ -1,6 +1,6 @@
 ﻿#!/usr/bin/env node
 
-const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+const baseUrl = process.env.BASE_URL || 'http://localhost:5175';
 const token = process.env.BENCH_TOKEN || '';
 const examId = process.env.BENCH_EXAM_ID || '';
 const attemptId = process.env.BENCH_ATTEMPT_ID || '';

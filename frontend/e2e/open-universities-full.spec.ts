@@ -202,7 +202,7 @@ test.describe('Open Universities Full Audit', () => {
         await expect(page.getByRole('heading', { name: /Open QA Broken Logo University/i })).toBeVisible();
         await expect(page.getByTestId('university-fallback-logo').first()).toBeVisible();
         await expect(page.getByRole('heading', { name: /Description/i })).toBeVisible();
-        await expect(page.getByText(/is included in the Open Universities QA dataset\./i)).toBeVisible();
+        await expect(page.getByText(/Open Universities QA dataset\./i)).toHaveCount(0);
         await expect(page.getByText(/open-university QA fixture\./i)).toHaveCount(0);
 
         await page.goto('/universities/open-qa-no-short-name-institute');

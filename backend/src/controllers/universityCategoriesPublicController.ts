@@ -1,12 +1,20 @@
 import { Request, Response } from 'express';
 import University from '../models/University';
 import UniversitySettingsModel from '../models/UniversitySettings';
+import {
+    buildPublicUniversityExclusionQuery,
+    combineMongoFilters,
+} from '../utils/publicFixtureFilters';
 
 export const getUniversityCategories = async (_req: Request, res: Response): Promise<void> => {
     try {
+        const publicUniversityFilter = combineMongoFilters(
+            { isActive: true, isArchived: { $ne: true } },
+            buildPublicUniversityExclusionQuery(),
+        );
         const [uniSettingsDoc, rawUniversities] = await Promise.all([
             UniversitySettingsModel.findOne().lean(),
-            University.find({ isActive: true, isArchived: { $ne: true } })
+            University.find(publicUniversityFilter)
                 .select('category clusterGroup')
                 .lean(),
         ]);

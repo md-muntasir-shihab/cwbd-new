@@ -63,7 +63,7 @@ function newRandomPassword(length = 12): string {
     return crypto.randomBytes(length).toString('base64url').slice(0, length);
 }
 
-const APP_DOMAIN = process.env.APP_DOMAIN || 'http://localhost:5173';
+const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5175';
 
 async function issueSetPasswordInvite(user: { _id: mongoose.Types.ObjectId; email: string; full_name: string; username: string }) {
     if (!user.email) return false;

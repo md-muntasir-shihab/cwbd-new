@@ -44,6 +44,8 @@ async function bootstrap() {
     // Generate initial access file
     const createdAt = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    const appDomain = String(process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5175').trim().replace(/\/$/, '');
+    const adminUiPath = String(process.env.ADMIN_UI_PATH || '__cw_admin__').trim().replace(/^\/+/, '');
 
     const accessFileContent = `
 CAMPUSWAY INITIAL ACCESS — ONE TIME
@@ -60,7 +62,7 @@ HOW TO USE:
   3) You will be required to set a new password and enable MFA.
   4) Immediately rotate this credential and confirm via audit log.
 
-ADMIN PANEL URL: http://localhost:${process.env.PORT || 5000}/api/${process.env.ADMIN_SECRET_PATH || 'campusway-secure-admin-2024'}
+ADMIN PANEL URL: ${appDomain}/${adminUiPath}/login
 
 ⚠️  DELETE THIS FILE AFTER USE ⚠️
 ====================================

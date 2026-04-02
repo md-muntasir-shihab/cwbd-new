@@ -22,6 +22,13 @@ import ContentBlock from '../models/ContentBlock';
 import HomeConfig from '../models/HomeConfig';
 import { backfillUniversityTaxonomyIfNeeded } from '../services/universitySyncService';
 import { normalizeUniversityCategory } from '../utils/universityCategories';
+import { normalizeStoredBrandAsset } from '../utils/brandAssets';
+import {
+    isVisiblePublicClusterRecord,
+    isVisiblePublicSubscriptionPlanRecord,
+    isVisiblePublicUniversityRecord,
+    sanitizePublicFixtureText,
+} from '../utils/publicFixtureFilters';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -371,7 +378,7 @@ function buildGlobalSettings(
     const socialLinks = ((settings?.socialLinks as Record<string, unknown>) || {});
     return {
         websiteName: pickString(settings?.websiteName, 'CampusWay'),
-        logoUrl: pickString(settings?.logo, '/logo.png'),
+        logoUrl: normalizeStoredBrandAsset(settings?.logo, 'logo'),
         motto: pickString(settings?.motto, ''),
         contactEmail: pickString(settings?.contactEmail, ''),
         contactPhone: pickString(settings?.contactPhone, ''),
@@ -463,7 +470,9 @@ function mapUniversityPreviewItem(item: Record<string, unknown>): UniversityCard
         examDateArts: artsExamIso,
         examDateBusiness: businessExamIso,
         examCentersPreview,
-        shortDescription: pickString((item as { shortDescription?: unknown }).shortDescription, pickString((item as { description?: unknown }).description, '')),
+        shortDescription: sanitizePublicFixtureText(
+            pickString((item as { shortDescription?: unknown }).shortDescription, pickString((item as { description?: unknown }).description, ''))
+        ),
         logoUrl: pickString((item as { logoUrl?: unknown }).logoUrl, ''),
     };
 }
@@ -691,7 +700,7 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
             homeSettingsDoc.toObject()
         ) as HomeSettingsShape;
 
-        const [rawUniversities, categoryDocs, clusters, allRelevantExams, totalStudents, totalResources, totalNews, subscriptionPlansRaw, activeBanners] = await Promise.all([
+        const [rawUniversities, categoryDocs, rawClusters, allRelevantExams, totalStudents, totalResources, totalNews, subscriptionPlansRaw, activeBanners] = await Promise.all([
             University.find({ isActive: true, isArchived: { $ne: true } })
                 .select('name shortForm slug category clusterId clusterGroup contactNumber established address email website admissionWebsite totalSeats scienceSeats artsSeats businessSeats applicationStartDate applicationEndDate scienceExamDate artsExamDate businessExamDate examCenters shortDescription description logoUrl')
                 .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
@@ -729,11 +738,18 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
             .filter(Boolean);
         const activeCategorySet = new Set(activeCategoryNames);
         const universities = rawUniversities.filter((item) => {
+            if (!isVisiblePublicUniversityRecord(item as unknown as Record<string, unknown>)) {
+                return false;
+            }
             if (activeCategorySet.size === 0) return true;
             return activeCategorySet.has(
                 normalizeUniversityCategory(pickString((item as { category?: unknown }).category, 'Uncategorized')),
             );
         });
+        const clusters = rawClusters.filter((item) => isVisiblePublicClusterRecord(item as unknown as Record<string, unknown>));
+        const publicSubscriptionPlans = subscriptionPlansRaw.filter((plan) => (
+            isVisiblePublicSubscriptionPlanRecord(plan as unknown as Record<string, unknown>)
+        ));
 
         const activeClusterIds = new Set(clusters.map((item) => String(item._id || '')));
         const activeClusterNames = new Set(
@@ -1346,7 +1362,7 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
             && homeSettings.subscriptionBanner.enabled !== false
             && homeSettings.subscriptionBanner.showPlanCards;
         const findHomePlanByToken = (token: string) => {
-            return subscriptionPlansRaw.find((plan) => {
+            return publicSubscriptionPlans.find((plan) => {
                 const raw = plan as Record<string, unknown>;
                 const planId = String(raw._id || '').trim();
                 const planCode = String(raw.code || '').trim();
@@ -1356,11 +1372,11 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
         };
         const curatedPlans = Array.from(new Set(curatedPlanIds))
             .map((token) => findHomePlanByToken(token))
-            .filter(Boolean) as typeof subscriptionPlansRaw;
-        const homeTaggedPlans = subscriptionPlansRaw.filter(
+            .filter(Boolean) as typeof publicSubscriptionPlans;
+        const homeTaggedPlans = publicSubscriptionPlans.filter(
             (plan) => Boolean((plan as { showOnHome?: boolean }).showOnHome),
         );
-        const fallbackPlans = homeTaggedPlans.length > 0 ? homeTaggedPlans : subscriptionPlansRaw;
+        const fallbackPlans = homeTaggedPlans.length > 0 ? homeTaggedPlans : publicSubscriptionPlans;
         const subscriptionPlans = subscriptionPreviewEnabled
             ? (curatedPlans.length > 0 ? curatedPlans : fallbackPlans)
             : [];

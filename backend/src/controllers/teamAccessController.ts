@@ -20,7 +20,7 @@ import { escapeRegex } from '../utils/escapeRegex';
 import { getClientIp, getDeviceInfo } from '../utils/requestMeta';
 
 const TEAM_USER_ROLES = ['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'] as const;
-const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5173';
+const APP_DOMAIN = process.env.APP_DOMAIN || process.env.FRONTEND_URL || 'http://localhost:5175';
 
 function normalizeEmail(value: unknown): string {
     return String(value || '').trim().toLowerCase();

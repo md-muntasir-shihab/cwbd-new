@@ -89,6 +89,7 @@ export default defineConfig(({ mode }) => {
     const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:5003';
 
     return {
+        appType: 'spa',  // Enable SPA routing fallback for frontend routes like /universities
         plugins: [react()],
         server: {
             port: frontendPort,

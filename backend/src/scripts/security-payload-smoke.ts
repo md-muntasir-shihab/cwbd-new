@@ -4,7 +4,7 @@ dotenv.config();
 declare const fetch: any;
 
 async function run(): Promise<void> {
-    const baseUrl = process.env.SECURITY_BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.SECURITY_BASE_URL || 'http://localhost:5003';
     const token = process.env.SECURITY_TOKEN || '';
     const examId = process.env.SECURITY_EXAM_ID || '';
     const attemptId = process.env.SECURITY_ATTEMPT_ID || '';

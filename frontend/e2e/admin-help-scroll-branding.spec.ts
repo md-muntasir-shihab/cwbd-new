@@ -2,8 +2,8 @@ import path from 'path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { attachHealthTracker, expectPageHealthy, loginAsAdmin, loginAsStudent } from './helpers';
 
-const ACTIVE_LOGO = '/uploads/logo-1773555868748-118876447.webp';
-const ACTIVE_FAVICON = '/uploads/favicon-1773555868749-501330119.webp';
+const ACTIVE_LOGO = '/logo.png';
+const ACTIVE_FAVICON = '/favicon.ico';
 const THEMES = ['light', 'dark'] as const;
 
 function escapeRegex(value: string): string {
@@ -178,7 +178,7 @@ test.describe('Admin help, scroll reset, and branding', () => {
         expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(120);
     });
 
-    test('public branding keeps the active uploaded logo and favicon', async ({ page }) => {
+    test('public branding keeps the active canonical logo and favicon', async ({ page }) => {
         const response = await page.request.get('/api/settings/public');
         expect(response.ok()).toBeTruthy();
         const payload = await response.json();
