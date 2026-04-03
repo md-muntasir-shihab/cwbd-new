@@ -12,6 +12,7 @@ import {
     mockGetUniversities,
     mockGetUniversityBySlug,
 } from './universities';
+import { mockHomeResponse } from './home';
 import type { AxiosResponse } from 'axios';
 
 function mockResponse(data: unknown, status = 200): AxiosResponse {
@@ -59,6 +60,21 @@ export function registerAllMocks(): void {
             },
         });
     });
+
+    // GET /settings/public
+    registerMock(/\/settings\/public(\?|$)/, () =>
+        mockResponse({
+            websiteName: 'CampusWay',
+            siteName: 'CampusWay',
+            logoUrl: '',
+            motto: 'Plan. Explore. Achieve.',
+            contactEmail: 'support@campusway.local',
+            contactPhone: '',
+        }),
+    );
+
+    // GET /home
+    registerMock(/\/home(\?|$)/, () => mockResponse(mockHomeResponse()));
 
     console.log('[MockAPI] University mock handlers registered.');
 }

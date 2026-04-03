@@ -88,6 +88,36 @@ Set:
 "C:\Program Files\MongoDB\Server\8.2\bin\mongod.exe" --dbpath D:\CampusWay\CampusWay\.local-mongo\data
 ```
 
+## MongoDB Test Environment Setup
+
+Backend Jest tests (`backend/tests/setup.ts`) resolve MongoDB in this order:
+1. `TEST_MONGO_URI`
+2. `MONGODB_URI`
+3. `MONGO_URI`
+4. local `mongodb://127.0.0.1:27017`
+5. `mongodb-memory-server` (downloaded binary)
+
+Recommended local test env (especially for offline/blocked network environments):
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Set:
+- `TEST_MONGO_URI=mongodb://127.0.0.1:27017`
+- `TEST_MONGO_DB=campusway_test`
+- optional cache dir for memory-server binaries:
+  - `MONGOMS_DOWNLOAD_DIR=/absolute/path/to/mongodb-binaries-cache`
+
+Then run:
+
+```bash
+cd backend
+npm run build
+npm run test:home
+```
+
 ## Initial Verification
 
 ```bash
