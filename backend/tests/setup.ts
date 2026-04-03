@@ -34,7 +34,7 @@ async function canConnectToMongo(uri: string): Promise<boolean> {
 }
 
 async function resolveMongoUri(): Promise<string> {
-    const explicitUri = process.env.TEST_MONGO_URI || process.env.MONGO_URI;
+    const explicitUri = process.env.TEST_MONGO_URI || process.env.MONGODB_URI || process.env.MONGO_URI;
     if (explicitUri) {
         return explicitUri;
     }
@@ -64,6 +64,8 @@ beforeAll(async () => {
     process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret';
 
     const mongoUri = await resolveMongoUri();
+    process.env.MONGODB_URI = process.env.MONGODB_URI || mongoUri;
+    process.env.MONGO_URI = process.env.MONGO_URI || mongoUri;
     await mongoose.connect(mongoUri, {
         dbName: TEST_DB_NAME,
     });
