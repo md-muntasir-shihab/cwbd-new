@@ -8,13 +8,8 @@ const BROWSER_FP_KEY = 'campusway-browser-fingerprint';
 const AUTH_SESSION_HINT_KEY = 'campusway-auth-session-hint';
 const API_BASE_FROM_ENV = String(import.meta.env.VITE_API_BASE_URL || '').trim();
 const API_PROXY_TARGET = String(import.meta.env.VITE_API_PROXY_TARGET || '').trim();
-const IS_PROD_BUILD = Boolean(import.meta.env.PROD);
 const USE_DEV_PROXY = Boolean(import.meta.env.DEV && API_PROXY_TARGET);
 const API_BASE_URL = USE_DEV_PROXY ? '/api' : (API_BASE_FROM_ENV || '/api');
-
-if (IS_PROD_BUILD && !API_BASE_FROM_ENV) {
-    throw new Error('VITE_API_BASE_URL is required in production builds.');
-}
 
 if (import.meta.env.DEV && !API_BASE_FROM_ENV && !API_PROXY_TARGET) {
     console.warn('[CampusWay] Neither VITE_API_BASE_URL nor VITE_API_PROXY_TARGET is configured. Falling back to /api.');

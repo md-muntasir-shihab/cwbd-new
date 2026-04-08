@@ -365,43 +365,44 @@ const UniversityCard = memo(function UniversityCard({
                                 {name}
                             </Link>
 
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                {shortForm && shortForm !== 'N/A' && (
-                                    <span className={`inline-flex rounded-full bg-slate-100 px-2.5 py-1 ${shortFormClass} font-bold uppercase tracking-[0.16em] text-slate-700 dark:bg-slate-800 dark:text-slate-200`} title={shortForm}>
-                                        {shortForm}
-                                    </span>
-                                )}
-                                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-bold ${classicStatusTone}`}>
-                                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                                    {classicStatusLabel}
+                            <div className="mt-3 flex flex-wrap items-center gap-1.5 pb-1">
+                                {/* Short form badge */}
+                                <span className={`inline-flex items-center rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200`}>
+                                    {shortForm && shortForm !== 'N/A' ? shortForm : 'N/A'}
                                 </span>
-                                {establishedYear ? (
-                                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                                        Est. {establishedYear}
-                                    </span>
-                                ) : null}
-                            </div>
 
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
-                                    {category}
+                                {/* Established badge */}
+                                <span className="inline-flex items-center rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
+                                    EST. {establishedYear || 'N/A'}
                                 </span>
-                                {clusterGroup ? (
+
+                                {/* Category badge */}
+                                <span className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${(category && category !== 'N/A') ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300' : 'border-slate-200/60 bg-slate-50 text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500'}`}>
+                                    {category && category !== 'N/A' ? category : 'N/A'}
+                                </span>
+
+                                {/* Cluster badge */}
+                                {clusterGroup && clusterGroup !== 'N/A' ? (
                                     clusterUrl ? (
                                         <Link
                                             to={clusterUrl}
-                                            className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-700 transition hover:bg-purple-500/20 dark:text-purple-200"
+                                            className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 transition hover:bg-purple-100 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20"
                                         >
                                             <Layers3 className="h-3 w-3" />
                                             <span className="max-w-[13rem] truncate">{clusterGroup}</span>
                                         </Link>
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-200">
+                                        <span className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300">
                                             <Layers3 className="h-3 w-3" />
                                             <span className="max-w-[13rem] truncate">{clusterGroup}</span>
                                         </span>
                                     )
-                                ) : null}
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500">
+                                        <Layers3 className="h-3 w-3 opacity-50" />
+                                        <span>N/A</span>
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -672,45 +673,46 @@ const UniversityCard = memo(function UniversityCard({
                             <h3 className={`${universityNameSizeClass} line-clamp-2 font-bold leading-tight text-slate-900 dark:text-white`} title={name}>
                                 {name}
                             </h3>
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                {shortForm && shortForm !== 'N/A' && (
-                                    <span className={`inline-flex rounded-full border border-cyan-500/15 bg-cyan-500/10 px-2.5 py-1 ${shortFormClass} font-bold uppercase tracking-[0.16em] text-cyan-700 dark:text-cyan-200`} title={shortForm}>
-                                        {shortForm}
+                            <div className="mt-3 flex flex-wrap items-center gap-1.5 pb-1">
+                                {/* Short form badge */}
+                                <span className={`inline-flex items-center rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-200`}>
+                                    {shortForm && shortForm !== 'N/A' ? shortForm : 'N/A'}
+                                </span>
+
+                                {/* Established badge */}
+                                <span className="inline-flex items-center rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-400">
+                                    EST. {establishedYear || 'N/A'}
+                                </span>
+
+                                {/* Category badge */}
+                                <span className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${(category && category !== 'N/A') ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300' : 'border-slate-200/60 bg-slate-50 text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500'}`}>
+                                    {category && category !== 'N/A' ? category : 'N/A'}
+                                </span>
+
+                                {/* Cluster badge */}
+                                {clusterGroup && clusterGroup !== 'N/A' ? (
+                                    clusterUrl ? (
+                                        <Link
+                                            to={clusterUrl}
+                                            className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 transition hover:bg-purple-100 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20"
+                                        >
+                                            <Layers3 className="h-3 w-3" />
+                                            <span className="max-w-[13rem] truncate">{clusterGroup}</span>
+                                        </Link>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300">
+                                            <Layers3 className="h-3 w-3" />
+                                            <span className="max-w-[13rem] truncate">{clusterGroup}</span>
+                                        </span>
+                                    )
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500">
+                                        <Layers3 className="h-3 w-3 opacity-50" />
+                                        <span>N/A</span>
                                     </span>
                                 )}
-                                {establishedYear ? (
-                                    <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                                        Est. {establishedYear}
-                                    </span>
-                                ) : null}
                             </div>
                         </div>
-                        <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] ${classicStatusTone}`}>
-                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                            {classicStatusLabel}
-                        </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-lg border border-sky-500/20 bg-sky-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-sky-700 dark:text-sky-200">
-                            {category}
-                        </span>
-                        {clusterGroup && (
-                            clusterUrl ? (
-                                <Link
-                                    to={clusterUrl}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-700 transition hover:bg-purple-500/20 dark:text-purple-200"
-                                >
-                                    <Layers3 className="h-3 w-3" />
-                                    <span className="max-w-[10rem] truncate">{clusterGroup}</span>
-                                </Link>
-                            ) : (
-                                <span className="inline-flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-200">
-                                    <Layers3 className="h-3 w-3" />
-                                    <span className="max-w-[10rem] truncate">{clusterGroup}</span>
-                                </span>
-                            )
-                        )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">

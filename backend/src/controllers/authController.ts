@@ -211,19 +211,8 @@ function isAdminRole(role: string): boolean {
 }
 
 export function needsTwoFactor(user: IUser, security: SecurityConfig): boolean {
-    if (security.testingAccessMode) return false;
-    const requiredRoles = Array.isArray(security.requiredTwoFactorRoles)
-        ? security.requiredTwoFactorRoles.map((role) => String(role || '').toLowerCase())
-        : [];
-    const userRole = String(user.role || '').toLowerCase();
-    if (user.twoFactorEnabled === true) return true;
-    if (requiredRoles.length > 0) {
-        return requiredRoles.includes(userRole);
-    }
-    return (
-        (isAdminRole(userRole) && security.enable2faAdmin) ||
-        (userRole === 'student' && security.enable2faStudent)
-    );
+    // 2FA is OFF by default unless explicitly enabled by the user or an admin
+    return user.twoFactorEnabled === true;
 }
 
 function shouldSendChallenge(method: TwoFactorMethod): boolean {
