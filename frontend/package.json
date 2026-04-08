@@ -7,7 +7,6 @@
         "dev": "vite",
         "build": "tsc -b && vite build",
         "lint": "eslint .",
-        "preview": "vite preview",
         "preview": "vite preview"
     },
     "dependencies": {
@@ -32,7 +31,6 @@
         "react-is": "^19.2.4",
         "react-katex": "^3.1.0",
         "react-markdown": "^10.1.0",
-        "react-quill": "^2.0.0",
         "react-router-dom": "^7.1.0",
         "recharts": "^3.8.0",
         "rehype-katex": "^7.0.1",
