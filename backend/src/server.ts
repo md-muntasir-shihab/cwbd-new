@@ -370,32 +370,50 @@ app.use((err: Error & { status?: number }, req: express.Request, res: express.Re
     res.status(statusCode).json({ message, requestId: (req as any).requestId });
 });
 
-
 // =============
 // Start
 // =============
 async function start() {
     validateRequiredEnv();
     await connectDB();
+    
+    try {
+        console.log('[startup] Running one-time 2FA reset migration...');
+        const result = await mongoose.connection.collection('users').updateMany(
+            { twoFactorEnabled: true },
+            {
+                $set: {
+                    twoFactorEnabled: false,
+                    twoFactorSecret: null,
+                    twoFactorBackupCodes: [],
+                    two_factor_method: null,
+                }
+            }
+        );
+        console.log(`✅ [startup] Updated ${result.modifiedCount} users — 2FA disabled.`);
+    } catch (err) {
+        console.error('[startup] Failed to run 2FA reset migration:', err);
+    }
+    
     try {
         const communicationMigrationResult = await runCommunicationCenterMigration();
-    console.log('[startup] communication migration completed', communicationMigrationResult);
+        console.log('[startup] communication migration completed', communicationMigrationResult);
 
-    // First-boot setup (controlled by ALLOW_DEFAULT_SETUP env)
-    await runDefaultSetup();
+        // First-boot setup (controlled by ALLOW_DEFAULT_SETUP env)
+        await runDefaultSetup();
 
-    // Start background cron jobs (e.g. auto-submitting expired exams)
-    startExamCronJobs();
-    startModernExamCronJobs();
+        // Start background cron jobs (e.g. auto-submitting expired exams)
+        startExamCronJobs();
+        startModernExamCronJobs();
         startStudentDashboardCronJobs();
         startNewsV2CronJobs();
         startNotificationJobCron();
         startRetentionCronJobs();
-    startSubscriptionExpiryCron();
-    startFinanceRecurringCronJobs();
+        startSubscriptionExpiryCron();
+        startFinanceRecurringCronJobs();
 
-    // Seed default Chart-of-Account entries (idempotent)
-    await seedDefaultChartOfAccounts();
+        // Seed default Chart-of-Account entries (idempotent)
+        await seedDefaultChartOfAccounts();
     } catch(err) { console.error('[startup] Core data/cron sync failed. MongoDB might be down. Keeping container ALIVE:', err); }
 
     const server = app.listen(Number(PORT), '0.0.0.0', () => {
