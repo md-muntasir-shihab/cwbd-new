@@ -41,7 +41,7 @@ $requiredVars = @(
 
 $missing = @()
 foreach ($var in $requiredVars) {
-    if (-not $env:($var)) {
+    if (-not [Environment]::GetEnvironmentVariable($var, "Process")) {
         $missing += $var
     }
 }
