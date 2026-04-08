@@ -32,7 +32,7 @@ async function expectClassicCardSignals(card: Locator) {
     await expect(card).toBeVisible();
     await expect(card).toContainText(/Est\./i);
     await expect(card).toContainText(/Application/i);
-    await expect(card).toContainText(/Nearest exam/i);
+    await expect(card).toContainText(/Upcoming Exam/i);
     await expect(card.getByTestId('university-card-status-indicator')).toBeVisible();
 
     const detailsAction = card.locator('[data-testid="university-card-details"]').first();

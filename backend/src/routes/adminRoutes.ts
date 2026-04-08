@@ -664,7 +664,7 @@ router.use(enforceAdminPanelPolicy);
 router.use(enforceAdminReadOnlyMode);
 router.use(enforceModulePermissions);
 
-router.get('/permissions/matrix', authorize('superadmin', 'admin'), (req: Request, res: Response) => {
+router.get('/permissions/matrix', requirePermission('team_access_control', 'view'), (req: Request, res: Response) => {
     const includeMarkdown = String(req.query.format || '').trim().toLowerCase() === 'markdown';
     const responseBody: Record<string, unknown> = {
         modules: Object.keys(ROLE_PERMISSION_MATRIX.superadmin),
@@ -680,50 +680,50 @@ router.get('/permissions/matrix', authorize('superadmin', 'admin'), (req: Reques
 });
 
 /* ── Team & Access Control ── */
-router.get('/team/members', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetMembers);
-router.post('/team/members', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamCreateMember);
-router.get('/team/members/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetMemberById);
-router.put('/team/members/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamUpdateMember);
-router.post('/team/members/:id/suspend', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamSuspendMember);
-router.post('/team/members/:id/activate', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamActivateMember);
-router.post('/team/members/:id/reset-password', authorize('superadmin', 'admin'), requireSecurityStepUp('team_access', 'member_reset_password'), teamResetPassword);
-router.post('/team/members/:id/revoke-sessions', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), requireSecurityStepUp('team_access', 'member_revoke_sessions'), teamRevokeSessions);
-router.post('/team/members/:id/resend-invite', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamResendInvite);
+router.get('/team/members', requirePermission('team_access_control', 'view'), teamGetMembers);
+router.post('/team/members', requirePermission('team_access_control', 'create'), teamCreateMember);
+router.get('/team/members/:id', requirePermission('team_access_control', 'view'), teamGetMemberById);
+router.put('/team/members/:id', requirePermission('team_access_control', 'edit'), teamUpdateMember);
+router.post('/team/members/:id/suspend', requirePermission('team_access_control', 'edit'), teamSuspendMember);
+router.post('/team/members/:id/activate', requirePermission('team_access_control', 'edit'), teamActivateMember);
+router.post('/team/members/:id/reset-password', requirePermission('team_access_control', 'edit'), requireSecurityStepUp('team_access', 'member_reset_password'), teamResetPassword);
+router.post('/team/members/:id/revoke-sessions', requirePermission('team_access_control', 'edit'), requireSecurityStepUp('team_access', 'member_revoke_sessions'), teamRevokeSessions);
+router.post('/team/members/:id/resend-invite', requirePermission('team_access_control', 'create'), teamResendInvite);
 
-router.get('/team/roles', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetRoles);
-router.post('/team/roles', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), requireSecurityStepUp('team_access', 'role_create'), teamCreateRole);
-router.get('/team/roles/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetRoleById);
-router.put('/team/roles/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), requireSecurityStepUp('team_access', 'role_update'), teamUpdateRole);
-router.post('/team/roles/:id/duplicate', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), requireSecurityStepUp('team_access', 'role_duplicate'), teamDuplicateRole);
-router.delete('/team/roles/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), requireSecurityStepUp('team_access', 'role_delete'), teamDeleteRole);
+router.get('/team/roles', requirePermission('team_access_control', 'view'), teamGetRoles);
+router.post('/team/roles', requirePermission('team_access_control', 'create'), requireSecurityStepUp('team_access', 'role_create'), teamCreateRole);
+router.get('/team/roles/:id', requirePermission('team_access_control', 'view'), teamGetRoleById);
+router.put('/team/roles/:id', requirePermission('team_access_control', 'edit'), requireSecurityStepUp('team_access', 'role_update'), teamUpdateRole);
+router.post('/team/roles/:id/duplicate', requirePermission('team_access_control', 'create'), requireSecurityStepUp('team_access', 'role_duplicate'), teamDuplicateRole);
+router.delete('/team/roles/:id', requirePermission('team_access_control', 'delete'), requireSecurityStepUp('team_access', 'role_delete'), teamDeleteRole);
 
-router.get('/team/permissions', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetPermissions);
-router.put('/team/permissions/roles/:id', authorize('superadmin'), requireSecurityStepUp('team_access', 'role_permissions_update'), teamUpdateRolePermissions);
-router.put('/team/permissions/members/:id/override', authorize('superadmin'), teamUpdateMemberOverride);
+router.get('/team/permissions', requirePermission('team_access_control', 'view'), teamGetPermissions);
+router.put('/team/permissions/roles/:id', requirePermission('team_access_control', 'edit'), requireSecurityStepUp('team_access', 'role_permissions_update'), teamUpdateRolePermissions);
+router.put('/team/permissions/members/:id/override', requirePermission('team_access_control', 'edit'), teamUpdateMemberOverride);
 
-router.get('/team/approval-rules', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetApprovalRules);
-router.post('/team/approval-rules', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamCreateApprovalRule);
-router.put('/team/approval-rules/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamUpdateApprovalRule);
-router.delete('/team/approval-rules/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), requireDestructiveStepUp('team_access', 'approval_rule_delete'), teamDeleteApprovalRule);
+router.get('/team/approval-rules', requirePermission('team_access_control', 'view'), teamGetApprovalRules);
+router.post('/team/approval-rules', requirePermission('team_access_control', 'create'), teamCreateApprovalRule);
+router.put('/team/approval-rules/:id', requirePermission('team_access_control', 'edit'), teamUpdateApprovalRule);
+router.delete('/team/approval-rules/:id', requirePermission('team_access_control', 'delete'), requireDestructiveStepUp('team_access', 'approval_rule_delete'), teamDeleteApprovalRule);
 
-router.get('/team/activity', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetActivity);
-router.get('/team/activity/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetActivityById);
+router.get('/team/activity', requirePermission('team_access_control', 'view'), teamGetActivity);
+router.get('/team/activity/:id', requirePermission('team_access_control', 'view'), teamGetActivityById);
 
-router.get('/team/security', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetSecurityOverview);
-router.get('/team/invites', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), teamGetInvites);
+router.get('/team/security', requirePermission('team_access_control', 'view'), teamGetSecurityOverview);
+router.get('/team/invites', requirePermission('team_access_control', 'view'), teamGetInvites);
 
-router.get('/approvals/pending', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminGetPendingApprovals);
-router.post('/approvals/:id/approve', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminApprovePendingAction);
-router.post('/approvals/:id/reject', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminRejectPendingAction);
-router.get('/jobs/runs', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent', 'finance_agent'), adminGetJobRuns);
-router.get('/jobs/health', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent', 'finance_agent'), adminGetJobHealth);
+router.get('/approvals/pending', requirePermission('team_access_control', 'view'), adminGetPendingApprovals);
+router.post('/approvals/:id/approve', requirePermission('team_access_control', 'approve'), adminApprovePendingAction);
+router.post('/approvals/:id/reject', requirePermission('team_access_control', 'approve'), adminRejectPendingAction);
+router.get('/jobs/runs', requirePermission('site_settings', 'view'), adminGetJobRuns);
+router.get('/jobs/health', requirePermission('site_settings', 'view'), adminGetJobHealth);
 
 /* ── Health ── */
 router.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'OK', message: 'Admin API is running', timestamp: new Date().toISOString() });
 });
-router.get('/dashboard/summary', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), adminGetDashboardSummary);
-router.get('/openapi/exam-console.json', authorize('superadmin', 'admin', 'moderator', 'editor'), (_req: Request, res: Response) => {
+router.get('/dashboard/summary', requirePermission('site_settings', 'view'), adminGetDashboardSummary);
+router.get('/openapi/exam-console.json', requirePermission('exams', 'view'), (_req: Request, res: Response) => {
     const candidatePaths = [
         path.resolve(process.cwd(), '../docs/openapi/exam-console.json'),
         path.resolve(process.cwd(), 'docs/openapi/exam-console.json'),
@@ -735,7 +735,7 @@ router.get('/openapi/exam-console.json', authorize('superadmin', 'admin', 'moder
     }
     res.sendFile(filePath);
 });
-router.get('/openapi/question-bank.json', authorize('superadmin', 'admin', 'moderator', 'editor'), (_req: Request, res: Response) => {
+router.get('/openapi/question-bank.json', requirePermission('question_bank', 'view'), (_req: Request, res: Response) => {
     const candidatePaths = [
         path.resolve(process.cwd(), '../docs/openapi/question-bank.json'),
         path.resolve(process.cwd(), 'docs/openapi/question-bank.json'),
@@ -747,7 +747,7 @@ router.get('/openapi/question-bank.json', authorize('superadmin', 'admin', 'mode
     }
     res.sendFile(filePath);
 });
-router.get('/openapi/news-system.json', authorize('superadmin', 'admin', 'moderator', 'editor'), (_req: Request, res: Response) => {
+router.get('/openapi/news-system.json', requirePermission('news', 'view'), (_req: Request, res: Response) => {
     const candidatePaths = [
         path.resolve(process.cwd(), '../docs/openapi/news-system.json'),
         path.resolve(process.cwd(), 'docs/openapi/news-system.json'),
@@ -770,106 +770,106 @@ router.get('/openapi/news-system.json', authorize('superadmin', 'admin', 'modera
 ───────────────────────────────────────────────────────────── */
 
 /* ── Site Settings ── */
-router.get('/settings', authorize('superadmin', 'admin'), getSiteSettings);
-router.put('/settings', authorize('superadmin', 'admin'), updateSiteSettings);
-router.get('/settings/site', authorize('superadmin', 'admin', 'moderator', 'editor'), getSettings);
-router.put('/settings/site', authorize('superadmin', 'admin'), uploadMiddleware.fields([{ name: 'logo', maxCount: 1 }, { name: 'favicon', maxCount: 1 }]), updateSettings);
-router.get('/settings/home', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetHomeSettings);
-router.put('/settings/home', authorize('superadmin', 'admin', 'moderator', 'editor'), adminUpdateHomeSettings);
-router.get('/social-links', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetSocialLinks);
-router.post('/social-links', authorize('superadmin', 'admin'), adminCreateSocialLink);
-router.put('/social-links/:id', authorize('superadmin', 'admin'), adminUpdateSocialLink);
-router.delete('/social-links/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('site_settings', 'social_link_delete'), adminDeleteSocialLink);
-router.get('/settings/runtime', authorize('superadmin', 'admin'), getRuntimeSettings);
-router.put('/settings/runtime', authorize('superadmin', 'admin'), updateRuntimeSettingsController);
-router.get('/settings/admin-ui', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'), getAdminUiLayoutSettings);
-router.put('/settings/admin-ui', authorize('superadmin', 'admin'), updateAdminUiLayoutSettings);
-router.get('/settings/notifications', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetNotificationAutomationSettings);
-router.put('/settings/notifications', authorize('superadmin', 'admin'), adminUpdateNotificationAutomationSettings);
-router.get('/settings/analytics', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetAnalyticsSettings);
-router.put('/settings/analytics', authorize('superadmin', 'admin'), adminUpdateAnalyticsSettings);
-router.get('/settings/university', authorize('superadmin', 'admin', 'moderator', 'editor'), getUniversitySettings);
-router.put('/settings/university', authorize('superadmin', 'admin'), updateUniversitySettings);
+router.get('/settings', requirePermission('site_settings', 'view'), getSiteSettings);
+router.put('/settings', requirePermission('site_settings', 'edit'), updateSiteSettings);
+router.get('/settings/site', requirePermission('site_settings', 'view'), getSettings);
+router.put('/settings/site', requirePermission('site_settings', 'edit'), uploadMiddleware.fields([{ name: 'logo', maxCount: 1 }, { name: 'favicon', maxCount: 1 }]), updateSettings);
+router.get('/settings/home', requirePermission('home_control', 'view'), adminGetHomeSettings);
+router.put('/settings/home', requirePermission('home_control', 'edit'), adminUpdateHomeSettings);
+router.get('/social-links', requirePermission('site_settings', 'view'), adminGetSocialLinks);
+router.post('/social-links', requirePermission('site_settings', 'create'), adminCreateSocialLink);
+router.put('/social-links/:id', requirePermission('site_settings', 'edit'), adminUpdateSocialLink);
+router.delete('/social-links/:id', requirePermission('site_settings', 'delete'), requireDestructiveStepUp('site_settings', 'social_link_delete'), adminDeleteSocialLink);
+router.get('/settings/runtime', requirePermission('site_settings', 'view'), getRuntimeSettings);
+router.put('/settings/runtime', requirePermission('site_settings', 'edit'), updateRuntimeSettingsController);
+router.get('/settings/admin-ui', requirePermission('site_settings', 'view'), getAdminUiLayoutSettings);
+router.put('/settings/admin-ui', requirePermission('site_settings', 'edit'), updateAdminUiLayoutSettings);
+router.get('/settings/notifications', requirePermission('notifications', 'view'), adminGetNotificationAutomationSettings);
+router.put('/settings/notifications', requirePermission('notifications', 'edit'), adminUpdateNotificationAutomationSettings);
+router.get('/settings/analytics', requirePermission('site_settings', 'view'), adminGetAnalyticsSettings);
+router.put('/settings/analytics', requirePermission('site_settings', 'edit'), adminUpdateAnalyticsSettings);
+router.get('/settings/university', requirePermission('universities', 'view'), getUniversitySettings);
+router.put('/settings/university', requirePermission('universities', 'edit'), updateUniversitySettings);
 
 /* ── Security ── */
-router.get('/security-settings', authorize('superadmin', 'admin'), getAdminSecuritySettings);
-router.put('/security-settings', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'settings_update' }), updateAdminSecuritySettings);
-router.post('/security-settings/reset-defaults', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'settings_reset' }), resetAdminSecuritySettings);
-router.post('/security-settings/force-logout-all', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'force_logout_all' }), forceLogoutAllUsers);
-router.post('/security-settings/admin-panel-lock', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'admin_panel_lock' }), lockAdminPanel);
-router.get('/security/sessions', authorize('superadmin', 'admin', 'moderator'), canManageStudents, getActiveSessions);
-router.post('/security/force-logout', authorize('superadmin', 'admin'), canManageStudents, requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'force_logout_user' }), forceLogoutUser);
-router.get('/security/2fa/users', authorize('superadmin', 'admin'), canManageStudents, getTwoFactorUsers);
-router.patch('/security/2fa/users/:id', authorize('superadmin', 'admin'), canManageStudents, requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'update_user_2fa' }), updateTwoFactorUser);
-router.post('/security/2fa/users/:id/reset', authorize('superadmin', 'admin'), canManageStudents, requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'reset_user_2fa' }), resetTwoFactorUser);
-router.get('/security/2fa/failures', authorize('superadmin', 'admin'), canManageStudents, getTwoFactorFailures);
-router.get('/security/dashboard', authorize('superadmin', 'admin'), getSecurityDashboardMetrics);
-router.get('/audit-logs', authorize('superadmin', 'admin'), getAuditLogsList);
+router.get('/security-settings', requirePermission('security_logs', 'view'), getAdminSecuritySettings);
+router.put('/security-settings', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'settings_update' }), updateAdminSecuritySettings);
+router.post('/security-settings/reset-defaults', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'settings_reset' }), resetAdminSecuritySettings);
+router.post('/security-settings/force-logout-all', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'force_logout_all' }), forceLogoutAllUsers);
+router.post('/security-settings/admin-panel-lock', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'admin_panel_lock' }), lockAdminPanel);
+router.get('/security/sessions', requirePermission('security_logs', 'view'), getActiveSessions);
+router.post('/security/force-logout', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'force_logout_user' }), forceLogoutUser);
+router.get('/security/2fa/users', requirePermission('security_logs', 'view'), getTwoFactorUsers);
+router.patch('/security/2fa/users/:id', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'update_user_2fa' }), updateTwoFactorUser);
+router.post('/security/2fa/users/:id/reset', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'security.settings_change', moduleName: 'security_center', actionName: 'reset_user_2fa' }), resetTwoFactorUser);
+router.get('/security/2fa/failures', requirePermission('security_logs', 'view'), getTwoFactorFailures);
+router.get('/security/dashboard', requirePermission('security_logs', 'view'), getSecurityDashboardMetrics);
+router.get('/audit-logs', requirePermission('security_logs', 'view'), getAuditLogsList);
 
 /* ── Reports & Analytics ── */
-router.get('/reports/summary', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetReportsSummary);
-router.get('/reports/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, requireSensitiveExport('reports', 'summary_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'summary_export' }), adminExportReportsSummary);
-router.get('/reports/analytics', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetAnalyticsOverview);
-router.get('/reports/events/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, requireSensitiveExport('reports', 'event_logs_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'event_logs_export' }), adminExportEventLogs);
-router.get('/reports/exams/:examId/insights', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamInsights);
-router.get('/reports/exams/:examId/insights/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, requireSensitiveExport('reports', 'exam_insights_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'exam_insights_export', targetType: 'exam', targetParam: 'examId' }), adminExportExamInsights);
+router.get('/reports/summary', requirePermission('reports_analytics', 'view'), adminGetReportsSummary);
+router.get('/reports/export', requirePermission('reports_analytics', 'export'), requireSensitiveExport('reports', 'summary_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'summary_export' }), adminExportReportsSummary);
+router.get('/reports/analytics', requirePermission('reports_analytics', 'view'), adminGetAnalyticsOverview);
+router.get('/reports/events/export', requirePermission('reports_analytics', 'export'), requireSensitiveExport('reports', 'event_logs_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'event_logs_export' }), adminExportEventLogs);
+router.get('/reports/exams/:examId/insights', requirePermission('reports_analytics', 'view'), adminGetExamInsights);
+router.get('/reports/exams/:examId/insights/export', requirePermission('reports_analytics', 'export'), requireSensitiveExport('reports', 'exam_insights_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'exam_insights_export', targetType: 'exam', targetParam: 'examId' }), adminExportExamInsights);
 
 /* ── Exams ── */
-router.get('/exams', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetExams);
-router.get('/exams/daily-report', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminDailyReport);
-router.get('/exams/live-sessions', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminGetLiveExamSessions);
-router.get('/live/attempts', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminGetLiveExamSessions);
-router.get('/live/stream', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminLiveStream);
-router.post('/live/attempts/:attemptId/action', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminLiveAttemptAction);
-router.get('/exams/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetExamById);
-router.post('/exams', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminCreateExam);
-router.post('/exams/sign-banner-upload', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminSignExamBannerUpload);
-router.post('/exams/:id/clone', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminCloneExam);
-router.post('/exams/:id/share-link/regenerate', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminRegenerateExamShareLink);
-router.put('/exams/:id', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminUpdateExam);
-router.delete('/exams/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('exams', 'exam_delete'), adminDeleteExam);
-router.patch('/exams/:id/publish', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminPublishExam);
-router.patch('/exams/:id/publish-result', authorize('superadmin', 'admin'), canEditExams, requireTwoPersonForExamResultPublish, adminPublishResult);
-router.patch('/exams/:examId/force-submit/:studentId', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminForceSubmit);
-router.patch('/exams/evaluate/:resultId', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, adminEvaluateResult);
-router.get('/exams/:examId/results', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamResults);
-router.get('/exams/:examId/analytics', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminGetExamAnalytics);
-router.get('/exams/:examId/export', authorize('superadmin', 'admin'), canViewReports, requireSensitiveAction({ actionKey: 'students.export', moduleName: 'reports', actionName: 'exam_results_export', enforceExportRolePolicy: true }), adminExportExamResults);
-router.get('/exams/:id/results/import-template', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminDownloadExamResultsImportTemplate);
-router.post('/exams/:id/results/import', authorize('superadmin', 'admin', 'moderator'), canEditExams, upload.single('file'), adminImportExamResults);
-router.post('/exams/:id/results/import-external', authorize('superadmin', 'admin', 'moderator'), canEditExams, upload.single('file'), adminImportExternalExamResults);
-router.post('/exams/:id/import/preview', authorize('superadmin', 'admin', 'moderator'), canEditExams, upload.single('file'), adminPreviewExamImport);
-router.post('/exams/:id/import/commit', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminCommitExamImport);
-router.get('/exams/:id/import/logs', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamImportLogs);
-router.post('/exams/:id/profile-sync/run', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminRunExamProfileSync);
-router.get('/exams/:id/profile-sync/logs', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamProfileSyncLogs);
-router.get('/exams/:id/reports/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, requireSensitiveAction({ actionKey: 'students.export', moduleName: 'reports', actionName: 'exam_report_export', enforceExportRolePolicy: true }), adminExportExamReport);
-router.get('/exams/:id/events/export', authorize('superadmin', 'admin', 'moderator'), canViewReports, requireSensitiveExport('reports', 'exam_events_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'exam_events_export', targetType: 'exam', targetParam: 'id' }), adminExportExamEvents);
-router.post('/exams/:id/preview/start', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminStartExamPreview);
-router.patch('/exams/:examId/reset-attempt/:userId', authorize('superadmin', 'admin'), canEditExams, adminResetExamAttempt);
-router.get('/exam-import-templates', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamImportTemplates);
-router.post('/exam-import-templates', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminCreateExamImportTemplate);
-router.put('/exam-import-templates/:id', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminUpdateExamImportTemplate);
-router.delete('/exam-import-templates/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('exams', 'exam_import_template_delete'), adminDeleteExamImportTemplate);
-router.get('/exam-mapping-profiles', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamMappingProfiles);
-router.post('/exam-mapping-profiles', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminCreateExamMappingProfile);
-router.put('/exam-mapping-profiles/:id', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminUpdateExamMappingProfile);
-router.delete('/exam-mapping-profiles/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('exams', 'exam_mapping_profile_delete'), adminDeleteExamMappingProfile);
-router.get('/exam-centers', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamCenters);
-router.post('/exam-centers', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminCreateExamCenter);
-router.put('/exam-centers/:id', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminUpdateExamCenter);
-router.delete('/exam-centers/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('exams', 'exam_center_delete'), adminDeleteExamCenter);
-router.get('/exam-center-settings', authorize('superadmin', 'admin', 'moderator', 'editor'), canViewReports, adminGetExamCenterSettings);
-router.put('/exam-center-settings', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminUpdateExamCenterSettings);
+router.get('/exams', requirePermission('exams', 'view'), adminGetExams);
+router.get('/exams/daily-report', requirePermission('exams', 'view'), adminDailyReport);
+router.get('/exams/live-sessions', requirePermission('exams', 'view'), adminGetLiveExamSessions);
+router.get('/live/attempts', requirePermission('exams', 'view'), adminGetLiveExamSessions);
+router.get('/live/stream', requirePermission('exams', 'view'), adminLiveStream);
+router.post('/live/attempts/:attemptId/action', requirePermission('exams', 'edit'), adminLiveAttemptAction);
+router.get('/exams/:id', requirePermission('exams', 'view'), adminGetExamById);
+router.post('/exams', requirePermission('exams', 'create'), adminCreateExam);
+router.post('/exams/sign-banner-upload', requirePermission('exams', 'create'), adminSignExamBannerUpload);
+router.post('/exams/:id/clone', requirePermission('exams', 'create'), adminCloneExam);
+router.post('/exams/:id/share-link/regenerate', requirePermission('exams', 'edit'), adminRegenerateExamShareLink);
+router.put('/exams/:id', requirePermission('exams', 'edit'), adminUpdateExam);
+router.delete('/exams/:id', requirePermission('exams', 'delete'), requireDestructiveStepUp('exams', 'exam_delete'), adminDeleteExam);
+router.patch('/exams/:id/publish', requirePermission('exams', 'publish'), adminPublishExam);
+router.patch('/exams/:id/publish-result', requirePermission('exams', 'publish'), requireTwoPersonForExamResultPublish, adminPublishResult);
+router.patch('/exams/:examId/force-submit/:studentId', requirePermission('exams', 'edit'), adminForceSubmit);
+router.patch('/exams/evaluate/:resultId', requirePermission('exams', 'edit'), adminEvaluateResult);
+router.get('/exams/:examId/results', requirePermission('exams', 'view'), adminGetExamResults);
+router.get('/exams/:examId/analytics', requirePermission('exams', 'view'), adminGetExamAnalytics);
+router.get('/exams/:examId/export', requirePermission('exams', 'export'), requireSensitiveAction({ actionKey: 'students.export', moduleName: 'reports', actionName: 'exam_results_export', enforceExportRolePolicy: true }), adminExportExamResults);
+router.get('/exams/:id/results/import-template', requirePermission('exams', 'view'), adminDownloadExamResultsImportTemplate);
+router.post('/exams/:id/results/import', requirePermission('exams', 'create'), upload.single('file'), adminImportExamResults);
+router.post('/exams/:id/results/import-external', requirePermission('exams', 'create'), upload.single('file'), adminImportExternalExamResults);
+router.post('/exams/:id/import/preview', requirePermission('exams', 'create'), upload.single('file'), adminPreviewExamImport);
+router.post('/exams/:id/import/commit', requirePermission('exams', 'create'), adminCommitExamImport);
+router.get('/exams/:id/import/logs', requirePermission('exams', 'view'), adminGetExamImportLogs);
+router.post('/exams/:id/profile-sync/run', requirePermission('exams', 'edit'), adminRunExamProfileSync);
+router.get('/exams/:id/profile-sync/logs', requirePermission('exams', 'view'), adminGetExamProfileSyncLogs);
+router.get('/exams/:id/reports/export', requirePermission('exams', 'export'), requireSensitiveAction({ actionKey: 'students.export', moduleName: 'reports', actionName: 'exam_report_export', enforceExportRolePolicy: true }), adminExportExamReport);
+router.get('/exams/:id/events/export', requirePermission('exams', 'export'), requireSensitiveExport('reports', 'exam_events_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'exam_events_export', targetType: 'exam', targetParam: 'id' }), adminExportExamEvents);
+router.post('/exams/:id/preview/start', requirePermission('exams', 'create'), adminStartExamPreview);
+router.patch('/exams/:examId/reset-attempt/:userId', requirePermission('exams', 'edit'), adminResetExamAttempt);
+router.get('/exam-import-templates', requirePermission('exams', 'view'), adminGetExamImportTemplates);
+router.post('/exam-import-templates', requirePermission('exams', 'create'), adminCreateExamImportTemplate);
+router.put('/exam-import-templates/:id', requirePermission('exams', 'edit'), adminUpdateExamImportTemplate);
+router.delete('/exam-import-templates/:id', requirePermission('exams', 'delete'), requireDestructiveStepUp('exams', 'exam_import_template_delete'), adminDeleteExamImportTemplate);
+router.get('/exam-mapping-profiles', requirePermission('exams', 'view'), adminGetExamMappingProfiles);
+router.post('/exam-mapping-profiles', requirePermission('exams', 'create'), adminCreateExamMappingProfile);
+router.put('/exam-mapping-profiles/:id', requirePermission('exams', 'edit'), adminUpdateExamMappingProfile);
+router.delete('/exam-mapping-profiles/:id', requirePermission('exams', 'delete'), requireDestructiveStepUp('exams', 'exam_mapping_profile_delete'), adminDeleteExamMappingProfile);
+router.get('/exam-centers', requirePermission('exams', 'view'), adminGetExamCenters);
+router.post('/exam-centers', requirePermission('exams', 'create'), adminCreateExamCenter);
+router.put('/exam-centers/:id', requirePermission('exams', 'edit'), adminUpdateExamCenter);
+router.delete('/exam-centers/:id', requirePermission('exams', 'delete'), requireDestructiveStepUp('exams', 'exam_center_delete'), adminDeleteExamCenter);
+router.get('/exam-center-settings', requirePermission('exams', 'view'), adminGetExamCenterSettings);
+router.put('/exam-center-settings', requirePermission('exams', 'edit'), adminUpdateExamCenterSettings);
 
 /* ── Questions (per-exam) ── */
-router.get('/exams/:examId/questions', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetQuestions);
-router.post('/exams/:examId/questions', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, adminCreateQuestion);
-router.put('/exams/:examId/questions/reorder', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminReorderQuestions);
-router.put('/exams/:examId/questions/:questionId', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, adminUpdateQuestion);
-router.delete('/exams/:examId/questions/:questionId', authorize('superadmin', 'admin', 'moderator'), canEditExams, requireDestructiveStepUp('exams', 'exam_question_delete'), adminDeleteQuestion);
-router.post('/exams/:examId/questions/import-excel', authorize('superadmin', 'admin', 'moderator'), canEditExams, adminImportQuestionsFromExcel);
-router.get('/exams/:id/questions/template.xlsx', authorize('superadmin', 'admin', 'moderator', 'editor'), async (_req: Request, res: Response) => {
+router.get('/exams/:examId/questions', requirePermission('question_bank', 'view'), adminGetQuestions);
+router.post('/exams/:examId/questions', requirePermission('question_bank', 'create'), adminCreateQuestion);
+router.put('/exams/:examId/questions/reorder', requirePermission('question_bank', 'edit'), adminReorderQuestions);
+router.put('/exams/:examId/questions/:questionId', requirePermission('question_bank', 'edit'), adminUpdateQuestion);
+router.delete('/exams/:examId/questions/:questionId', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('exams', 'exam_question_delete'), adminDeleteQuestion);
+router.post('/exams/:examId/questions/import-excel', requirePermission('question_bank', 'create'), adminImportQuestionsFromExcel);
+router.get('/exams/:id/questions/template.xlsx', requirePermission('question_bank', 'view'), async (_req: Request, res: Response) => {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Questions');
     ws.columns = [
@@ -897,20 +897,20 @@ router.get('/exams/:id/questions/template.xlsx', authorize('superadmin', 'admin'
 });
 
 /* ── Global Question Bank ── */
-router.get('/question-bank', authorize('superadmin', 'admin', 'moderator', 'editor'), getQuestions);
-router.get('/question-bank/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), getQuestionById);
-router.post('/question-bank', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, createQuestion);
-router.put('/question-bank/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, updateQuestion);
-router.delete('/question-bank/:id', authorize('superadmin', 'admin', 'moderator'), canDeleteData, requireDestructiveStepUp('question_bank', 'question_delete'), deleteQuestion);
-router.post('/question-bank/:id/approve', authorize('superadmin', 'admin', 'moderator'), canEditExams, approveQuestion);
-router.post('/question-bank/:id/lock', authorize('superadmin', 'admin', 'moderator'), canEditExams, lockQuestion);
-router.post('/question-bank/:id/revert/:revisionNo', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, revertQuestionRevision);
-router.post('/question-bank/search/similar', authorize('superadmin', 'admin', 'moderator', 'editor'), searchSimilarQuestions);
-router.post('/question-bank/bulk-import', authorize('superadmin', 'admin', 'moderator'), canEditExams, upload.single('file'), bulkImportQuestions);
-router.get('/question-bank/import/:jobId', authorize('superadmin', 'admin', 'moderator', 'editor'), getQuestionImportJob);
-router.post('/question-bank/export', authorize('superadmin', 'admin', 'moderator', 'editor'), requireSensitiveExport('question_bank', 'bank_export'), trackSensitiveExport({ moduleName: 'question_bank', actionName: 'bank_export' }), exportQuestions);
-router.post('/question-bank/media/sign-upload', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, signQuestionMediaUpload);
-router.post('/question-bank/media', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, createQuestionMedia);
+router.get('/question-bank', requirePermission('question_bank', 'view'), getQuestions);
+router.get('/question-bank/:id', requirePermission('question_bank', 'view'), getQuestionById);
+router.post('/question-bank', requirePermission('question_bank', 'create'), createQuestion);
+router.put('/question-bank/:id', requirePermission('question_bank', 'edit'), updateQuestion);
+router.delete('/question-bank/:id', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('question_bank', 'question_delete'), deleteQuestion);
+router.post('/question-bank/:id/approve', requirePermission('question_bank', 'approve'), approveQuestion);
+router.post('/question-bank/:id/lock', requirePermission('question_bank', 'edit'), lockQuestion);
+router.post('/question-bank/:id/revert/:revisionNo', requirePermission('question_bank', 'edit'), revertQuestionRevision);
+router.post('/question-bank/search/similar', requirePermission('question_bank', 'view'), searchSimilarQuestions);
+router.post('/question-bank/bulk-import', requirePermission('question_bank', 'bulk'), upload.single('file'), bulkImportQuestions);
+router.get('/question-bank/import/:jobId', requirePermission('question_bank', 'view'), getQuestionImportJob);
+router.post('/question-bank/export', requirePermission('question_bank', 'export'), requireSensitiveExport('question_bank', 'bank_export'), trackSensitiveExport({ moduleName: 'question_bank', actionName: 'bank_export' }), exportQuestions);
+router.post('/question-bank/media/sign-upload', requirePermission('question_bank', 'create'), signQuestionMediaUpload);
+router.post('/question-bank/media', requirePermission('question_bank', 'create'), createQuestionMedia);
 // Consolidated under /question-bank
 
 /* ── Universities (Full CRUD) ── */
@@ -954,161 +954,161 @@ router.delete('/university-clusters/:id/permanent', authorize('superadmin', 'adm
 /* ── Legacy News CRUD ── */
 
 /* ── News Hub (spec aliases) ── */
-router.get('/news/dashboard', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2Dashboard);
-router.post('/news/fetch-now', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2FetchNow);
-router.get('/news', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetItems);
-router.post('/news', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2CreateItem);
-router.post('/news/bulk-approve', authorize('superadmin', 'admin', 'moderator'), adminNewsV2BulkApprove);
-router.post('/news/bulk-reject', authorize('superadmin', 'admin', 'moderator'), adminNewsV2BulkReject);
-router.get('/news/settings', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetAllSettings);
-router.put('/news/settings', authorize('superadmin', 'admin', 'moderator'), adminNewsV2UpdateAllSettings);
-router.patch('/news/settings', authorize('superadmin', 'admin', 'moderator'), adminNewsV2UpdateAllSettings);
-router.get('/news/settings/appearance', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetAppearanceSettings);
-router.put('/news/settings/appearance', authorize('superadmin', 'admin', 'moderator'), adminNewsV2UpdateAppearanceSettings);
-router.get('/news/settings/ai', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetAiSettings);
-router.put('/news/settings/ai', authorize('superadmin', 'admin', 'moderator'), adminNewsV2UpdateAiSettings);
-router.get('/news/settings/share', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetShareSettings);
-router.put('/news/settings/share', authorize('superadmin', 'admin', 'moderator'), adminNewsV2UpdateShareSettings);
-router.get('/news/notices', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent'), canManageTickets, adminGetNotices);
-router.post('/news/notices', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminCreateNotice);
-router.patch('/news/notices/:id/toggle', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminToggleNotice);
-router.get('/news/media', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetMedia);
-router.post('/news/media/upload', authorize('superadmin', 'admin', 'moderator', 'editor'), uploadMiddleware.single('file'), adminNewsV2UploadMedia);
-router.post('/news/media/from-url', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2MediaFromUrl);
-router.delete('/news/media/:id', authorize('superadmin', 'admin', 'moderator'), requireDestructiveStepUp('news', 'news_media_delete'), adminNewsV2DeleteMedia);
-router.get('/news/export', authorize('superadmin', 'admin', 'moderator', 'editor'), requireSensitiveExport('news', 'news_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'news_export' }), adminNewsV2ExportNews);
-router.get('/news/exports/sources', authorize('superadmin', 'admin', 'moderator', 'editor'), requireSensitiveExport('news', 'rss_sources_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'rss_sources_export' }), adminNewsV2ExportSources);
-router.get('/news/exports/logs', authorize('superadmin', 'admin', 'moderator', 'editor'), requireSensitiveExport('news', 'news_logs_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'news_logs_export' }), adminNewsV2ExportLogs);
-router.get('/news/audit-logs', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetAuditLogs);
-router.get('/news/sources', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetSources);
-router.post('/news/sources', authorize('superadmin', 'admin', 'moderator'), adminNewsV2CreateSource);
-router.put('/news/sources/:id', authorize('superadmin', 'admin', 'moderator'), adminNewsV2UpdateSource);
-router.delete('/news/sources/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('news', 'source_delete'), adminNewsV2DeleteSource);
-router.post('/news/sources/:id/test', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2TestSource);
-router.post('/news/sources/reorder', authorize('superadmin', 'admin', 'moderator'), adminNewsV2ReorderSources);
-router.post('/news/:id/ai-check', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2AiCheckItem);
-router.post('/news/:id/approve', authorize('superadmin', 'admin', 'moderator'), adminNewsV2Approve);
-router.post('/news/:id/approve-publish', authorize('superadmin', 'admin', 'moderator'), adminNewsV2ApprovePublish);
-router.post('/news/:id/reject', authorize('superadmin', 'admin', 'moderator'), adminNewsV2Reject);
-router.post('/news/:id/schedule', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2Schedule);
-router.post('/news/:id/publish-now', authorize('superadmin', 'admin', 'moderator'), adminNewsV2PublishNow);
-router.post('/news/:id/publish-send', authorize('superadmin', 'admin', 'moderator'), requireSensitiveAction({ actionKey: 'news.publish_breaking', moduleName: 'news', actionName: 'publish_send' }), adminNewsV2PublishSend);
-router.post('/news/:id/move-to-draft', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2MoveToDraft);
-router.post('/news/:id/archive', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2Archive);
-router.post('/news/:id/restore', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2RestoreItem);
-router.post('/news/:id/convert-to-notice', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent'), canManageTickets, adminNewsV2ConvertToNotice);
-router.post('/news/:id/publish-anyway', authorize('superadmin', 'admin', 'moderator'), adminNewsV2PublishAnyway);
-router.post('/news/:id/merge', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2MergeDuplicate);
-router.post('/news/:id/submit-review', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2SubmitReview);
-router.get('/news/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2GetItemById);
-router.put('/news/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminNewsV2UpdateItem);
-router.delete('/news/:id', authorize('superadmin', 'admin', 'moderator'), canDeleteData, requireDestructiveStepUp('news', 'news_delete'), requireTwoPersonForNewsDelete, adminNewsV2DeleteItem);
-router.delete('/news/:id/purge', authorize('superadmin', 'admin', 'moderator'), canDeleteData, requireDestructiveStepUp('news', 'news_delete'), requireTwoPersonForNewsDelete, adminNewsV2PurgeItem);
+router.get('/news/dashboard', requirePermission('news', 'view'), adminNewsV2Dashboard);
+router.post('/news/fetch-now', requirePermission('news', 'create'), adminNewsV2FetchNow);
+router.get('/news', requirePermission('news', 'view'), adminNewsV2GetItems);
+router.post('/news', requirePermission('news', 'create'), adminNewsV2CreateItem);
+router.post('/news/bulk-approve', requirePermission('news', 'bulk'), adminNewsV2BulkApprove);
+router.post('/news/bulk-reject', requirePermission('news', 'bulk'), adminNewsV2BulkReject);
+router.get('/news/settings', requirePermission('news', 'view'), adminNewsV2GetAllSettings);
+router.put('/news/settings', requirePermission('news', 'edit'), adminNewsV2UpdateAllSettings);
+router.patch('/news/settings', requirePermission('news', 'edit'), adminNewsV2UpdateAllSettings);
+router.get('/news/settings/appearance', requirePermission('news', 'view'), adminNewsV2GetAppearanceSettings);
+router.put('/news/settings/appearance', requirePermission('news', 'edit'), adminNewsV2UpdateAppearanceSettings);
+router.get('/news/settings/ai', requirePermission('news', 'view'), adminNewsV2GetAiSettings);
+router.put('/news/settings/ai', requirePermission('news', 'edit'), adminNewsV2UpdateAiSettings);
+router.get('/news/settings/share', requirePermission('news', 'view'), adminNewsV2GetShareSettings);
+router.put('/news/settings/share', requirePermission('news', 'edit'), adminNewsV2UpdateShareSettings);
+router.get('/news/notices', requirePermission('support_center', 'view'), adminGetNotices);
+router.post('/news/notices', requirePermission('support_center', 'create'), adminCreateNotice);
+router.patch('/news/notices/:id/toggle', requirePermission('support_center', 'edit'), adminToggleNotice);
+router.get('/news/media', requirePermission('news', 'view'), adminNewsV2GetMedia);
+router.post('/news/media/upload', requirePermission('news', 'create'), uploadMiddleware.single('file'), adminNewsV2UploadMedia);
+router.post('/news/media/from-url', requirePermission('news', 'create'), adminNewsV2MediaFromUrl);
+router.delete('/news/media/:id', requirePermission('news', 'delete'), requireDestructiveStepUp('news', 'news_media_delete'), adminNewsV2DeleteMedia);
+router.get('/news/export', requirePermission('news', 'export'), requireSensitiveExport('news', 'news_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'news_export' }), adminNewsV2ExportNews);
+router.get('/news/exports/sources', requirePermission('news', 'export'), requireSensitiveExport('news', 'rss_sources_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'rss_sources_export' }), adminNewsV2ExportSources);
+router.get('/news/exports/logs', requirePermission('news', 'export'), requireSensitiveExport('news', 'news_logs_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'news_logs_export' }), adminNewsV2ExportLogs);
+router.get('/news/audit-logs', requirePermission('news', 'view'), adminNewsV2GetAuditLogs);
+router.get('/news/sources', requirePermission('news', 'view'), adminNewsV2GetSources);
+router.post('/news/sources', requirePermission('news', 'create'), adminNewsV2CreateSource);
+router.put('/news/sources/:id', requirePermission('news', 'edit'), adminNewsV2UpdateSource);
+router.delete('/news/sources/:id', requirePermission('news', 'delete'), requireDestructiveStepUp('news', 'source_delete'), adminNewsV2DeleteSource);
+router.post('/news/sources/:id/test', requirePermission('news', 'view'), adminNewsV2TestSource);
+router.post('/news/sources/reorder', requirePermission('news', 'edit'), adminNewsV2ReorderSources);
+router.post('/news/:id/ai-check', requirePermission('news', 'view'), adminNewsV2AiCheckItem);
+router.post('/news/:id/approve', requirePermission('news', 'approve'), adminNewsV2Approve);
+router.post('/news/:id/approve-publish', requirePermission('news', 'approve'), adminNewsV2ApprovePublish);
+router.post('/news/:id/reject', requirePermission('news', 'approve'), adminNewsV2Reject);
+router.post('/news/:id/schedule', requirePermission('news', 'publish'), adminNewsV2Schedule);
+router.post('/news/:id/publish-now', requirePermission('news', 'publish'), adminNewsV2PublishNow);
+router.post('/news/:id/publish-send', requirePermission('news', 'publish'), requireSensitiveAction({ actionKey: 'news.publish_breaking', moduleName: 'news', actionName: 'publish_send' }), adminNewsV2PublishSend);
+router.post('/news/:id/move-to-draft', requirePermission('news', 'edit'), adminNewsV2MoveToDraft);
+router.post('/news/:id/archive', requirePermission('news', 'edit'), adminNewsV2Archive);
+router.post('/news/:id/restore', requirePermission('news', 'edit'), adminNewsV2RestoreItem);
+router.post('/news/:id/convert-to-notice', requirePermission('support_center', 'create'), adminNewsV2ConvertToNotice);
+router.post('/news/:id/publish-anyway', requirePermission('news', 'publish'), adminNewsV2PublishAnyway);
+router.post('/news/:id/merge', requirePermission('news', 'edit'), adminNewsV2MergeDuplicate);
+router.post('/news/:id/submit-review', requirePermission('news', 'edit'), adminNewsV2SubmitReview);
+router.get('/news/:id', requirePermission('news', 'view'), adminNewsV2GetItemById);
+router.put('/news/:id', requirePermission('news', 'edit'), adminNewsV2UpdateItem);
+router.delete('/news/:id', requirePermission('news', 'delete'), requireDestructiveStepUp('news', 'news_delete'), requireTwoPersonForNewsDelete, adminNewsV2DeleteItem);
+router.delete('/news/:id/purge', requirePermission('news', 'delete'), requireDestructiveStepUp('news', 'news_delete'), requireTwoPersonForNewsDelete, adminNewsV2PurgeItem);
 
 /* ── News Categories ── */
-router.get('/news-category', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetNewsCategories);
-router.post('/news-category', authorize('superadmin', 'admin'), adminCreateNewsCategory);
-router.put('/news-category/:id', authorize('superadmin', 'admin'), adminUpdateNewsCategory);
-router.delete('/news-category/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('news', 'category_delete'), adminDeleteNewsCategory);
-router.patch('/news-category/:id/toggle', authorize('superadmin', 'admin'), adminToggleNewsCategory);
+router.get('/news-category', requirePermission('news', 'view'), adminGetNewsCategories);
+router.post('/news-category', requirePermission('news', 'create'), adminCreateNewsCategory);
+router.put('/news-category/:id', requirePermission('news', 'edit'), adminUpdateNewsCategory);
+router.delete('/news-category/:id', requirePermission('news', 'delete'), requireDestructiveStepUp('news', 'category_delete'), adminDeleteNewsCategory);
+router.patch('/news-category/:id/toggle', requirePermission('news', 'edit'), adminToggleNewsCategory);
 
 /* ── News V2 ── */
 
 
 /* ── Service Categories ── */
-router.get('/service-categories', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetCategories);
-router.post('/service-categories', authorize('superadmin', 'admin'), adminCreateCategory);
-router.put('/service-categories/:id', authorize('superadmin', 'admin'), adminUpdateCategory);
-router.delete('/service-categories/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('services', 'service_category_delete'), adminDeleteCategory);
+router.get('/service-categories', requirePermission('resources', 'view'), adminGetCategories);
+router.post('/service-categories', requirePermission('resources', 'create'), adminCreateCategory);
+router.put('/service-categories/:id', requirePermission('resources', 'edit'), adminUpdateCategory);
+router.delete('/service-categories/:id', requirePermission('resources', 'delete'), requireDestructiveStepUp('services', 'service_category_delete'), adminDeleteCategory);
 
 /* ── Services CRUD ── */
-router.get('/services', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetServices);
-router.post('/services', authorize('superadmin', 'admin', 'moderator'), adminCreateService);
-router.put('/services/:id', authorize('superadmin', 'admin', 'moderator'), adminUpdateService);
-router.delete('/services/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('services', 'service_delete'), adminDeleteService);
-router.post('/services/reorder', authorize('superadmin', 'admin', 'moderator'), adminReorderServices);
-router.patch('/services/:id/toggle-status', authorize('superadmin', 'admin', 'moderator'), adminToggleServiceStatus);
-router.patch('/services/:id/toggle-featured', authorize('superadmin', 'admin', 'moderator'), adminToggleServiceFeatured);
+router.get('/services', requirePermission('resources', 'view'), adminGetServices);
+router.post('/services', requirePermission('resources', 'create'), adminCreateService);
+router.put('/services/:id', requirePermission('resources', 'edit'), adminUpdateService);
+router.delete('/services/:id', requirePermission('resources', 'delete'), requireDestructiveStepUp('services', 'service_delete'), adminDeleteService);
+router.post('/services/reorder', requirePermission('resources', 'edit'), adminReorderServices);
+router.patch('/services/:id/toggle-status', requirePermission('resources', 'edit'), adminToggleServiceStatus);
+router.patch('/services/:id/toggle-featured', requirePermission('resources', 'edit'), adminToggleServiceFeatured);
 
 /* ── Resources CRUD ── */
-router.get('/resources', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetResources);
-router.post('/resources', authorize('superadmin', 'admin', 'moderator', 'editor'), adminCreateResource);
-router.put('/resources/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminUpdateResource);
-router.delete('/resources/:id', authorize('superadmin', 'admin', 'moderator'), canDeleteData, requireDestructiveStepUp('resources', 'resource_delete'), adminDeleteResource);
-router.patch('/resources/:id/toggle-publish', authorize('superadmin', 'admin', 'moderator', 'editor'), adminToggleResourcePublish);
-router.patch('/resources/:id/toggle-featured', authorize('superadmin', 'admin', 'moderator', 'editor'), adminToggleResourceFeatured);
-router.get('/resource-settings', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetResourceSettings);
-router.put('/resource-settings', authorize('superadmin', 'admin', 'moderator'), adminUpdateResourceSettings);
+router.get('/resources', requirePermission('resources', 'view'), adminGetResources);
+router.post('/resources', requirePermission('resources', 'create'), adminCreateResource);
+router.put('/resources/:id', requirePermission('resources', 'edit'), adminUpdateResource);
+router.delete('/resources/:id', requirePermission('resources', 'delete'), requireDestructiveStepUp('resources', 'resource_delete'), adminDeleteResource);
+router.patch('/resources/:id/toggle-publish', requirePermission('resources', 'publish'), adminToggleResourcePublish);
+router.patch('/resources/:id/toggle-featured', requirePermission('resources', 'edit'), adminToggleResourceFeatured);
+router.get('/resource-settings', requirePermission('resources', 'view'), adminGetResourceSettings);
+router.put('/resource-settings', requirePermission('resources', 'edit'), adminUpdateResourceSettings);
 
 /* ── Contact Messages ── */
-router.get('/contact-messages', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminGetContactMessages);
-router.get('/contact-messages/:id', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminGetContactMessageById);
-router.patch('/contact-messages/:id', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminUpdateContactMessage);
-router.post('/contact-messages/:id/mark-read', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminMarkContactMessageRead);
-router.post('/contact-messages/:id/resolve', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminResolveContactMessage);
-router.post('/contact-messages/:id/archive', authorize('superadmin', 'admin', 'moderator', 'support_agent'), requireDestructiveStepUp('contact_messages', 'contact_message_archive'), adminArchiveContactMessage);
-router.delete('/contact-messages/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('contact_messages', 'contact_message_delete'), adminDeleteContactMessage);
+router.get('/contact-messages', requirePermission('support_center', 'view'), adminGetContactMessages);
+router.get('/contact-messages/:id', requirePermission('support_center', 'view'), adminGetContactMessageById);
+router.patch('/contact-messages/:id', requirePermission('support_center', 'edit'), adminUpdateContactMessage);
+router.post('/contact-messages/:id/mark-read', requirePermission('support_center', 'edit'), adminMarkContactMessageRead);
+router.post('/contact-messages/:id/resolve', requirePermission('support_center', 'approve'), adminResolveContactMessage);
+router.post('/contact-messages/:id/archive', requirePermission('support_center', 'delete'), requireDestructiveStepUp('contact_messages', 'contact_message_archive'), adminArchiveContactMessage);
+router.delete('/contact-messages/:id', requirePermission('support_center', 'delete'), requireDestructiveStepUp('contact_messages', 'contact_message_delete'), adminDeleteContactMessage);
 
 /* ── Banners & Config ── */
-router.get('/banners', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetBanners);
-router.get('/banners/active', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetBanners);
-router.post('/banners/sign-upload', authorize('superadmin', 'admin', 'moderator'), adminSignBannerUpload);
-router.post('/banners', authorize('superadmin', 'admin', 'moderator'), adminCreateBanner);
-router.put('/banners/:id', authorize('superadmin', 'admin', 'moderator'), adminUpdateBanner);
-router.delete('/banners/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('site_settings', 'banner_delete'), adminDeleteBanner);
-router.put('/banners/:id/publish', authorize('superadmin', 'admin', 'moderator'), adminPublishBanner);
+router.get('/banners', requirePermission('banner_manager', 'view'), adminGetBanners);
+router.get('/banners/active', requirePermission('banner_manager', 'view'), adminGetBanners);
+router.post('/banners/sign-upload', requirePermission('banner_manager', 'create'), adminSignBannerUpload);
+router.post('/banners', requirePermission('banner_manager', 'create'), adminCreateBanner);
+router.put('/banners/:id', requirePermission('banner_manager', 'edit'), adminUpdateBanner);
+router.delete('/banners/:id', requirePermission('banner_manager', 'delete'), requireDestructiveStepUp('site_settings', 'banner_delete'), adminDeleteBanner);
+router.put('/banners/:id/publish', requirePermission('banner_manager', 'publish'), adminPublishBanner);
 
 /* ── Home Alerts (Live Ticker) ── */
-router.get('/home-alerts', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetAlerts);
-router.post('/home-alerts', authorize('superadmin', 'admin', 'moderator'), adminCreateAlert);
-router.put('/home-alerts/:id', authorize('superadmin', 'admin', 'moderator'), adminUpdateAlert);
-router.delete('/home-alerts/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('site_settings', 'home_alert_delete'), adminDeleteAlert);
-router.patch('/home-alerts/:id/toggle', authorize('superadmin', 'admin', 'moderator'), adminToggleAlert);
-router.put('/home-alerts/:id/publish', authorize('superadmin', 'admin', 'moderator'), adminPublishAlert);
+router.get('/home-alerts', requirePermission('home_control', 'view'), adminGetAlerts);
+router.post('/home-alerts', requirePermission('home_control', 'create'), adminCreateAlert);
+router.put('/home-alerts/:id', requirePermission('home_control', 'edit'), adminUpdateAlert);
+router.delete('/home-alerts/:id', requirePermission('home_control', 'delete'), requireDestructiveStepUp('site_settings', 'home_alert_delete'), adminDeleteAlert);
+router.patch('/home-alerts/:id/toggle', requirePermission('home_control', 'edit'), adminToggleAlert);
+router.put('/home-alerts/:id/publish', requirePermission('home_control', 'publish'), adminPublishAlert);
 // Consolidated under /home-alerts
 // Deprecated aliases kept temporarily for legacy callers.
-router.get('/alerts', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetAlerts);
-router.post('/alerts', authorize('superadmin', 'admin', 'moderator'), adminCreateAlert);
-router.put('/alerts/:id', authorize('superadmin', 'admin', 'moderator'), adminUpdateAlert);
-router.delete('/alerts/:id', authorize('superadmin', 'admin'), canDeleteData, requireDestructiveStepUp('site_settings', 'alert_delete'), adminDeleteAlert);
-router.patch('/alerts/:id/toggle', authorize('superadmin', 'admin', 'moderator'), adminToggleAlert);
-router.put('/alerts/:id/publish', authorize('superadmin', 'admin', 'moderator'), adminPublishAlert);
+router.get('/alerts', requirePermission('home_control', 'view'), adminGetAlerts);
+router.post('/alerts', requirePermission('home_control', 'create'), adminCreateAlert);
+router.put('/alerts/:id', requirePermission('home_control', 'edit'), adminUpdateAlert);
+router.delete('/alerts/:id', requirePermission('home_control', 'delete'), requireDestructiveStepUp('site_settings', 'alert_delete'), adminDeleteAlert);
+router.patch('/alerts/:id/toggle', requirePermission('home_control', 'edit'), adminToggleAlert);
+router.put('/alerts/:id/publish', requirePermission('home_control', 'publish'), adminPublishAlert);
 
-router.get('/home-config', authorize('superadmin', 'admin', 'editor'), getHomeConfig);
-router.put('/home-config', authorize('superadmin', 'admin', 'editor'), updateHomeConfig);
+router.get('/home-config', requirePermission('home_control', 'view'), getHomeConfig);
+router.put('/home-config', requirePermission('home_control', 'edit'), updateHomeConfig);
 
 /* ── Dynamic Home System ── */
-router.get('/home-settings', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetHomeSettings);
-router.put('/home-settings', authorize('superadmin', 'admin', 'moderator', 'editor'), adminUpdateHomeSettings);
-router.get('/home-settings/defaults', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetHomeSettingsDefaults);
-router.post('/home-settings/reset-section', authorize('superadmin', 'admin', 'moderator', 'editor'), adminResetHomeSettingsSection);
-router.put('/home/settings', authorize('superadmin', 'admin'), uploadMiddleware.fields([{ name: 'logo', maxCount: 1 }, { name: 'favicon', maxCount: 1 }]), updateSettings);
-router.put('/home', authorize('superadmin', 'admin'), updateHome);
-router.put('/home/hero', authorize('superadmin', 'admin', 'moderator', 'editor'), uploadMiddleware.single('file'), updateHero);
-router.put('/home/banner', authorize('superadmin', 'admin'), uploadMiddleware.single('image'), updatePromotionalBanner);
-router.put('/home/announcement', authorize('superadmin', 'admin', 'moderator'), updateAnnouncement);
-router.put('/home/stats', authorize('superadmin', 'admin'), updateStats);
+router.get('/home-settings', requirePermission('home_control', 'view'), adminGetHomeSettings);
+router.put('/home-settings', requirePermission('home_control', 'edit'), adminUpdateHomeSettings);
+router.get('/home-settings/defaults', requirePermission('home_control', 'view'), adminGetHomeSettingsDefaults);
+router.post('/home-settings/reset-section', requirePermission('home_control', 'edit'), adminResetHomeSettingsSection);
+router.put('/home/settings', requirePermission('site_settings', 'edit'), uploadMiddleware.fields([{ name: 'logo', maxCount: 1 }, { name: 'favicon', maxCount: 1 }]), updateSettings);
+router.put('/home', requirePermission('home_control', 'edit'), updateHome);
+router.put('/home/hero', requirePermission('home_control', 'edit'), uploadMiddleware.single('file'), updateHero);
+router.put('/home/banner', requirePermission('banner_manager', 'edit'), uploadMiddleware.single('image'), updatePromotionalBanner);
+router.put('/home/announcement', requirePermission('home_control', 'edit'), updateAnnouncement);
+router.put('/home/stats', requirePermission('site_settings', 'edit'), updateStats);
 
 /* ── Media ── */
-router.post('/upload', authorize('superadmin', 'admin', 'moderator', 'editor'), uploadMiddleware.single('file'), uploadMedia);
+router.post('/upload', requirePermission('site_settings', 'create'), uploadMiddleware.single('file'), uploadMedia);
 
 /* ── Student & User Management ── */
-router.get('/users/admin/profile', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetAdminProfile);
-router.put('/users/admin/profile', authorize('superadmin', 'admin', 'moderator', 'editor'), adminUpdateAdminProfile);
+router.get('/users/admin/profile', requirePermission('team_access_control', 'view'), adminGetAdminProfile);
+router.put('/users/admin/profile', requirePermission('team_access_control', 'edit'), adminUpdateAdminProfile);
 
-router.get('/users', authorize('superadmin'), adminGetUsers);
-router.get('/users/activity', authorize('superadmin', 'admin'), adminGetUserActivity);
-router.get('/users/stream', authorize('superadmin', 'admin'), adminUserStream);
-router.get('/users/:id', authorize('superadmin', 'admin'), adminGetUserById);
-router.post('/users', authorize('superadmin'), adminCreateUser);
-router.put('/users/:id', authorize('superadmin'), adminUpdateUser);
-router.put('/users/:id/role', authorize('superadmin'), requireSecurityStepUp('users', 'role_update'), adminUpdateUserRole);
-router.patch('/users/:id/toggle-status', authorize('superadmin', 'admin'), adminToggleUserStatus);
-router.delete('/users/:id', authorize('superadmin'), requireDestructiveStepUp('users', 'user_delete'), adminDeleteUser);
-router.patch('/users/:id/set-status', authorize('superadmin'), adminSetUserStatus);
-router.patch('/users/:id/permissions', authorize('superadmin'), adminSetUserPermissions);
-router.post('/users/bulk-action', authorize('superadmin'), adminBulkUserAction);
-router.get('/audit-logs', authorize('superadmin', 'admin', 'moderator', 'editor'), (req: Request, res: Response) => {
+router.get('/users', requirePermission('team_access_control', 'view'), adminGetUsers);
+router.get('/users/activity', requirePermission('team_access_control', 'view'), adminGetUserActivity);
+router.get('/users/stream', requirePermission('team_access_control', 'view'), adminUserStream);
+router.get('/users/:id', requirePermission('team_access_control', 'view'), adminGetUserById);
+router.post('/users', requirePermission('team_access_control', 'create'), adminCreateUser);
+router.put('/users/:id', requirePermission('team_access_control', 'edit'), adminUpdateUser);
+router.put('/users/:id/role', requirePermission('team_access_control', 'edit'), requireSecurityStepUp('users', 'role_update'), adminUpdateUserRole);
+router.patch('/users/:id/toggle-status', requirePermission('team_access_control', 'edit'), adminToggleUserStatus);
+router.delete('/users/:id', requirePermission('team_access_control', 'delete'), requireDestructiveStepUp('users', 'user_delete'), adminDeleteUser);
+router.patch('/users/:id/set-status', requirePermission('team_access_control', 'edit'), adminSetUserStatus);
+router.patch('/users/:id/permissions', requirePermission('team_access_control', 'edit'), adminSetUserPermissions);
+router.post('/users/bulk-action', requirePermission('team_access_control', 'bulk'), adminBulkUserAction);
+router.get('/audit-logs', requirePermission('security_logs', 'view'), (req: Request, res: Response) => {
     const scope = String(req.query.scope || '').trim().toLowerCase();
     const moduleScope = String(req.query.module || '').trim().toLowerCase();
     if (scope === 'news' || moduleScope === 'news') {
@@ -1126,354 +1126,353 @@ router.get('/audit-logs', authorize('superadmin', 'admin', 'moderator', 'editor'
 });
 
 /* ── Extended Student Management ── */
-router.get('/students', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminGetStudents);
-router.post('/students', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminCreateStudent);
-router.put('/students/:id', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminUpdateStudent);
-router.post('/students/bulk-action', authorize('superadmin', 'admin', 'moderator'), canManageStudents, requireTwoPersonForStudentBulkDelete, adminBulkStudentAction);
-router.post('/students/bulk-import', authorize('superadmin', 'admin', 'moderator'), canManageStudents, upload.single('file'), adminBulkImportStudents);
-router.put('/students/:id/subscription', authorize('superadmin', 'admin', 'moderator'), canManageStudents, subscriptionActionRateLimiter, adminLegacyAssignStudentSubscription);
+router.get('/students', requirePermission('students_groups', 'view'), adminGetStudents);
+router.post('/students', requirePermission('students_groups', 'create'), adminCreateStudent);
+router.put('/students/:id', requirePermission('students_groups', 'edit'), adminUpdateStudent);
+router.post('/students/bulk-action', requirePermission('students_groups', 'bulk'), requireTwoPersonForStudentBulkDelete, adminBulkStudentAction);
+router.post('/students/bulk-import', requirePermission('students_groups', 'create'), upload.single('file'), adminBulkImportStudents);
+router.put('/students/:id/subscription', requirePermission('students_groups', 'edit'), subscriptionActionRateLimiter, adminLegacyAssignStudentSubscription);
 /* ── Extracted Admin Features ── */
-router.post('/users/:id/reset-password', authorize('superadmin', 'admin'), requireSecurityStepUp('users', 'password_reset'), adminResetUserPassword);
-router.post('/students/:id/reset-password', authorize('superadmin', 'admin'), canManageStudents, requireSecurityStepUp('students_groups', 'password_reset'), adminResetUserPassword);
-router.get('/students/profile-requests', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminGetProfileUpdateRequests);
-router.post('/students/profile-requests/:id/approve', authorize('superadmin', 'admin'), canManageStudents, adminApproveProfileUpdateRequest);
-router.post('/students/profile-requests/:id/reject', authorize('superadmin', 'admin'), canManageStudents, adminRejectProfileUpdateRequest);
+router.post('/users/:id/reset-password', requirePermission('team_access_control', 'edit'), requireSecurityStepUp('users', 'password_reset'), adminResetUserPassword);
+router.post('/students/:id/reset-password', requirePermission('students_groups', 'edit'), requireSecurityStepUp('students_groups', 'password_reset'), adminResetUserPassword);
+router.get('/students/profile-requests', requirePermission('students_groups', 'view'), adminGetProfileUpdateRequests);
+router.post('/students/profile-requests/:id/approve', requirePermission('students_groups', 'approve'), adminApproveProfileUpdateRequest);
+router.post('/students/profile-requests/:id/reject', requirePermission('students_groups', 'approve'), adminRejectProfileUpdateRequest);
 
 /* ── Student Import/Export ── */
-router.get('/students/import/template', authorize('superadmin', 'admin', 'moderator', 'editor'), adminDownloadStudentTemplate);
-router.post('/students/import/init', authorize('superadmin', 'admin'), upload.single('file'), adminInitStudentImport);
-router.get('/students/import/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetStudentImportJob);
-router.post('/students/import/:id/validate', authorize('superadmin', 'admin', 'moderator'), adminValidateStudentImport);
-router.post('/students/import/:id/commit', authorize('superadmin', 'admin'), adminCommitStudentImport);
+router.get('/students/import/template', requirePermission('students_groups', 'view'), adminDownloadStudentTemplate);
+router.post('/students/import/init', requirePermission('students_groups', 'create'), upload.single('file'), adminInitStudentImport);
+router.get('/students/import/:id', requirePermission('students_groups', 'view'), adminGetStudentImportJob);
+router.post('/students/import/:id/validate', requirePermission('students_groups', 'edit'), adminValidateStudentImport);
+router.post('/students/import/:id/commit', requirePermission('students_groups', 'create'), adminCommitStudentImport);
 
-router.get('/user-stream', authorize('superadmin', 'admin'), adminUserStream);
-router.get('/student-groups', authorize('superadmin', 'admin', 'moderator'), adminGetStudentGroups);
-router.get('/student-groups/export', authorize('superadmin', 'admin', 'moderator'), canViewReports, requireSensitiveExport('students_groups', 'student_groups_export', true), trackSensitiveExport({ moduleName: 'students_groups', actionName: 'student_groups_export' }), adminExportStudentGroups);
-router.post('/student-groups/import', authorize('superadmin', 'admin', 'moderator'), canManageStudents, upload.single('file'), adminImportStudentGroups);
-router.post('/student-groups', authorize('superadmin', 'admin', 'moderator'), adminCreateStudentGroup);
-router.put('/student-groups/:id', authorize('superadmin', 'admin', 'moderator'), adminUpdateStudentGroup);
-router.delete('/student-groups/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('students_groups', 'student_group_delete'), adminDeleteStudentGroup);
+router.get('/user-stream', requirePermission('team_access_control', 'view'), adminUserStream);
+router.get('/student-groups', requirePermission('students_groups', 'view'), adminGetStudentGroups);
+router.get('/student-groups/export', requirePermission('students_groups', 'export'), requireSensitiveExport('students_groups', 'student_groups_export', true), trackSensitiveExport({ moduleName: 'students_groups', actionName: 'student_groups_export' }), adminExportStudentGroups);
+router.post('/student-groups/import', requirePermission('students_groups', 'create'), upload.single('file'), adminImportStudentGroups);
+router.post('/student-groups', requirePermission('students_groups', 'create'), adminCreateStudentGroup);
+router.put('/student-groups/:id', requirePermission('students_groups', 'edit'), adminUpdateStudentGroup);
+router.delete('/student-groups/:id', requirePermission('students_groups', 'delete'), requireDestructiveStepUp('students_groups', 'student_group_delete'), adminDeleteStudentGroup);
 
 /* ── Subscription Plans ── */
-router.get('/subscription-plans', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetSubscriptionPlans);
-router.get('/subscription-plans/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canManagePlans, requireSensitiveExport('subscription_plans', 'plans_export'), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'plans_export' }), adminExportSubscriptionPlans);
-router.post('/subscription-plans/:id/duplicate', authorize('superadmin', 'admin'), canManagePlans, adminDuplicateSubscriptionPlan);
-router.get('/subscription-plans/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetSubscriptionPlanById);
-router.post('/subscription-plans', authorize('superadmin', 'admin'), canManagePlans, adminCreateSubscriptionPlan);
-router.put('/subscription-plans/reorder', authorize('superadmin', 'admin'), canManagePlans, adminReorderSubscriptionPlans);
-router.put('/subscription-plans/:id', authorize('superadmin', 'admin'), canManagePlans, adminUpdateSubscriptionPlan);
-router.delete('/subscription-plans/:id', authorize('superadmin', 'admin'), canManagePlans, requireDestructiveStepUp('subscription_plans', 'plan_delete'), adminDeleteSubscriptionPlan);
-router.put('/subscription-plans/:id/toggle', authorize('superadmin', 'admin'), canManagePlans, adminToggleSubscriptionPlan);
-router.patch('/subscription-plans/:id/toggle', authorize('superadmin', 'admin'), canManagePlans, adminToggleSubscriptionPlan);
-router.put('/subscription-plans/:id/toggle-featured', authorize('superadmin', 'admin'), canManagePlans, adminToggleSubscriptionPlanFeatured);
-router.get('/subscription-settings', authorize('superadmin', 'admin', 'moderator', 'editor'), canManagePlans, adminGetSubscriptionSettings);
-router.put('/subscription-settings', authorize('superadmin', 'admin'), canManagePlans, adminUpdateSubscriptionSettings);
+router.get('/subscription-plans', requirePermission('subscription_plans', 'view'), adminGetSubscriptionPlans);
+router.get('/subscription-plans/export', requirePermission('subscription_plans', 'export'), requireSensitiveExport('subscription_plans', 'plans_export'), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'plans_export' }), adminExportSubscriptionPlans);
+router.post('/subscription-plans/:id/duplicate', requirePermission('subscription_plans', 'create'), adminDuplicateSubscriptionPlan);
+router.get('/subscription-plans/:id', requirePermission('subscription_plans', 'view'), adminGetSubscriptionPlanById);
+router.post('/subscription-plans', requirePermission('subscription_plans', 'create'), adminCreateSubscriptionPlan);
+router.put('/subscription-plans/reorder', requirePermission('subscription_plans', 'edit'), adminReorderSubscriptionPlans);
+router.put('/subscription-plans/:id', requirePermission('subscription_plans', 'edit'), adminUpdateSubscriptionPlan);
+router.delete('/subscription-plans/:id', requirePermission('subscription_plans', 'delete'), requireDestructiveStepUp('subscription_plans', 'plan_delete'), adminDeleteSubscriptionPlan);
+router.put('/subscription-plans/:id/toggle', requirePermission('subscription_plans', 'edit'), adminToggleSubscriptionPlan);
+router.patch('/subscription-plans/:id/toggle', requirePermission('subscription_plans', 'edit'), adminToggleSubscriptionPlan);
+router.put('/subscription-plans/:id/toggle-featured', requirePermission('subscription_plans', 'edit'), adminToggleSubscriptionPlanFeatured);
+router.get('/subscription-settings', requirePermission('subscription_plans', 'view'), adminGetSubscriptionSettings);
+router.put('/subscription-settings', requirePermission('subscription_plans', 'edit'), adminUpdateSubscriptionSettings);
 
-router.get('/user-subscriptions', authorize('superadmin', 'admin', 'moderator', 'editor'), canManagePlans, adminGetUserSubscriptions);
-router.post('/user-subscriptions/create', authorize('superadmin', 'admin'), canManagePlans, adminCreateUserSubscription);
-router.put('/user-subscriptions/:id/activate', authorize('superadmin', 'admin'), canManagePlans, adminActivateUserSubscription);
-router.put('/user-subscriptions/:id/suspend', authorize('superadmin', 'admin'), canManagePlans, adminSuspendUserSubscriptionById);
-router.put('/user-subscriptions/:id/expire', authorize('superadmin', 'admin'), canManagePlans, adminExpireUserSubscription);
-router.get('/user-subscriptions/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canManagePlans, requireSensitiveExport('subscription_plans', 'user_subscriptions_export', true), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'user_subscriptions_export' }), adminExportSubscriptions);
-router.post('/subscriptions/assign', authorize('superadmin', 'admin', 'moderator'), canManagePlans, subscriptionActionRateLimiter, adminAssignSubscription);
-router.post('/subscriptions/suspend', authorize('superadmin', 'admin', 'moderator'), canManagePlans, subscriptionActionRateLimiter, adminSuspendSubscription);
-router.get('/subscriptions/export', authorize('superadmin', 'admin', 'moderator', 'editor'), canManagePlans, requireSensitiveExport('subscription_plans', 'subscriptions_export', true), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'subscriptions_export' }), adminExportSubscriptions);
+router.get('/user-subscriptions', requirePermission('subscription_plans', 'view'), adminGetUserSubscriptions);
+router.post('/user-subscriptions/create', requirePermission('subscription_plans', 'create'), adminCreateUserSubscription);
+router.put('/user-subscriptions/:id/activate', requirePermission('subscription_plans', 'approve'), adminActivateUserSubscription);
+router.put('/user-subscriptions/:id/suspend', requirePermission('subscription_plans', 'approve'), adminSuspendUserSubscriptionById);
+router.put('/user-subscriptions/:id/expire', requirePermission('subscription_plans', 'approve'), adminExpireUserSubscription);
+router.get('/user-subscriptions/export', requirePermission('subscription_plans', 'export'), requireSensitiveExport('subscription_plans', 'user_subscriptions_export', true), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'user_subscriptions_export' }), adminExportSubscriptions);
+router.post('/subscriptions/assign', requirePermission('subscription_plans', 'create'), subscriptionActionRateLimiter, adminAssignSubscription);
+router.post('/subscriptions/suspend', requirePermission('subscription_plans', 'approve'), subscriptionActionRateLimiter, adminSuspendSubscription);
+router.get('/subscriptions/export', requirePermission('subscription_plans', 'export'), requireSensitiveExport('subscription_plans', 'subscriptions_export', true), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'subscriptions_export' }), adminExportSubscriptions);
 
 /* ── Student LTV ── */
-router.get('/students/:id/ltv', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetStudentLtv);
+router.get('/students/:id/ltv', requirePermission('finance_center', 'view'), adminGetStudentLtv);
 
 /* ── Manual Payments ── */
-router.get('/payments', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetPayments);
-router.get('/payments/export', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, requireSensitiveExport('payments', 'payments_export', true), trackSensitiveExport({ moduleName: 'payments', actionName: 'payments_export' }), adminExportPayments);
-router.post('/payments', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminCreatePayment);
-router.put('/payments/:id', authorize('superadmin', 'admin', 'finance_agent'), canManageFinance, requireTwoPersonForPaymentRefund, adminUpdatePayment);
-router.get('/students/:id/payments', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetStudentPayments);
+router.get('/payments', requirePermission('payments', 'view'), adminGetPayments);
+router.get('/payments/export', requirePermission('payments', 'export'), requireSensitiveExport('payments', 'payments_export', true), trackSensitiveExport({ moduleName: 'payments', actionName: 'payments_export' }), adminExportPayments);
+router.post('/payments', requirePermission('payments', 'create'), adminCreatePayment);
+router.put('/payments/:id', requirePermission('payments', 'approve'), requireTwoPersonForPaymentRefund, adminUpdatePayment);
+router.get('/students/:id/payments', requirePermission('payments', 'view'), adminGetStudentPayments);
 
 /* ── Expenses ── */
-router.get('/finance/payments/:id/history', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetPayments); // Placeholder
-router.post('/finance/payments/:id/approve', authorize('superadmin', 'admin', 'finance_agent'), canManageFinance, adminApprovePayment);
-router.get('/expenses', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetExpenses);
-router.post('/expenses', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminCreateExpense);
-router.put('/expenses/:id', authorize('superadmin', 'admin', 'finance_agent'), canManageFinance, adminUpdateExpense);
+router.get('/finance/payments/:id/history', requirePermission('finance_center', 'view'), adminGetPayments); // Placeholder
+router.post('/finance/payments/:id/approve', requirePermission('finance_center', 'approve'), adminApprovePayment);
+router.get('/expenses', requirePermission('finance_center', 'view'), adminGetExpenses);
+router.post('/expenses', requirePermission('finance_center', 'create'), adminCreateExpense);
+router.put('/expenses/:id', requirePermission('finance_center', 'edit'), adminUpdateExpense);
 
 /* ── Staff Payouts ── */
-router.get('/staff-payouts', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetStaffPayouts);
-router.post('/staff-payouts', authorize('superadmin', 'admin', 'finance_agent'), canManageFinance, adminCreateStaffPayout);
+router.get('/staff-payouts', requirePermission('finance_center', 'view'), adminGetStaffPayouts);
+router.post('/staff-payouts', requirePermission('finance_center', 'create'), adminCreateStaffPayout);
 
 /* ── Finance Analytics ── */
-router.get('/finance/summary', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinanceSummary);
-router.get('/finance/revenue-series', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinanceRevenueSeries);
-router.get('/finance/student-growth', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinanceStudentGrowth);
-router.get('/finance/plan-distribution', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinancePlanDistribution);
-router.get('/finance/expense-breakdown', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinanceExpenseBreakdown);
-router.get('/finance/cashflow', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinanceCashflow);
-router.get('/finance/test-board', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetFinanceTestBoard);
-router.get('/finance/stream', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminFinanceStream);
+router.get('/finance/summary', requirePermission('finance_center', 'view'), adminGetFinanceSummary);
+router.get('/finance/revenue-series', requirePermission('finance_center', 'view'), adminGetFinanceRevenueSeries);
+router.get('/finance/student-growth', requirePermission('finance_center', 'view'), adminGetFinanceStudentGrowth);
+router.get('/finance/plan-distribution', requirePermission('finance_center', 'view'), adminGetFinancePlanDistribution);
+router.get('/finance/expense-breakdown', requirePermission('finance_center', 'view'), adminGetFinanceExpenseBreakdown);
+router.get('/finance/cashflow', requirePermission('finance_center', 'view'), adminGetFinanceCashflow);
+router.get('/finance/test-board', requirePermission('finance_center', 'view'), adminGetFinanceTestBoard);
+router.get('/finance/stream', requirePermission('finance_center', 'view'), adminFinanceStream);
 
 /* ── Dues & Reminders ── */
-router.get('/dues', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminGetDues);
-router.patch('/dues/:studentId', authorize('superadmin', 'admin', 'finance_agent'), canManageFinance, adminUpdateDue);
-router.post('/dues/:studentId/remind', authorize('superadmin', 'admin', 'moderator', 'finance_agent'), canManageFinance, adminSendDueReminder);
-router.post('/reminders/dispatch', authorize('superadmin', 'admin', 'finance_agent'), canManageFinance, adminDispatchReminders);
+router.get('/dues', requirePermission('finance_center', 'view'), adminGetDues);
+router.patch('/dues/:studentId', requirePermission('finance_center', 'edit'), adminUpdateDue);
+router.post('/dues/:studentId/remind', requirePermission('finance_center', 'create'), adminSendDueReminder);
+router.post('/reminders/dispatch', requirePermission('finance_center', 'approve'), adminDispatchReminders);
 
 /* ── Notices ── */
-router.get('/notices', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent'), canManageTickets, adminGetNotices);
-router.post('/notices', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminCreateNotice);
-router.patch('/notices/:id/toggle', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminToggleNotice);
+router.get('/notices', requirePermission('support_center', 'view'), adminGetNotices);
+router.post('/notices', requirePermission('support_center', 'create'), adminCreateNotice);
+router.patch('/notices/:id/toggle', requirePermission('support_center', 'edit'), adminToggleNotice);
 
 /* ── Support Tickets ── */
-router.get('/support-tickets', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminGetSupportTickets);
-router.get('/support-tickets/:id', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminGetSupportTicketById);
-router.patch('/support-tickets/:id/status', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminUpdateSupportTicketStatus);
-router.post('/support-tickets/:id/status', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminUpdateSupportTicketStatus);
-router.post('/support-tickets/:id/reply', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminReplySupportTicket);
-router.post('/support-tickets/:id/mark-read', authorize('superadmin', 'admin', 'moderator', 'support_agent'), canManageTickets, adminMarkSupportTicketRead);
+router.get('/support-tickets', requirePermission('support_center', 'view'), adminGetSupportTickets);
+router.get('/support-tickets/:id', requirePermission('support_center', 'view'), adminGetSupportTicketById);
+router.patch('/support-tickets/:id/status', requirePermission('support_center', 'edit'), adminUpdateSupportTicketStatus);
+router.post('/support-tickets/:id/status', requirePermission('support_center', 'edit'), adminUpdateSupportTicketStatus);
+router.post('/support-tickets/:id/reply', requirePermission('support_center', 'edit'), adminReplySupportTicket);
+router.post('/support-tickets/:id/mark-read', requirePermission('support_center', 'edit'), adminMarkSupportTicketRead);
 
-router.get('/alerts/feed', authorize('superadmin', 'admin', 'moderator', 'viewer', 'support_agent', 'finance_agent'), adminGetActionableAlerts);
-router.post('/alerts/mark-read', authorize('superadmin', 'admin', 'moderator', 'viewer', 'support_agent', 'finance_agent'), adminMarkActionableAlertsRead);
-router.get('/alerts/unread-count', authorize('superadmin', 'admin', 'moderator', 'viewer', 'support_agent', 'finance_agent'), adminGetActionableAlertsUnreadCount);
-router.post('/alerts/:id/read', authorize('superadmin', 'admin', 'moderator', 'viewer', 'support_agent', 'finance_agent'), adminMarkSingleActionableAlertRead);
-router.post('/alerts/read-all', authorize('superadmin', 'admin', 'moderator', 'viewer', 'support_agent', 'finance_agent'), adminMarkAllActionableAlertsRead);
-router.get('/notifications/unread-count', authorize('superadmin', 'admin', 'moderator', 'viewer', 'support_agent', 'finance_agent'), adminGetActionableAlertsUnreadCount);
-router.post('/notifications/:id/read', authorize('superadmin', 'admin', 'moderator'), adminMarkSingleActionableAlertRead);
-router.post('/notifications/read-all', authorize('superadmin', 'admin', 'moderator'), adminMarkAllActionableAlertsRead);
+router.get('/alerts/feed', requirePermission('notifications', 'view'), adminGetActionableAlerts);
+router.post('/alerts/mark-read', requirePermission('notifications', 'edit'), adminMarkActionableAlertsRead);
+router.get('/alerts/unread-count', requirePermission('notifications', 'view'), adminGetActionableAlertsUnreadCount);
+router.post('/alerts/:id/read', requirePermission('notifications', 'edit'), adminMarkSingleActionableAlertRead);
+router.post('/alerts/read-all', requirePermission('notifications', 'edit'), adminMarkAllActionableAlertsRead);
+router.get('/notifications/unread-count', requirePermission('notifications', 'view'), adminGetActionableAlertsUnreadCount);
+router.post('/notifications/:id/read', requirePermission('notifications', 'edit'), adminMarkSingleActionableAlertRead);
+router.post('/notifications/read-all', requirePermission('notifications', 'edit'), adminMarkAllActionableAlertsRead);
 
 /* ── Backups ── */
-router.post('/backups/run', authorize('superadmin', 'admin'), canManageBackups, adminRunBackup);
-router.get('/backups', authorize('superadmin', 'admin', 'moderator'), canManageBackups, adminListBackups);
-router.post('/backups/:id/restore', authorize('superadmin', 'admin'), canManageBackups, requireSensitiveAction({ actionKey: 'backups.restore', moduleName: 'backups', actionName: 'restore' }), adminRestoreBackup);
-router.get('/backups/:id/download', authorize('superadmin', 'admin'), canManageBackups, adminDownloadBackup);
+router.post('/backups/run', requirePermission('security_logs', 'create'), adminRunBackup);
+router.get('/backups', requirePermission('security_logs', 'view'), adminListBackups);
+router.post('/backups/:id/restore', requirePermission('security_logs', 'edit'), requireSensitiveAction({ actionKey: 'backups.restore', moduleName: 'backups', actionName: 'restore' }), adminRestoreBackup);
+router.get('/backups/:id/download', requirePermission('security_logs', 'view'), adminDownloadBackup);
 /* ── Badges ── */
-router.get('/badges', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetBadges);
-router.post('/badges', authorize('superadmin', 'admin'), adminCreateBadge);
-router.put('/badges/:id', authorize('superadmin', 'admin'), adminUpdateBadge);
-router.delete('/badges/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('students', 'badge_delete'), adminDeleteBadge);
-router.post('/students/:studentId/badges/:badgeId', authorize('superadmin', 'admin'), adminAssignBadge);
-router.delete('/students/:studentId/badges/:badgeId', authorize('superadmin', 'admin'), requireDestructiveStepUp('students', 'badge_revoke'), adminRevokeBadge);
+router.get('/badges', requirePermission('students_groups', 'view'), adminGetBadges);
+router.post('/badges', requirePermission('students_groups', 'create'), adminCreateBadge);
+router.put('/badges/:id', requirePermission('students_groups', 'edit'), adminUpdateBadge);
+router.delete('/badges/:id', requirePermission('students_groups', 'delete'), requireDestructiveStepUp('students', 'badge_delete'), adminDeleteBadge);
+router.post('/students/:studentId/badges/:badgeId', requirePermission('students_groups', 'create'), adminAssignBadge);
+router.delete('/students/:studentId/badges/:badgeId', requirePermission('students_groups', 'delete'), requireDestructiveStepUp('students', 'badge_revoke'), adminRevokeBadge);
 
 /* ── Student Dashboard Configurations ── */
-router.get('/dashboard-config', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetStudentDashboardConfig);
-router.put('/dashboard-config', authorize('superadmin', 'admin'), adminUpdateStudentDashboardConfig);
+router.get('/dashboard-config', requirePermission('site_settings', 'view'), adminGetStudentDashboardConfig);
+router.put('/dashboard-config', requirePermission('site_settings', 'edit'), adminUpdateStudentDashboardConfig);
 // Consolidated under /dashboard-config
 
 /* ── Notifications ── */
-router.get('/notifications', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetNotifications);
-router.post('/notifications', authorize('superadmin', 'admin', 'moderator'), adminCreateNotification);
-router.put('/notifications/:id([0-9a-fA-F]{24})', authorize('superadmin', 'admin', 'moderator'), adminUpdateNotification);
-router.patch('/notifications/:id([0-9a-fA-F]{24})/toggle', authorize('superadmin', 'admin', 'moderator'), adminToggleNotification);
-router.delete('/notifications/:id([0-9a-fA-F]{24})', authorize('superadmin', 'admin'), requireDestructiveStepUp('notification_center', 'notification_delete'), adminDeleteNotification);
+router.get('/notifications', requirePermission('notifications', 'view'), adminGetNotifications);
+router.post('/notifications', requirePermission('notifications', 'create'), adminCreateNotification);
+router.put('/notifications/:id([0-9a-fA-F]{24})', requirePermission('notifications', 'edit'), adminUpdateNotification);
+router.patch('/notifications/:id([0-9a-fA-F]{24})/toggle', requirePermission('notifications', 'edit'), adminToggleNotification);
+router.delete('/notifications/:id([0-9a-fA-F]{24})', requirePermission('notifications', 'delete'), requireDestructiveStepUp('notification_center', 'notification_delete'), adminDeleteNotification);
 
 /* ── Parent / Guardian Link ── */
-router.post('/students/:studentId/otp', authorize('superadmin', 'admin'), adminIssueGuardianOtp);
-router.post('/students/:studentId/confirm-otp', authorize('superadmin', 'admin'), adminConfirmGuardianOtp);
+router.post('/students/:studentId/otp', requirePermission('students_groups', 'create'), adminIssueGuardianOtp);
+router.post('/students/:studentId/confirm-otp', requirePermission('students_groups', 'edit'), adminConfirmGuardianOtp);
 
 /* ── Admin Dashboard Overrides ── */
 
 /* ── Exports ── */
-router.get('/export-news', authorize('superadmin', 'admin'), requireSensitiveExport('news', 'legacy_news_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'legacy_news_export' }), adminExportNews);
-router.get('/export-subscription-plans', authorize('superadmin', 'admin'), requireSensitiveExport('subscription_plans', 'legacy_plans_export'), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'legacy_plans_export' }), adminExportSubscriptionPlans);
-router.get('/export-subscription-plans/legacy', authorize('superadmin', 'admin'), requireSensitiveExport('subscription_plans', 'legacy_plans_json_export'), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'legacy_plans_json_export' }), adminExportSubscriptionPlansLegacy);
-router.get('/export-universities', authorize('superadmin', 'admin'), requireSensitiveExport('universities', 'legacy_universities_export'), trackSensitiveExport({ moduleName: 'universities', actionName: 'legacy_universities_export' }), adminExportUniversitiesLegacy);
-router.get('/export-students', authorize('superadmin', 'admin'), requireSensitiveExport('students_groups', 'students_export', true), trackSensitiveExport({ moduleName: 'students_groups', actionName: 'students_export' }), adminExportStudents);
+router.get('/export-news', requirePermission('news', 'export'), requireSensitiveExport('news', 'legacy_news_export'), trackSensitiveExport({ moduleName: 'news', actionName: 'legacy_news_export' }), adminExportNews);
+router.get('/export-subscription-plans', requirePermission('subscription_plans', 'export'), requireSensitiveExport('subscription_plans', 'legacy_plans_export'), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'legacy_plans_export' }), adminExportSubscriptionPlans);
+router.get('/export-subscription-plans/legacy', requirePermission('subscription_plans', 'export'), requireSensitiveExport('subscription_plans', 'legacy_plans_json_export'), trackSensitiveExport({ moduleName: 'subscription_plans', actionName: 'legacy_plans_json_export' }), adminExportSubscriptionPlansLegacy);
+router.get('/export-universities', requirePermission('universities', 'export'), requireSensitiveExport('universities', 'legacy_universities_export'), trackSensitiveExport({ moduleName: 'universities', 'actionName': 'legacy_universities_export' }), adminExportUniversitiesLegacy);
+router.get('/export-students', requirePermission('students_groups', 'export'), requireSensitiveExport('students_groups', 'students_export', true), trackSensitiveExport({ moduleName: 'students_groups', actionName: 'students_export' }), adminExportStudents);
 
 /* ═══════════════════════════════════════════════════════════
    FINANCE CENTER (unified ledger)
    ═══════════════════════════════════════════════════════════ */
-router.get('/fc/dashboard', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetDashboard);
+router.get('/fc/dashboard', requirePermission('finance_center', 'view'), fcGetDashboard);
 
 // Transactions
-router.get('/fc/transactions', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetTransactions);
+router.get('/fc/transactions', requirePermission('finance_center', 'view'), fcGetTransactions);
 router.get(
     '/fc/expenses',
-    authorize('superadmin', 'admin', 'moderator'),
-    canManageFinance,
+    requirePermission('finance_center', 'view'),
     (req: Request, _res: Response, next: NextFunction) => {
         req.query.direction = 'expense';
         next();
     },
     fcGetTransactions,
 );
-router.get('/fc/transactions/:id', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetTransaction);
-router.post('/fc/transactions', authorize('superadmin', 'admin'), canManageFinance, validate(createTransactionSchema), fcCreateTransaction);
-router.put('/fc/transactions/:id', authorize('superadmin', 'admin'), canManageFinance, validate(updateTransactionSchema), fcUpdateTransaction);
-router.delete('/fc/transactions/:id', authorize('superadmin', 'admin'), canManageFinance, requireDestructiveStepUp('finance_center', 'transaction_delete'), fcDeleteTransaction);
-router.post('/fc/transactions/:id/restore', authorize('superadmin', 'admin'), canManageFinance, requireDestructiveStepUp('finance_center', 'transaction_restore'), fcRestoreTransaction);
-router.post('/fc/transactions/bulk-approve', authorize('superadmin', 'admin'), canManageFinance, validate(bulkIdsSchema), fcBulkApproveTransactions);
-router.post('/fc/transactions/bulk-mark-paid', authorize('superadmin', 'admin'), canManageFinance, validate(bulkIdsSchema), fcBulkMarkPaid);
+router.get('/fc/transactions/:id', requirePermission('finance_center', 'view'), fcGetTransaction);
+router.post('/fc/transactions', requirePermission('finance_center', 'create'), validate(createTransactionSchema), fcCreateTransaction);
+router.put('/fc/transactions/:id', requirePermission('finance_center', 'edit'), validate(updateTransactionSchema), fcUpdateTransaction);
+router.delete('/fc/transactions/:id', requirePermission('finance_center', 'delete'), requireDestructiveStepUp('finance_center', 'transaction_delete'), fcDeleteTransaction);
+router.post('/fc/transactions/:id/restore', requirePermission('finance_center', 'edit'), requireDestructiveStepUp('finance_center', 'transaction_restore'), fcRestoreTransaction);
+router.post('/fc/transactions/bulk-approve', requirePermission('finance_center', 'bulk'), validate(bulkIdsSchema), fcBulkApproveTransactions);
+router.post('/fc/transactions/bulk-mark-paid', requirePermission('finance_center', 'bulk'), validate(bulkIdsSchema), fcBulkMarkPaid);
 
 // Invoices
-router.get('/fc/invoices', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetInvoices);
-router.post('/fc/invoices', authorize('superadmin', 'admin'), canManageFinance, validate(createInvoiceSchema), fcCreateInvoice);
-router.put('/fc/invoices/:id', authorize('superadmin', 'admin'), canManageFinance, validate(updateInvoiceSchema), fcUpdateInvoice);
-router.post('/fc/invoices/:id/mark-paid', authorize('superadmin', 'admin'), canManageFinance, validate(markInvoicePaidSchema), fcMarkInvoicePaid);
+router.get('/fc/invoices', requirePermission('finance_center', 'view'), fcGetInvoices);
+router.post('/fc/invoices', requirePermission('finance_center', 'create'), validate(createInvoiceSchema), fcCreateInvoice);
+router.put('/fc/invoices/:id', requirePermission('finance_center', 'edit'), validate(updateInvoiceSchema), fcUpdateInvoice);
+router.post('/fc/invoices/:id/mark-paid', requirePermission('finance_center', 'edit'), validate(markInvoicePaidSchema), fcMarkInvoicePaid);
 
 // Budgets
-router.get('/fc/budgets', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetBudgets);
-router.post('/fc/budgets', authorize('superadmin', 'admin'), canManageFinance, validate(createBudgetSchema), fcCreateBudget);
-router.put('/fc/budgets/:id', authorize('superadmin', 'admin'), canManageFinance, validate(updateBudgetSchema), fcUpdateBudget);
-router.delete('/fc/budgets/:id', authorize('superadmin', 'admin'), canManageFinance, requireDestructiveStepUp('finance_center', 'budget_delete'), fcDeleteBudget);
+router.get('/fc/budgets', requirePermission('finance_center', 'view'), fcGetBudgets);
+router.post('/fc/budgets', requirePermission('finance_center', 'create'), validate(createBudgetSchema), fcCreateBudget);
+router.put('/fc/budgets/:id', requirePermission('finance_center', 'edit'), validate(updateBudgetSchema), fcUpdateBudget);
+router.delete('/fc/budgets/:id', requirePermission('finance_center', 'delete'), requireDestructiveStepUp('finance_center', 'budget_delete'), fcDeleteBudget);
 
 // Recurring Rules
-router.get('/fc/recurring-rules', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetRecurringRules);
-router.post('/fc/recurring-rules', authorize('superadmin', 'admin'), canManageFinance, validate(createRecurringRuleSchema), fcCreateRecurringRule);
-router.put('/fc/recurring-rules/:id', authorize('superadmin', 'admin'), canManageFinance, validate(updateRecurringRuleSchema), fcUpdateRecurringRule);
-router.delete('/fc/recurring-rules/:id', authorize('superadmin', 'admin'), canManageFinance, requireDestructiveStepUp('finance_center', 'recurring_rule_delete'), fcDeleteRecurringRule);
-router.post('/fc/recurring-rules/:id/run-now', authorize('superadmin', 'admin'), canManageFinance, fcRunRecurringRuleNow);
+router.get('/fc/recurring-rules', requirePermission('finance_center', 'view'), fcGetRecurringRules);
+router.post('/fc/recurring-rules', requirePermission('finance_center', 'create'), validate(createRecurringRuleSchema), fcCreateRecurringRule);
+router.put('/fc/recurring-rules/:id', requirePermission('finance_center', 'edit'), validate(updateRecurringRuleSchema), fcUpdateRecurringRule);
+router.delete('/fc/recurring-rules/:id', requirePermission('finance_center', 'delete'), requireDestructiveStepUp('finance_center', 'recurring_rule_delete'), fcDeleteRecurringRule);
+router.post('/fc/recurring-rules/:id/run-now', requirePermission('finance_center', 'edit'), fcRunRecurringRuleNow);
 
 // Chart of Accounts
-router.get('/fc/chart-of-accounts', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetChartOfAccounts);
-router.post('/fc/chart-of-accounts', authorize('superadmin', 'admin'), canManageFinance, validate(createAccountSchema), fcCreateAccount);
+router.get('/fc/chart-of-accounts', requirePermission('finance_center', 'view'), fcGetChartOfAccounts);
+router.post('/fc/chart-of-accounts', requirePermission('finance_center', 'create'), validate(createAccountSchema), fcCreateAccount);
 
 // Vendors
-router.get('/fc/vendors', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetVendors);
-router.post('/fc/vendors', authorize('superadmin', 'admin'), canManageFinance, validate(createVendorSchema), fcCreateVendor);
+router.get('/fc/vendors', requirePermission('finance_center', 'view'), fcGetVendors);
+router.post('/fc/vendors', requirePermission('finance_center', 'create'), validate(createVendorSchema), fcCreateVendor);
 
 // Settings
-router.get('/fc/settings', authorize('superadmin', 'admin'), canManageFinance, fcGetSettings);
-router.put('/fc/settings', authorize('superadmin', 'admin'), canManageFinance, validate(updateSettingsSchema), fcUpdateSettings);
+router.get('/fc/settings', requirePermission('finance_center', 'view'), fcGetSettings);
+router.put('/fc/settings', requirePermission('finance_center', 'edit'), validate(updateSettingsSchema), fcUpdateSettings);
 
 // Audit Logs
-router.get('/fc/audit-logs', authorize('superadmin', 'admin'), canManageFinance, fcGetAuditLogs);
-router.get('/fc/audit-logs/:id', authorize('superadmin', 'admin'), canManageFinance, fcGetAuditLogDetail);
+router.get('/fc/audit-logs', requirePermission('finance_center', 'view'), fcGetAuditLogs);
+router.get('/fc/audit-logs/:id', requirePermission('finance_center', 'view'), fcGetAuditLogDetail);
 
 // Export / Import
-router.get('/fc/export', authorize('superadmin', 'admin', 'moderator'), canManageFinance, financeExportRateLimiter, requireSensitiveExport('finance_center', 'transactions_export', true), trackSensitiveExport({ moduleName: 'finance_center', actionName: 'transactions_export' }), fcExportTransactions);
-router.get('/fc/import-template', authorize('superadmin', 'admin'), canManageFinance, fcDownloadTemplate);
-router.post('/fc/import-preview', authorize('superadmin', 'admin'), canManageFinance, financeImportRateLimiter, upload.single('file'), fcImportPreview);
-router.post('/fc/import-commit', authorize('superadmin', 'admin'), canManageFinance, financeImportRateLimiter, validate(importCommitSchema), fcImportCommit);
+router.get('/fc/export', requirePermission('finance_center', 'export'), financeExportRateLimiter, requireSensitiveExport('finance_center', 'transactions_export', true), trackSensitiveExport({ moduleName: 'finance_center', actionName: 'transactions_export' }), fcExportTransactions);
+router.get('/fc/import-template', requirePermission('finance_center', 'view'), fcDownloadTemplate);
+router.post('/fc/import-preview', requirePermission('finance_center', 'create'), financeImportRateLimiter, upload.single('file'), fcImportPreview);
+router.post('/fc/import-commit', requirePermission('finance_center', 'create'), financeImportRateLimiter, validate(importCommitSchema), fcImportCommit);
 
 // Refunds
-router.get('/fc/refunds', authorize('superadmin', 'admin', 'moderator'), canManageFinance, fcGetRefunds);
-router.post('/fc/refunds', authorize('superadmin', 'admin'), canManageFinance, validate(createRefundSchema), fcCreateRefund);
-router.post('/fc/refunds/:id/process', authorize('superadmin', 'admin'), canManageFinance, validate(processRefundSchema), fcApproveRefund);
+router.get('/fc/refunds', requirePermission('finance_center', 'view'), fcGetRefunds);
+router.post('/fc/refunds', requirePermission('finance_center', 'create'), validate(createRefundSchema), fcCreateRefund);
+router.post('/fc/refunds/:id/process', requirePermission('finance_center', 'approve'), validate(processRefundSchema), fcApproveRefund);
 
 // P&L Report PDF
-router.get('/fc/report.pdf', authorize('superadmin', 'admin'), canManageFinance, financeExportRateLimiter, requireSensitiveExport('finance_center', 'profit_loss_report_export', true), trackSensitiveExport({ moduleName: 'finance_center', actionName: 'profit_loss_report_export' }), fcGeneratePLReport);
+router.get('/fc/report.pdf', requirePermission('finance_center', 'export'), financeExportRateLimiter, requireSensitiveExport('finance_center', 'profit_loss_report_export', true), trackSensitiveExport({ moduleName: 'finance_center', actionName: 'profit_loss_report_export' }), fcGeneratePLReport);
 
 /* ── Question Bank v2 (Advanced) ── */
 import * as qbv2 from '../controllers/questionBankAdvancedController';
 
 // Settings
-router.get('/question-bank/v2/settings', authorize('superadmin', 'admin'), qbv2.getSettings);
-router.put('/question-bank/v2/settings', authorize('superadmin', 'admin'), qbv2.updateSettings);
+router.get('/question-bank/v2/settings', requirePermission('question_bank', 'view'), qbv2.getSettings);
+router.put('/question-bank/v2/settings', requirePermission('question_bank', 'edit'), qbv2.updateSettings);
 // CRUD
-router.get('/question-bank/v2/questions', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.listBankQuestions);
-router.get('/question-bank/v2/questions/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.getBankQuestion);
-router.post('/question-bank/v2/questions', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, qbv2.createBankQuestion);
-router.put('/question-bank/v2/questions/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, qbv2.updateBankQuestion);
-router.delete('/question-bank/v2/questions/:id', authorize('superadmin', 'admin', 'moderator'), canDeleteData, requireDestructiveStepUp('question_bank', 'bank_question_delete'), qbv2.deleteBankQuestion);
-router.post('/question-bank/v2/questions/:id/archive', authorize('superadmin', 'admin', 'moderator'), canEditExams, requireDestructiveStepUp('question_bank', 'bank_question_archive'), qbv2.archiveBankQuestion);
-router.post('/question-bank/v2/questions/:id/restore', authorize('superadmin', 'admin', 'moderator'), canEditExams, requireDestructiveStepUp('question_bank', 'bank_question_restore'), qbv2.restoreBankQuestion);
-router.post('/question-bank/v2/questions/:id/duplicate', authorize('superadmin', 'admin', 'moderator', 'editor'), canEditExams, qbv2.duplicateBankQuestion);
+router.get('/question-bank/v2/questions', requirePermission('question_bank', 'view'), qbv2.listBankQuestions);
+router.get('/question-bank/v2/questions/:id', requirePermission('question_bank', 'view'), qbv2.getBankQuestion);
+router.post('/question-bank/v2/questions', requirePermission('question_bank', 'create'), qbv2.createBankQuestion);
+router.put('/question-bank/v2/questions/:id', requirePermission('question_bank', 'edit'), qbv2.updateBankQuestion);
+router.delete('/question-bank/v2/questions/:id', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('question_bank', 'bank_question_delete'), qbv2.deleteBankQuestion);
+router.post('/question-bank/v2/questions/:id/archive', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('question_bank', 'bank_question_archive'), qbv2.archiveBankQuestion);
+router.post('/question-bank/v2/questions/:id/restore', requirePermission('question_bank', 'edit'), requireDestructiveStepUp('question_bank', 'bank_question_restore'), qbv2.restoreBankQuestion);
+router.post('/question-bank/v2/questions/:id/duplicate', requirePermission('question_bank', 'create'), qbv2.duplicateBankQuestion);
 // Bulk
-router.post('/question-bank/v2/bulk/archive', authorize('superadmin', 'admin', 'moderator'), canEditExams, requireDestructiveStepUp('question_bank', 'bulk_archive'), qbv2.bulkArchive);
-router.post('/question-bank/v2/bulk/activate', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.bulkActivate);
-router.post('/question-bank/v2/bulk/tags', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.bulkUpdateTags);
-router.post('/question-bank/v2/bulk/delete', authorize('superadmin', 'admin'), canDeleteData, qbv2.bulkDelete);
+router.post('/question-bank/v2/bulk/archive', requirePermission('question_bank', 'bulk'), requireDestructiveStepUp('question_bank', 'bulk_archive'), qbv2.bulkArchive);
+router.post('/question-bank/v2/bulk/activate', requirePermission('question_bank', 'bulk'), qbv2.bulkActivate);
+router.post('/question-bank/v2/bulk/tags', requirePermission('question_bank', 'bulk'), qbv2.bulkUpdateTags);
+router.post('/question-bank/v2/bulk/delete', requirePermission('question_bank', 'delete'), qbv2.bulkDelete);
 // Import / Export
-router.get('/question-bank/v2/import/template', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.downloadImportTemplate);
-router.post('/question-bank/v2/import/preview', authorize('superadmin', 'admin', 'moderator'), canEditExams, upload.single('file'), qbv2.importPreview);
-router.post('/question-bank/v2/import/commit', authorize('superadmin', 'admin', 'moderator'), canEditExams, upload.single('file'), qbv2.importCommit);
-router.get('/question-bank/v2/export', authorize('superadmin', 'admin', 'moderator', 'editor'), requireSensitiveExport('question_bank', 'bank_v2_export'), trackSensitiveExport({ moduleName: 'question_bank', actionName: 'bank_v2_export' }), qbv2.exportQuestions);
+router.get('/question-bank/v2/import/template', requirePermission('question_bank', 'view'), qbv2.downloadImportTemplate);
+router.post('/question-bank/v2/import/preview', requirePermission('question_bank', 'create'), upload.single('file'), qbv2.importPreview);
+router.post('/question-bank/v2/import/commit', requirePermission('question_bank', 'create'), upload.single('file'), qbv2.importCommit);
+router.get('/question-bank/v2/export', requirePermission('question_bank', 'export'), requireSensitiveExport('question_bank', 'bank_v2_export'), trackSensitiveExport({ moduleName: 'question_bank', actionName: 'bank_v2_export' }), qbv2.exportQuestions);
 // Sets
-router.get('/question-bank/v2/sets', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.listSets);
-router.get('/question-bank/v2/sets/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.getSet);
-router.post('/question-bank/v2/sets', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.createSet);
-router.put('/question-bank/v2/sets/:id', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.updateSet);
-router.delete('/question-bank/v2/sets/:id', authorize('superadmin', 'admin', 'moderator'), canDeleteData, requireDestructiveStepUp('question_bank', 'question_set_delete'), qbv2.deleteSet);
-router.get('/question-bank/v2/sets/:id/resolve', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.resolveSetQuestions);
+router.get('/question-bank/v2/sets', requirePermission('question_bank', 'view'), qbv2.listSets);
+router.get('/question-bank/v2/sets/:id', requirePermission('question_bank', 'view'), qbv2.getSet);
+router.post('/question-bank/v2/sets', requirePermission('question_bank', 'create'), qbv2.createSet);
+router.put('/question-bank/v2/sets/:id', requirePermission('question_bank', 'edit'), qbv2.updateSet);
+router.delete('/question-bank/v2/sets/:id', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('question_bank', 'question_set_delete'), qbv2.deleteSet);
+router.get('/question-bank/v2/sets/:id/resolve', requirePermission('question_bank', 'view'), qbv2.resolveSetQuestions);
 // Exam integration
-router.get('/question-bank/v2/exam/:examId/search', authorize('superadmin', 'admin', 'moderator', 'editor'), qbv2.searchBankQuestionsForExam);
-router.post('/question-bank/v2/exam/:examId/attach', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.attachBankQuestionsToExam);
-router.delete('/question-bank/v2/exam/:examId/questions/:questionId', authorize('superadmin', 'admin', 'moderator'), canEditExams, requireDestructiveStepUp('question_bank', 'question_remove_from_exam'), qbv2.removeBankQuestionFromExam);
-router.put('/question-bank/v2/exam/:examId/reorder', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.reorderExamQuestions);
-router.post('/question-bank/v2/exam/:examId/finalize', authorize('superadmin', 'admin', 'moderator'), canEditExams, qbv2.finalizeExamSnapshot);
+router.get('/question-bank/v2/exam/:examId/search', requirePermission('question_bank', 'view'), qbv2.searchBankQuestionsForExam);
+router.post('/question-bank/v2/exam/:examId/attach', requirePermission('question_bank', 'create'), qbv2.attachBankQuestionsToExam);
+router.delete('/question-bank/v2/exam/:examId/questions/:questionId', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('question_bank', 'question_remove_from_exam'), qbv2.removeBankQuestionFromExam);
+router.put('/question-bank/v2/exam/:examId/reorder', requirePermission('question_bank', 'edit'), qbv2.reorderExamQuestions);
+router.post('/question-bank/v2/exam/:examId/finalize', requirePermission('question_bank', 'edit'), qbv2.finalizeExamSnapshot);
 // Analytics
-router.get('/question-bank/v2/analytics', authorize('superadmin', 'admin', 'moderator'), qbv2.getAnalytics);
-router.post('/question-bank/v2/analytics/:id/refresh', authorize('superadmin', 'admin', 'moderator'), qbv2.refreshAnalyticsForQuestion);
-router.post('/question-bank/v2/analytics/refresh-all', authorize('superadmin', 'admin'), qbv2.refreshAllAnalytics);
+router.get('/question-bank/v2/analytics', requirePermission('question_bank', 'view'), qbv2.getAnalytics);
+router.post('/question-bank/v2/analytics/:id/refresh', requirePermission('question_bank', 'edit'), qbv2.refreshAnalyticsForQuestion);
+router.post('/question-bank/v2/analytics/refresh-all', requirePermission('question_bank', 'edit'), qbv2.refreshAllAnalytics);
 
 /* ═══════════════════════════════════════════════════════════
    SECURITY ALERTS & MAINTENANCE
    ═══════════════════════════════════════════════════════════ */
-router.get('/security-alerts', authorize('superadmin', 'admin'), adminGetSecurityAlerts);
-router.get('/security-alerts/summary', authorize('superadmin', 'admin'), adminGetSecurityAlertSummary);
-router.post('/security-alerts/:id/read', authorize('superadmin', 'admin'), adminMarkAlertRead);
-router.post('/security-alerts/mark-all-read', authorize('superadmin', 'admin'), adminMarkAllAlertsRead);
-router.post('/security-alerts/:id/resolve', authorize('superadmin', 'admin'), adminResolveAlert);
-router.delete('/security-alerts/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('security_center', 'security_alert_delete'), adminDeleteSecurityAlert);
-router.get('/maintenance/status', authorize('superadmin', 'admin'), adminGetMaintenanceStatus);
-router.put('/maintenance/status', authorize('superadmin', 'admin'), adminUpdateMaintenanceStatus);
+router.get('/security-alerts', requirePermission('security_logs', 'view'), adminGetSecurityAlerts);
+router.get('/security-alerts/summary', requirePermission('security_logs', 'view'), adminGetSecurityAlertSummary);
+router.post('/security-alerts/:id/read', requirePermission('security_logs', 'edit'), adminMarkAlertRead);
+router.post('/security-alerts/mark-all-read', requirePermission('security_logs', 'edit'), adminMarkAllAlertsRead);
+router.post('/security-alerts/:id/resolve', requirePermission('security_logs', 'approve'), adminResolveAlert);
+router.delete('/security-alerts/:id', requirePermission('security_logs', 'delete'), requireDestructiveStepUp('security_center', 'security_alert_delete'), adminDeleteSecurityAlert);
+router.get('/maintenance/status', requirePermission('site_settings', 'view'), adminGetMaintenanceStatus);
+router.put('/maintenance/status', requirePermission('site_settings', 'edit'), adminUpdateMaintenanceStatus);
 
 /* ═══════════════════════════════════════════════════════════
    HELP CENTER (Knowledge Base)
    ═══════════════════════════════════════════════════════════ */
-router.get('/help-center/categories', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent'), adminGetHelpCategories);
-router.post('/help-center/categories', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminCreateHelpCategory);
-router.put('/help-center/categories/:id', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminUpdateHelpCategory);
-router.delete('/help-center/categories/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('help_center', 'category_delete'), adminDeleteHelpCategory);
-router.get('/help-center/articles', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent'), adminGetHelpArticles);
-router.get('/help-center/articles/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent'), adminGetHelpArticle);
-router.post('/help-center/articles', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent'), adminCreateHelpArticle);
-router.put('/help-center/articles/:id', authorize('superadmin', 'admin', 'moderator', 'editor', 'support_agent'), adminUpdateHelpArticle);
-router.delete('/help-center/articles/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('help_center', 'article_delete'), adminDeleteHelpArticle);
-router.post('/help-center/articles/:id/publish', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminPublishHelpArticle);
-router.post('/help-center/articles/:id/unpublish', authorize('superadmin', 'admin', 'moderator', 'support_agent'), adminUnpublishHelpArticle);
+router.get('/help-center/categories', requirePermission('support_center', 'view'), adminGetHelpCategories);
+router.post('/help-center/categories', requirePermission('support_center', 'create'), adminCreateHelpCategory);
+router.put('/help-center/categories/:id', requirePermission('support_center', 'edit'), adminUpdateHelpCategory);
+router.delete('/help-center/categories/:id', requirePermission('support_center', 'delete'), requireDestructiveStepUp('help_center', 'category_delete'), adminDeleteHelpCategory);
+router.get('/help-center/articles', requirePermission('support_center', 'view'), adminGetHelpArticles);
+router.get('/help-center/articles/:id', requirePermission('support_center', 'view'), adminGetHelpArticle);
+router.post('/help-center/articles', requirePermission('support_center', 'create'), adminCreateHelpArticle);
+router.put('/help-center/articles/:id', requirePermission('support_center', 'edit'), adminUpdateHelpArticle);
+router.delete('/help-center/articles/:id', requirePermission('support_center', 'delete'), requireDestructiveStepUp('help_center', 'article_delete'), adminDeleteHelpArticle);
+router.post('/help-center/articles/:id/publish', requirePermission('support_center', 'publish'), adminPublishHelpArticle);
+router.post('/help-center/articles/:id/unpublish', requirePermission('support_center', 'publish'), adminUnpublishHelpArticle);
 
 /* ═══════════════════════════════════════════════════════════
    CONTENT BLOCKS (Global Promotions / Banners)
    ═══════════════════════════════════════════════════════════ */
-router.get('/content-blocks', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetContentBlocks);
-router.get('/content-blocks/:id', authorize('superadmin', 'admin', 'moderator', 'editor'), adminGetContentBlock);
-router.post('/content-blocks', authorize('superadmin', 'admin', 'moderator'), adminCreateContentBlock);
-router.put('/content-blocks/:id', authorize('superadmin', 'admin', 'moderator'), adminUpdateContentBlock);
-router.delete('/content-blocks/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('content_blocks', 'content_block_delete'), adminDeleteContentBlock);
-router.patch('/content-blocks/:id/toggle', authorize('superadmin', 'admin', 'moderator'), adminToggleContentBlock);
+router.get('/content-blocks', requirePermission('home_control', 'view'), adminGetContentBlocks);
+router.get('/content-blocks/:id', requirePermission('home_control', 'view'), adminGetContentBlock);
+router.post('/content-blocks', requirePermission('home_control', 'create'), adminCreateContentBlock);
+router.put('/content-blocks/:id', requirePermission('home_control', 'edit'), adminUpdateContentBlock);
+router.delete('/content-blocks/:id', requirePermission('home_control', 'delete'), requireDestructiveStepUp('content_blocks', 'content_block_delete'), adminDeleteContentBlock);
+router.patch('/content-blocks/:id/toggle', requirePermission('home_control', 'edit'), adminToggleContentBlock);
 
 /* ═══════════════════════════════════════════════════════════
    WEAK TOPIC DETECTION (Analytics)
    ═══════════════════════════════════════════════════════════ */
-router.get('/analytics/weak-topics', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminGetWeakTopics);
-router.get('/analytics/weak-topics/by-student/:studentId', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminGetStudentWeakTopics);
-router.get('/analytics/weak-topics/question-difficulty', authorize('superadmin', 'admin', 'moderator'), canViewReports, adminGetHardestQuestions);
+router.get('/analytics/weak-topics', requirePermission('reports_analytics', 'view'), adminGetWeakTopics);
+router.get('/analytics/weak-topics/by-student/:studentId', requirePermission('reports_analytics', 'view'), adminGetStudentWeakTopics);
+router.get('/analytics/weak-topics/question-difficulty', requirePermission('reports_analytics', 'view'), adminGetHardestQuestions);
 
 /* ═══════════════════════════════════════════════════════════
    STUDENT CRM TIMELINE
    ═══════════════════════════════════════════════════════════ */
-router.get('/students/:id/timeline', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminGetStudentTimeline);
-router.post('/students/:id/timeline', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminAddTimelineEntry);
-router.delete('/students/:id/timeline/:entryId', authorize('superadmin', 'admin'), canManageStudents, requireDestructiveStepUp('students_groups', 'timeline_entry_delete'), adminDeleteTimelineEntry);
-router.get('/students/:id/timeline/summary', authorize('superadmin', 'admin', 'moderator'), canManageStudents, adminGetTimelineSummary);
+router.get('/students/:id/timeline', requirePermission('students_groups', 'view'), adminGetStudentTimeline);
+router.post('/students/:id/timeline', requirePermission('students_groups', 'create'), adminAddTimelineEntry);
+router.delete('/students/:id/timeline/:entryId', requirePermission('students_groups', 'delete'), requireDestructiveStepUp('students_groups', 'timeline_entry_delete'), adminDeleteTimelineEntry);
+router.get('/students/:id/timeline/summary', requirePermission('students_groups', 'view'), adminGetTimelineSummary);
 
 /* ═══════════════════════════════════════════════════════════
    NOTIFICATION CENTER (Providers / Templates / Jobs / Logs)
    ═══════════════════════════════════════════════════════════ */
-router.get('/notification-center/summary', authorize('superadmin', 'admin', 'moderator'), adminGetNotificationSummary);
-router.get('/notification-center/providers', authorize('superadmin', 'admin'), adminGetProviders);
-router.post('/notification-center/providers', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'providers.credentials_change', moduleName: 'notification_center', actionName: 'provider_create' }), adminCreateProvider);
-router.put('/notification-center/providers/:id', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'providers.credentials_change', moduleName: 'notification_center', actionName: 'provider_update' }), adminUpdateProvider);
-router.delete('/notification-center/providers/:id', authorize('superadmin', 'admin'), requireSensitiveAction({ actionKey: 'providers.credentials_change', moduleName: 'notification_center', actionName: 'provider_delete' }), adminDeleteProvider);
-router.post('/notification-center/providers/:id/test', authorize('superadmin', 'admin'), requireProviderStepUp('notification_center', 'provider_test'), adminTestProvider);
-router.get('/notification-center/templates', authorize('superadmin', 'admin', 'moderator'), adminGetTemplates);
-router.post('/notification-center/templates', authorize('superadmin', 'admin'), adminCreateTemplate);
-router.put('/notification-center/templates/:id', authorize('superadmin', 'admin'), adminUpdateTemplate);
-router.delete('/notification-center/templates/:id', authorize('superadmin', 'admin'), requireDestructiveStepUp('notification_center', 'template_delete'), adminDeleteTemplate);
-router.get('/notification-center/jobs', authorize('superadmin', 'admin', 'moderator'), adminGetJobs);
-router.post('/notification-center/send', authorize('superadmin', 'admin'), adminSendNotification);
-router.post('/notification-center/jobs/:id/retry', authorize('superadmin', 'admin'), adminRetryFailedJob);
-router.get('/notification-center/delivery-logs', authorize('superadmin', 'admin', 'moderator'), adminGetDeliveryLogs);
+router.get('/notification-center/summary', requirePermission('notifications', 'view'), adminGetNotificationSummary);
+router.get('/notification-center/providers', requirePermission('notifications', 'view'), adminGetProviders);
+router.post('/notification-center/providers', requirePermission('notifications', 'create'), requireSensitiveAction({ actionKey: 'providers.credentials_change', moduleName: 'notification_center', actionName: 'provider_create' }), adminCreateProvider);
+router.put('/notification-center/providers/:id', requirePermission('notifications', 'edit'), requireSensitiveAction({ actionKey: 'providers.credentials_change', moduleName: 'notification_center', actionName: 'provider_update' }), adminUpdateProvider);
+router.delete('/notification-center/providers/:id', requirePermission('notifications', 'delete'), requireSensitiveAction({ actionKey: 'providers.credentials_change', moduleName: 'notification_center', actionName: 'provider_delete' }), adminDeleteProvider);
+router.post('/notification-center/providers/:id/test', requirePermission('notifications', 'edit'), requireProviderStepUp('notification_center', 'provider_test'), adminTestProvider);
+router.get('/notification-center/templates', requirePermission('notifications', 'view'), adminGetTemplates);
+router.post('/notification-center/templates', requirePermission('notifications', 'create'), adminCreateTemplate);
+router.put('/notification-center/templates/:id', requirePermission('notifications', 'edit'), adminUpdateTemplate);
+router.delete('/notification-center/templates/:id', requirePermission('notifications', 'delete'), requireDestructiveStepUp('notification_center', 'template_delete'), adminDeleteTemplate);
+router.get('/notification-center/jobs', requirePermission('notifications', 'view'), adminGetJobs);
+router.post('/notification-center/send', requirePermission('notifications', 'create'), adminSendNotification);
+router.post('/notification-center/jobs/:id/retry', requirePermission('notifications', 'edit'), adminRetryFailedJob);
+router.get('/notification-center/delivery-logs', requirePermission('notifications', 'view'), adminGetDeliveryLogs);
 
 /* ═══════════════════════════════════════════════════════════
    RENEWAL AUTOMATION
    ═══════════════════════════════════════════════════════════ */
-router.get('/renewal/subscriptions', authorize('superadmin', 'admin', 'moderator'), canManagePlans, adminGetActiveSubscriptions);
-router.get('/renewal/stats', authorize('superadmin', 'admin', 'moderator'), canManagePlans, adminGetSubscriptionStats);
-router.post('/renewal/subscriptions/:id/extend', authorize('superadmin', 'admin'), canManagePlans, adminExtendSubscription);
-router.post('/renewal/subscriptions/:id/expire', authorize('superadmin', 'admin'), canManagePlans, adminExpireSubscription);
-router.post('/renewal/subscriptions/:id/reactivate', authorize('superadmin', 'admin'), canManagePlans, adminReactivateSubscription);
-router.patch('/renewal/subscriptions/:id/auto-renew', authorize('superadmin', 'admin'), canManagePlans, adminToggleAutoRenew);
-router.get('/renewal/logs', authorize('superadmin', 'admin', 'moderator'), canManagePlans, adminGetAutomationLogs);
-router.get('/renewal/students/:studentId/history', authorize('superadmin', 'admin', 'moderator'), canManagePlans, adminGetStudentSubscriptionHistory);
+router.get('/renewal/subscriptions', requirePermission('subscription_plans', 'view'), adminGetActiveSubscriptions);
+router.get('/renewal/stats', requirePermission('subscription_plans', 'view'), adminGetSubscriptionStats);
+router.post('/renewal/subscriptions/:id/extend', requirePermission('subscription_plans', 'edit'), adminExtendSubscription);
+router.post('/renewal/subscriptions/:id/expire', requirePermission('subscription_plans', 'edit'), adminExpireSubscription);
+router.post('/renewal/subscriptions/:id/reactivate', requirePermission('subscription_plans', 'edit'), adminReactivateSubscription);
+router.patch('/renewal/subscriptions/:id/auto-renew', requirePermission('subscription_plans', 'edit'), adminToggleAutoRenew);
+router.get('/renewal/logs', requirePermission('subscription_plans', 'view'), adminGetAutomationLogs);
+router.get('/renewal/students/:studentId/history', requirePermission('subscription_plans', 'view'), adminGetStudentSubscriptionHistory);
 
 export default router;
 
