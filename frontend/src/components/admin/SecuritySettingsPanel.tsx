@@ -382,17 +382,18 @@ type SectionCardProps = {
 
 function SectionCard({ title, description, help, children }: SectionCardProps) {
     return (
-        <section className="rounded-3xl border border-white/8 bg-slate-950/70 shadow-[0_14px_36px_rgba(2,6,23,0.24)]">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-6 py-5">
+        <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/50 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-all duration-500 hover:shadow-[0_8px_32px_rgba(6,182,212,0.1)]">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-indigo-500/5 pointer-events-none" />
+            <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 border-b border-white/5 bg-slate-950/40 px-8 py-6">
                 <div>
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-base font-semibold text-white">{title}</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
                         {help ? <SecurityHelpButton {...help} /> : null}
                     </div>
-                    <p className="mt-1 text-sm text-slate-400">{description}</p>
+                    <p className="mt-1.5 text-sm font-medium text-slate-400">{description}</p>
                 </div>
             </div>
-            <div className="space-y-5 px-6 py-5">{children}</div>
+            <div className="relative z-10 space-y-6 px-8 py-7">{children}</div>
         </section>
     );
 }
@@ -406,17 +407,23 @@ type ToggleFieldProps = {
 
 function ToggleField({ label, description, checked, onChange }: ToggleFieldProps) {
     return (
-        <label className="flex items-start justify-between gap-4 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-            <div className="min-w-0">
-                <p className="text-sm font-medium text-white">{label}</p>
-                <p className="mt-1 text-xs text-slate-400">{description}</p>
+        <label className="group relative flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-4 transition-all duration-300 hover:border-cyan-500/30 hover:bg-white/[0.04]">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/0 to-cyan-500/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+            <div className="min-w-0 flex-1 relative z-10">
+                <p className="text-sm font-semibold text-slate-200 transition-colors group-hover:text-white">{label}</p>
+                <p className="mt-1.5 text-xs text-slate-400 leading-relaxed transition-colors group-hover:text-slate-300">{description}</p>
             </div>
-            <input
-                type="checkbox"
-                checked={checked}
-                onChange={(event) => onChange(event.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-900 text-cyan-500 focus:ring-cyan-500"
-            />
+            <div className="relative z-10 flex shrink-0 items-center justify-center mt-1">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(event) => onChange(event.target.checked)}
+                    className="peer sr-only"
+                />
+                <div className={`h-[22px] w-10 rounded-full p-[3px] transition-colors duration-300 ease-in-out ${checked ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]' : 'bg-slate-700/80 shadow-inner'}`}>
+                    <div className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-in-out ${checked ? 'translate-x-full' : 'translate-x-0'}`} />
+                </div>
+            </div>
         </label>
     );
 }
@@ -433,21 +440,24 @@ type NumberFieldProps = {
 
 function NumberField({ label, description, value, min, max, step = 1, onChange }: NumberFieldProps) {
     return (
-        <label className="block rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-white">{label}</p>
-                    <p className="mt-1 text-xs text-slate-400">{description}</p>
+        <label className="group relative block rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-4 transition-all duration-300 hover:border-cyan-500/30 hover:bg-white/[0.04]">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/0 to-cyan-500/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+            <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-slate-200 transition-colors group-hover:text-white">{label}</p>
+                    <p className="mt-1.5 text-xs text-slate-400 leading-relaxed transition-colors group-hover:text-slate-300">{description}</p>
                 </div>
-                <input
-                    type="number"
-                    min={min}
-                    max={max}
-                    step={step}
-                    value={value}
-                    onChange={(event) => onChange(Number(event.target.value))}
-                    className="w-28 rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-right text-sm text-white outline-none transition focus:border-cyan-400/50"
-                />
+                <div className="relative shrink-0">
+                    <input
+                        type="number"
+                        min={min}
+                        max={max}
+                        step={step}
+                        value={value}
+                        onChange={(event) => onChange(Number(event.target.value))}
+                        className="w-24 rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 text-center text-sm font-bold text-white shadow-inner outline-none transition-all duration-300 focus:border-cyan-400 focus:bg-slate-800 focus:ring-2 focus:ring-cyan-500/20"
+                    />
+                </div>
             </div>
         </label>
     );
@@ -478,28 +488,31 @@ function ChipToggleGroup<T extends string>({
     };
 
     return (
-        <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3" data-testid={dataTestId}>
-            <p className="text-sm font-medium text-white">{title}</p>
-            <p className="mt-1 text-xs text-slate-400">{description}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-                {options.map((option) => {
-                    const active = selected.includes(option.value);
-                    return (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => toggleValue(option.value)}
-                            className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                                active
-                                    ? 'border-cyan-400/50 bg-cyan-500/15 text-cyan-200'
-                                    : 'border-white/10 bg-slate-900 text-slate-300 hover:border-white/20 hover:text-white'
-                            }`}
-                            title={option.description || option.label}
-                        >
-                            {option.label}
-                        </button>
-                    );
-                })}
+        <div className="group relative rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-4 transition-all duration-300 hover:border-cyan-500/30 hover:bg-white/[0.04]" data-testid={dataTestId}>
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/0 via-cyan-500/0 to-cyan-500/5 opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+            <div className="relative z-10">
+                <p className="text-sm font-semibold text-slate-200 transition-colors group-hover:text-white">{title}</p>
+                <p className="mt-1.5 text-xs text-slate-400 leading-relaxed transition-colors group-hover:text-slate-300">{description}</p>
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                    {options.map((option) => {
+                        const active = selected.includes(option.value);
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => toggleValue(option.value)}
+                                className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition-all duration-300 ${
+                                    active
+                                        ? 'border-cyan-400/60 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 text-cyan-50 shadow-[0_0_15px_rgba(6,182,212,0.15)] ring-1 ring-cyan-400/30'
+                                        : 'border-white/5 bg-slate-800/50 text-slate-400 hover:border-white/20 hover:bg-slate-800 hover:text-white'
+                                }`}
+                                title={option.description || option.label}
+                            >
+                                {option.label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -521,61 +534,64 @@ function PolicyCard({ label, policy, onChange, dataTestId }: PolicyCardProps) {
     };
 
     return (
-        <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4" data-testid={dataTestId}>
-            <div className="mb-4 flex items-center justify-between gap-3">
-                <h4 className="text-sm font-semibold text-white">{label}</h4>
-                <span className="rounded-full border border-white/10 bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-slate-300">
-                    Active policy
-                </span>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-                <NumberField
-                    label="Minimum length"
-                    description="Shortest allowed password length."
-                    value={policy.minLength}
-                    min={8}
-                    max={128}
-                    onChange={(value) => update('minLength', value)}
-                />
-                <NumberField
-                    label="Reuse prevention"
-                    description="How many old passwords remain blocked."
-                    value={policy.preventReuseCount}
-                    min={0}
-                    max={24}
-                    onChange={(value) => update('preventReuseCount', value)}
-                />
-                <NumberField
-                    label="Expiry days"
-                    description="Use 0 to disable password expiry."
-                    value={policy.expiryDays}
-                    min={0}
-                    max={3650}
-                    onChange={(value) => update('expiryDays', value)}
-                />
-                <div className="rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3">
-                    <p className="text-sm font-medium text-white">Required character mix</p>
-                    <div className="mt-3 space-y-2">
-                        <ToggleField label="Uppercase" description="Require at least one uppercase letter." checked={policy.requireUppercase} onChange={(value) => update('requireUppercase', value)} />
-                        <ToggleField label="Lowercase" description="Require at least one lowercase letter." checked={policy.requireLowercase} onChange={(value) => update('requireLowercase', value)} />
-                        <ToggleField label="Number" description="Require at least one numeric character." checked={policy.requireNumber} onChange={(value) => update('requireNumber', value)} />
-                        <ToggleField label="Special" description="Require at least one special character." checked={policy.requireSpecial} onChange={(value) => update('requireSpecial', value)} />
-                    </div>
+        <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-slate-900/40 p-1 group hover:border-cyan-500/20 transition-all duration-500" data-testid={dataTestId}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+            <div className="relative z-10 bg-slate-950/60 backdrop-blur-md rounded-[1.35rem] p-5">
+                <div className="mb-5 flex items-center justify-between gap-3 border-b border-white/5 pb-4">
+                    <h4 className="text-base font-bold tracking-tight text-white">{label}</h4>
+                    <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
+                        Active policy
+                    </span>
                 </div>
-                <div className="rounded-2xl border border-white/8 bg-slate-950/60 px-4 py-3 md:col-span-2">
-                    <div className="grid gap-2 md:grid-cols-2">
-                        <ToggleField
-                            label="Deny common passwords"
-                            description="Reject weak and commonly-used passwords."
-                            checked={policy.denyCommonPasswords}
-                            onChange={(value) => update('denyCommonPasswords', value)}
-                        />
-                        <ToggleField
-                            label="Force reset on first login"
-                            description="Require a password change immediately after account activation."
-                            checked={policy.forceResetOnFirstLogin}
-                            onChange={(value) => update('forceResetOnFirstLogin', value)}
-                        />
+                <div className="grid gap-3 sm:grid-cols-2">
+                    <NumberField
+                        label="Minimum length"
+                        description="Shortest allowed password length."
+                        value={policy.minLength}
+                        min={8}
+                        max={128}
+                        onChange={(value) => update('minLength', value)}
+                    />
+                    <NumberField
+                        label="Reuse prevention"
+                        description="How many old passwords remain blocked."
+                        value={policy.preventReuseCount}
+                        min={0}
+                        max={24}
+                        onChange={(value) => update('preventReuseCount', value)}
+                    />
+                    <NumberField
+                        label="Expiry days"
+                        description="Use 0 to disable password expiry."
+                        value={policy.expiryDays}
+                        min={0}
+                        max={3650}
+                        onChange={(value) => update('expiryDays', value)}
+                    />
+                    <div className="rounded-2xl border border-white/5 bg-slate-900/50 px-5 py-4 sm:col-span-2">
+                        <p className="text-sm font-semibold text-slate-200">Required character mix</p>
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                            <ToggleField label="Uppercase" description="Require at least one uppercase letter." checked={policy.requireUppercase} onChange={(value) => update('requireUppercase', value)} />
+                            <ToggleField label="Lowercase" description="Require at least one lowercase letter." checked={policy.requireLowercase} onChange={(value) => update('requireLowercase', value)} />
+                            <ToggleField label="Number" description="Require at least one numeric character." checked={policy.requireNumber} onChange={(value) => update('requireNumber', value)} />
+                            <ToggleField label="Special" description="Require at least one special character." checked={policy.requireSpecial} onChange={(value) => update('requireSpecial', value)} />
+                        </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/5 bg-slate-900/50 px-5 py-4 sm:col-span-2">
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <ToggleField
+                                label="Deny common passwords"
+                                description="Reject weak and commonly-used passwords from dictionary."
+                                checked={policy.denyCommonPasswords}
+                                onChange={(value) => update('denyCommonPasswords', value)}
+                            />
+                            <ToggleField
+                                label="Force reset on first login"
+                                description="Require a password change upon first activation."
+                                checked={policy.forceResetOnFirstLogin}
+                                onChange={(value) => update('forceResetOnFirstLogin', value)}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -821,33 +837,45 @@ export default function SecuritySettingsPanel() {
     }
 
     return (
-        <div className="space-y-6" data-testid="security-settings-panel">
-            <div className="rounded-3xl border border-white/8 bg-slate-950/70 p-6 shadow-[0_18px_46px_rgba(2,6,23,0.26)]">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-xl font-semibold text-white">Security Settings</h2>
-                            <SecurityHelpButton
-                                title="Security Settings"
-                                content="This page now owns only real security controls that are enforced in backend or runtime flows."
-                                impact="It removes duplicate or dead settings so policy changes are predictable."
-                                affected="Admin authentication, session handling, exports, approvals, and emergency operations."
-                                enabledNote="Changes here propagate to the canonical security snapshot used by auth and sensitive-action middleware."
-                                disabledNote="Duplicate settings elsewhere are intentionally hidden to avoid split ownership."
-                                bestPractice="Review these controls in sections, then save once after checking the impact summary."
-                            />
+        <div className="space-y-8" data-testid="security-settings-panel">
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-900/60 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-indigo-500/5 pointer-events-none" />
+                <div className="relative z-10 flex flex-wrap items-start justify-between gap-6">
+                    <div className="max-w-2xl">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-indigo-500 p-2.5 shadow-lg shadow-cyan-500/20 text-white">
+                                <ShieldCheck className="h-6 w-6" />
+                            </div>
+                            <h2 className="bg-gradient-to-r from-white to-slate-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Security Center</h2>
+                            <div className="ml-2">
+                                <SecurityHelpButton
+                                    title="Security Settings"
+                                    content="This page now owns only real security controls that are enforced in backend or runtime flows."
+                                    impact="It removes duplicate or dead settings so policy changes are predictable."
+                                    affected="Admin authentication, session handling, exports, approvals, and emergency operations."
+                                    enabledNote="Changes here propagate to the canonical security snapshot used by auth and sensitive-action middleware."
+                                    disabledNote="Duplicate settings elsewhere are intentionally hidden to avoid split ownership."
+                                    bestPractice="Review these controls in sections, then save once after checking the impact summary."
+                                />
+                            </div>
                         </div>
-                        <p className="mt-1 text-sm text-slate-400">
-                            Canonical policy controls only. Upload placeholders and dead legacy mirrors are intentionally removed from this surface.
+                        <p className="mt-4 text-sm font-medium leading-relaxed text-slate-400">
+                            Canonical policy controls governing administrative access, sessions, and protections. Upload placeholders and dead legacy mirrors are intentionally removed from this surface.
                         </p>
-                        <p className="mt-2 text-xs text-slate-500">Last synced {formatTimestamp(settings.updatedAt)}</p>
+                        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/5 bg-white/[0.02] px-3 py-1 shadow-inner">
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                            </span>
+                            <span className="text-[11px] font-bold tracking-wide text-slate-300">SYNCED {formatTimestamp(settings.updatedAt).toUpperCase()}</span>
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                         <button
                             type="button"
                             onClick={resetDefaults}
                             disabled={resetMutation.isPending}
-                            className="inline-flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-500/20 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-2.5 text-sm font-bold text-rose-200 transition-all duration-300 hover:bg-rose-500/20 hover:shadow-[0_0_15px_rgba(244,63,94,0.15)] disabled:opacity-50"
                         >
                             {resetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <TimerReset className="h-4 w-4" />}
                             Reset defaults
@@ -857,7 +885,7 @@ export default function SecuritySettingsPanel() {
                             onClick={saveCurrentSettings}
                             disabled={!hasChanges || saveMutation.isPending}
                             data-testid="security-settings-save"
-                            className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-cyan-500/20 transition-all duration-300 hover:from-cyan-400 hover:to-indigo-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                         >
                             {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Save changes
@@ -865,38 +893,42 @@ export default function SecuritySettingsPanel() {
                     </div>
                 </div>
 
-                <div className="mt-5 grid gap-3 md:grid-cols-4">
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                        <div className="flex items-center gap-2 text-cyan-300">
-                            <KeyRound className="h-4 w-4" />
-                            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Password Roles</span>
+                <div className="relative z-10 mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="group relative overflow-hidden rounded-[1.5rem] border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-6 transition-all duration-300 hover:border-cyan-500/50 hover:bg-white/[0.06] hover:shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+                        <div className="absolute -right-6 -top-6 rounded-full bg-cyan-500/10 p-12 blur-3xl transition-all duration-500 group-hover:bg-cyan-500/20" />
+                        <div className="relative z-10 mb-4 flex items-center gap-3 text-cyan-400">
+                            <div className="rounded-xl bg-cyan-500/10 p-2 shadow-inner"><KeyRound className="h-5 w-5" /></div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-cyan-200">Password Roles</span>
                         </div>
-                        <p className="mt-3 text-2xl font-semibold text-white">{PASSWORD_POLICY_KEYS.length}</p>
-                        <p className="mt-1 text-xs text-slate-400">Canonical role-based password policies.</p>
+                        <p className="relative z-10 px-1 text-4xl font-black text-white drop-shadow-sm">{PASSWORD_POLICY_KEYS.length}</p>
+                        <p className="relative z-10 mt-3 text-xs font-medium leading-relaxed text-slate-400">Canonical role-based password policies.</p>
                     </div>
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                        <div className="flex items-center gap-2 text-indigo-300">
-                            <ShieldCheck className="h-4 w-4" />
-                            <span className="text-xs font-semibold uppercase tracking-[0.2em]">2FA Roles</span>
+                    <div className="group relative overflow-hidden rounded-[1.5rem] border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-6 transition-all duration-300 hover:border-indigo-500/50 hover:bg-white/[0.06] hover:shadow-[0_0_30px_rgba(99,102,241,0.15)]">
+                        <div className="absolute -right-6 -top-6 rounded-full bg-indigo-500/10 p-12 blur-3xl transition-all duration-500 group-hover:bg-indigo-500/20" />
+                        <div className="relative z-10 mb-4 flex items-center gap-3 text-indigo-400">
+                            <div className="rounded-xl bg-indigo-500/10 p-2 shadow-inner"><ShieldCheck className="h-5 w-5" /></div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-indigo-200">2FA Roles</span>
                         </div>
-                        <p className="mt-3 text-2xl font-semibold text-white">{settings.twoFactor.requireForRoles.length}</p>
-                        <p className="mt-1 text-xs text-slate-400">Roles forced through MFA during login.</p>
+                        <p className="relative z-10 px-1 text-4xl font-black text-white drop-shadow-sm">{settings.twoFactor.requireForRoles.length}</p>
+                        <p className="relative z-10 mt-3 text-xs font-medium leading-relaxed text-slate-400">Roles forced through MFA during login.</p>
                     </div>
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                        <div className="flex items-center gap-2 text-amber-300">
-                            <ShieldAlert className="h-4 w-4" />
-                            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Risky Actions</span>
+                    <div className="group relative overflow-hidden rounded-[1.5rem] border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-6 transition-all duration-300 hover:border-amber-500/50 hover:bg-white/[0.06] hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+                        <div className="absolute -right-6 -top-6 rounded-full bg-amber-500/10 p-12 blur-3xl transition-all duration-500 group-hover:bg-amber-500/20" />
+                        <div className="relative z-10 mb-4 flex items-center gap-3 text-amber-400">
+                            <div className="rounded-xl bg-amber-500/10 p-2 shadow-inner"><ShieldAlert className="h-5 w-5" /></div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-amber-200">Risky Actions</span>
                         </div>
-                        <p className="mt-3 text-2xl font-semibold text-white">{settings.twoPersonApproval.riskyActions.length}</p>
-                        <p className="mt-1 text-xs text-slate-400">Actions that can require second approval.</p>
+                        <p className="relative z-10 px-1 text-4xl font-black text-white drop-shadow-sm">{settings.twoPersonApproval.riskyActions.length}</p>
+                        <p className="relative z-10 mt-3 text-xs font-medium leading-relaxed text-slate-400">Actions that can require second approval.</p>
                     </div>
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                        <div className="flex items-center gap-2 text-emerald-300">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Admin Panel</span>
+                    <div className="group relative overflow-hidden rounded-[1.5rem] border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-6 transition-all duration-300 hover:border-emerald-500/50 hover:bg-white/[0.06] hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+                        <div className="absolute -right-6 -top-6 rounded-full bg-emerald-500/10 p-12 blur-3xl transition-all duration-500 group-hover:bg-emerald-500/20" />
+                        <div className="relative z-10 mb-4 flex items-center gap-3 text-emerald-400">
+                            <div className="rounded-xl bg-emerald-500/10 p-2 shadow-inner"><CheckCircle2 className="h-5 w-5" /></div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-emerald-200">Admin Panel</span>
                         </div>
-                        <p className="mt-3 text-2xl font-semibold text-white">{settings.adminAccess.adminPanelEnabled ? 'Open' : 'Locked'}</p>
-                        <p className="mt-1 text-xs text-slate-400">Emergency access gate for admin routes.</p>
+                        <p className="relative z-10 px-1 text-4xl font-black text-white drop-shadow-sm">{settings.adminAccess.adminPanelEnabled ? 'Open' : 'Locked'}</p>
+                        <p className="relative z-10 mt-3 text-xs font-medium leading-relaxed text-slate-400">Emergency access gate for admin routes.</p>
                     </div>
                 </div>
             </div>

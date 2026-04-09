@@ -12,9 +12,8 @@ import { broadcastStudentDashboardEvent } from '../realtime/studentDashboardStre
 import { broadcastHomeStreamEvent } from '../realtime/homeStream';
 import {
     backfillUniversityTaxonomyIfNeeded,
-    ensureUniversityCategoryByName,
-    ensureUniversityClusterByName,
     normalizeExamCenters,
+    pruneOrphanedTaxonomy,
     reconcileUniversityClusterAssignments,
     serializeExamCenters,
     syncManualClusterMembership,
@@ -154,7 +153,7 @@ function resolveUniversityCategoryFilterValue(value: unknown): string {
     const raw = String(value || '').trim();
     if (!raw) return DEFAULT_UNIVERSITY_CATEGORY;
     if (isAllUniversityCategoryToken(raw)) return DEFAULT_UNIVERSITY_CATEGORY;
-    return normalizeUniversityCategoryStrict(raw);
+    return normalizeUniversityCategory(raw);
 }
 
 function csvEscape(value: unknown): string {
@@ -461,7 +460,7 @@ async function resolveCategoryFields(source: Record<string, unknown>): Promise<{
         if (byId) return { category: normalizeUniversityCategory(byId.name), categoryId: String(byId._id) };
     }
     const categoryName = normalizeUniversityCategory(source.category || DEFAULT_UNIVERSITY_CATEGORY);
-    const byName = await ensureUniversityCategoryByName(categoryName);
+    const byName = await UniversityCategory.findOne({ name: categoryName }).select('_id name').lean();
     return { category: categoryName, categoryId: byName ? String(byName._id) : null };
 }
 
@@ -480,11 +479,11 @@ async function resolveClusterFields(source: Record<string, unknown>): Promise<{ 
 
     const clusterName = String(source.clusterGroup || source.clusterName || '').trim();
     if (!clusterName) return { clusterId: null, clusterName: '', clusterGroup: '' };
-    const cluster = await ensureUniversityClusterByName(clusterName);
+    const cluster = await UniversityCluster.findOne({ name: clusterName }).select('_id name').lean();
     return {
-        clusterId: String(cluster._id),
-        clusterName: cluster.name,
-        clusterGroup: cluster.name,
+        clusterId: cluster ? String(cluster._id) : null,
+        clusterName: cluster ? cluster.name : clusterName,
+        clusterGroup: cluster ? cluster.name : clusterName,
     };
 }
 
@@ -622,12 +621,47 @@ export async function getUniversities(req: Request, res: Response): Promise<void
             ? ({ featuredOrder: 1, name: 1 } as Record<string, 1 | -1>)
             : normalizeSort(sortBy, sortOrder, sort);
         const total = await University.countDocuments(publicFilter);
-        const rows = await University.find(publicFilter)
-            .select(PUBLIC_UNIVERSITY_LIST_PROJECTION)
-            .sort(sortOption)
-            .skip((pageNum - 1) * limitNum)
-            .limit(limitNum)
-            .lean();
+        
+        const sortParamOriginal = String(sortBy || sort || '').trim().toLowerCase();
+        const isClosingSoon = ['closing_soon', 'nearest_deadline', 'deadline', 'nearest_application_deadline'].includes(sortParamOriginal);
+        const isExamSoon = sortParamOriginal === 'exam_soon';
+
+        let rows;
+        if (!featuredMode && (isClosingSoon || isExamSoon)) {
+            const aggrSort: Record<string, 1 | -1> = isClosingSoon 
+                ? { hasDateFlag: -1, applicationEndDate: 1, name: 1 }
+                : { hasDateFlag: -1, scienceExamDate: 1, artsExamDate: 1, businessExamDate: 1, name: 1 };
+
+            const projection = PUBLIC_UNIVERSITY_LIST_PROJECTION.split(' ').reduce((acc, field) => {
+                if (field.trim()) acc[field.trim()] = 1;
+                return acc;
+            }, {} as Record<string, 1>);
+            
+            rows = await University.aggregate([
+                { $match: publicFilter },
+                { $addFields: {
+                    hasDateFlag: isClosingSoon 
+                        ? { $cond: [{ $ifNull: ["$applicationEndDate", false] }, 1, 0] }
+                        : { $cond: [{ $or: [ 
+                            { $and: [{ $ifNull: ["$scienceExamDate", false] }, { $ne: ["$scienceExamDate", ""] }] },
+                            { $and: [{ $ifNull: ["$artsExamDate", false] }, { $ne: ["$artsExamDate", ""] }] },
+                            { $and: [{ $ifNull: ["$businessExamDate", false] }, { $ne: ["$businessExamDate", ""] }] }
+                          ]}, 1, 0] }
+                }},
+                { $sort: aggrSort },
+                { $skip: (pageNum - 1) * limitNum },
+                { $limit: limitNum },
+                { $project: projection }
+            ]);
+        } else {
+            rows = await University.find(publicFilter)
+                .select(PUBLIC_UNIVERSITY_LIST_PROJECTION)
+                .sort(sortOption)
+                .skip((pageNum - 1) * limitNum)
+                .limit(limitNum)
+                .lean();
+        }
+        
         const canonicalRows = rows.map((item) => toCanonicalUniversityRecord(
             stripInactiveClusterFromUniversityRecord(item as unknown as Record<string, unknown>, taxonomy),
         ));
@@ -923,6 +957,7 @@ export async function adminDeleteUniversity(req: Request, res: Response): Promis
             if (!removed) { res.status(404).json({ message: 'University not found' }); return; }
         }
         await reconcileUniversityClusterAssignments(actorId || null);
+        await pruneOrphanedTaxonomy();
         broadcastStudentDashboardEvent({ type: 'featured_university_updated', meta: { action: 'delete', universityId: req.params.id, mode } });
         broadcastHomeStreamEvent({ type: 'home-updated', meta: { source: 'university', action: 'delete', universityId: req.params.id, mode } });
         res.json({ message: mode === 'soft' ? 'University archived successfully' : 'University deleted successfully' });
@@ -967,6 +1002,7 @@ export async function adminBulkDeleteUniversities(req: Request, res: Response): 
             }
         }
         await reconcileUniversityClusterAssignments(actorId || null);
+        await pruneOrphanedTaxonomy();
         broadcastStudentDashboardEvent({ type: 'featured_university_updated', meta: { action: 'bulk_delete', mode, affected } });
         broadcastHomeStreamEvent({ type: 'home-updated', meta: { source: 'university', action: 'bulk_delete', mode, affected } });
         res.json({

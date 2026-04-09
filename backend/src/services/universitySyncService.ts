@@ -660,13 +660,6 @@ async function backfillUniversityTaxonomyInternal(): Promise<void> {
         ),
     );
 
-    for (const categoryName of categoryNames) {
-        await ensureUniversityCategoryByName(categoryName);
-    }
-    for (const clusterName of clusterNames) {
-        await ensureUniversityClusterByName(clusterName);
-    }
-
     const [categories, clusters] = await Promise.all([
         UniversityCategory.find({}).select('_id name').lean(),
         UniversityCluster.find({}).select('_id name memberUniversityIds').lean(),
@@ -777,4 +770,29 @@ export function normalizeUniversityImportRow(input: Record<string, unknown>): Re
         clusterSyncLocked: normalizeBoolean(input.clusterSyncLocked, false),
         examCenters: normalizeExamCenters(input.examCenters),
     };
+}
+
+export async function pruneOrphanedTaxonomy(): Promise<void> {
+    const activeUniversities = await University.find({ isArchived: { $ne: true } })
+        .select('categoryId clusterId')
+        .lean();
+
+    const usedCategoryIds = new Set(
+        activeUniversities.map((u) => u.categoryId ? String(u.categoryId) : null).filter(Boolean)
+    );
+    const usedClusterIds = new Set(
+        activeUniversities.map((u) => u.clusterId ? String(u.clusterId) : null).filter(Boolean)
+    );
+
+    const categories = await UniversityCategory.find({}).select('_id').lean();
+    const categoriesToDelete = categories.filter(c => !usedCategoryIds.has(String(c._id))).map(c => c._id);
+    if (categoriesToDelete.length > 0) {
+        await UniversityCategory.deleteMany({ _id: { $in: categoriesToDelete } });
+    }
+
+    const clusters = await UniversityCluster.find({}).select('_id').lean();
+    const clustersToDelete = clusters.filter(c => !usedClusterIds.has(String(c._id))).map(c => c._id);
+    if (clustersToDelete.length > 0) {
+        await UniversityCluster.deleteMany({ _id: { $in: clustersToDelete } });
+    }
 }
