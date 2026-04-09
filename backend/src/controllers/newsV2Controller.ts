@@ -2672,8 +2672,17 @@ export async function adminNewsV2CreateItem(req: AuthRequest, res: Response): Pr
         await writeNewsAuditEvent(req, { action: 'news.create', entityType: 'news', entityId: String(created._id), after: { title: created.title, status: created.status } });
         broadcastHomeStreamEvent({ type: 'news-updated', meta: { action: 'create', newsId: String(created._id) } });
         res.status(201).json({ item: createdPayload, message: 'News created' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('adminNewsV2CreateItem error:', error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors || {}).map((err: any) => err.message);
+            res.status(400).json({ message: messages.length > 0 ? messages.join(', ') : 'Validation failed' });
+            return;
+        }
+        if (error.code === 11000) {
+            res.status(400).json({ message: 'A news article with this unique information (like title or slug) already exists.' });
+            return;
+        }
         res.status(500).json({ message: 'Server error' });
     }
 }
@@ -2702,8 +2711,17 @@ export async function adminNewsV2UpdateItem(req: AuthRequest, res: Response): Pr
         });
         broadcastHomeStreamEvent({ type: 'news-updated', meta: { action: 'update', newsId: entityId } });
         res.json({ item: updatedPayload, message: 'News updated' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('adminNewsV2UpdateItem error:', error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors || {}).map((err: any) => err.message);
+            res.status(400).json({ message: messages.length > 0 ? messages.join(', ') : 'Validation failed' });
+            return;
+        }
+        if (error.code === 11000) {
+            res.status(400).json({ message: 'A news article with this unique information already exists.' });
+            return;
+        }
         res.status(500).json({ message: 'Server error' });
     }
 }

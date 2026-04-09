@@ -51,10 +51,19 @@ export async function adminCreateBanner(req: AuthRequest, res: Response): Promis
     try {
         const body = (req.body || {}) as Record<string, unknown>;
         const slotRaw = String(body.slot || 'top').trim().toLowerCase();
-        const slot = slotRaw === 'middle' || slotRaw === 'footer' || slotRaw === 'home_ads' ? slotRaw : 'top';
+        const slot = slotRaw === 'middle' || slotRaw === 'footer' || slotRaw === 'home_ads' || slotRaw === 'popup' ? slotRaw : 'top';
         const priority = Number(body.priority || 0);
         const statusRaw = String(body.status || 'draft').trim().toLowerCase();
         const status = statusRaw === 'published' ? 'published' : 'draft';
+
+        const popupConfig = slot === 'popup' && body.popupConfig && typeof body.popupConfig === 'object'
+            ? {
+                autoCloseAfterSeconds: Number((body.popupConfig as Record<string, unknown>).autoCloseAfterSeconds ?? 0),
+                closeButtonDelaySeconds: Number((body.popupConfig as Record<string, unknown>).closeButtonDelaySeconds ?? 0),
+                maxViewsPerDay: Number((body.popupConfig as Record<string, unknown>).maxViewsPerDay ?? 1),
+                cooldownHours: Number((body.popupConfig as Record<string, unknown>).cooldownHours ?? 24),
+            }
+            : undefined;
 
         const banner = await Banner.create({
             ...body,
@@ -65,6 +74,7 @@ export async function adminCreateBanner(req: AuthRequest, res: Response): Promis
             startDate: body.startDate ? new Date(String(body.startDate)) : undefined,
             endDate: body.endDate ? new Date(String(body.endDate)) : undefined,
             createdBy: req.user?._id,
+            popupConfig,
         });
         broadcastHomeStreamEvent({ type: 'banner-updated', meta: { action: 'create', bannerId: String(banner._id) } });
         res.status(201).json({ banner, message: 'Banner created' });
@@ -80,12 +90,25 @@ export async function adminUpdateBanner(req: Request, res: Response): Promise<vo
         const update: Record<string, unknown> = { ...body };
         if (body.slot !== undefined) {
             const slotRaw = String(body.slot || '').trim().toLowerCase();
-            update.slot = slotRaw === 'middle' || slotRaw === 'footer' || slotRaw === 'home_ads' ? slotRaw : 'top';
+            update.slot = slotRaw === 'middle' || slotRaw === 'footer' || slotRaw === 'home_ads' || slotRaw === 'popup' ? slotRaw : 'top';
         }
         if (body.priority !== undefined) update.priority = Number(body.priority || 0);
         if (body.status !== undefined) update.status = String(body.status || '').toLowerCase() === 'published' ? 'published' : 'draft';
         if (body.startDate !== undefined) update.startDate = body.startDate ? new Date(String(body.startDate)) : null;
         if (body.endDate !== undefined) update.endDate = body.endDate ? new Date(String(body.endDate)) : null;
+
+        // Handle popupConfig update
+        if (body.popupConfig !== undefined && typeof body.popupConfig === 'object' && body.popupConfig !== null) {
+            const pc = body.popupConfig as Record<string, unknown>;
+            update.popupConfig = {
+                autoCloseAfterSeconds: Number(pc.autoCloseAfterSeconds ?? 0),
+                closeButtonDelaySeconds: Number(pc.closeButtonDelaySeconds ?? 0),
+                maxViewsPerDay: Number(pc.maxViewsPerDay ?? 1),
+                cooldownHours: Number(pc.cooldownHours ?? 24),
+            };
+        } else if (body.popupConfig === null) {
+            update.popupConfig = undefined;
+        }
 
         const banner = await Banner.findByIdAndUpdate(req.params.id, update, { new: true });
         if (!banner) {

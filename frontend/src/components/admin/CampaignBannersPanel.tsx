@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import {
     Plus, Edit, Trash2, Image, RefreshCw, Eye, EyeOff,
     Calendar, Clock, ExternalLink, X, ChevronUp, ChevronDown,
-    Megaphone,
+    Megaphone, Zap, Timer, Users, AlertCircle,
 } from 'lucide-react';
 import {
     adminGetBanners,
@@ -17,6 +17,13 @@ import AdminImageUploadField from './AdminImageUploadField';
 import { uploadSignedBannerAsset } from './bannerUpload';
 
 /* ── Types ── */
+interface PopupConfig {
+    autoCloseAfterSeconds: number;
+    closeButtonDelaySeconds: number;
+    maxViewsPerDay: number;
+    cooldownHours: number;
+}
+
 interface CampaignBanner {
     _id: string;
     title?: string;
@@ -32,9 +39,18 @@ interface CampaignBanner {
     order: number;
     startDate?: string;
     endDate?: string;
+    popupConfig?: PopupConfig;
 }
 
 type ScheduleState = 'live' | 'scheduled' | 'expired' | 'draft';
+type PanelTab = 'home_ads' | 'popup';
+
+const DEFAULT_POPUP_CONFIG: PopupConfig = {
+    autoCloseAfterSeconds: 0,
+    closeButtonDelaySeconds: 5,
+    maxViewsPerDay: 1,
+    cooldownHours: 24,
+};
 
 const EMPTY_FORM = {
     title: '',
@@ -48,6 +64,7 @@ const EMPTY_FORM = {
     order: 0,
     startDate: '',
     endDate: '',
+    popupConfig: { ...DEFAULT_POPUP_CONFIG },
 };
 
 /* ── Helpers ── */
@@ -66,6 +83,24 @@ const SCHEDULE_BADGE: Record<ScheduleState, { bg: string; text: string; label: s
     draft: { bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Draft' },
 };
 
+function NumInput({
+    label, value, onChange, min = 0, helper,
+}: { label: string; value: number; onChange: (v: number) => void; min?: number; helper?: string }) {
+    return (
+        <div>
+            <label className="text-xs text-slate-400 mb-1 block">{label}</label>
+            <input
+                type="number"
+                min={min}
+                value={value}
+                onChange={(e) => onChange(Math.max(min, Number(e.target.value)))}
+                className="w-full bg-slate-800/60 border border-indigo-500/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+            />
+            {helper && <p className="text-[10px] text-slate-500 mt-0.5">{helper}</p>}
+        </div>
+    );
+}
+
 /* ── Component ── */
 export default function CampaignBannersPanel() {
     const [banners, setBanners] = useState<CampaignBanner[]>([]);
@@ -73,14 +108,14 @@ export default function CampaignBannersPanel() {
     const [saving, setSaving] = useState(false);
     const [modal, setModal] = useState<null | 'create' | CampaignBanner>(null);
     const [form, setForm] = useState(EMPTY_FORM);
+    const [activeTab, setActiveTab] = useState<PanelTab>('home_ads');
 
-    /* Filter only home_ads banners */
     const campaigns = useMemo(
         () =>
             banners
-                .filter((b) => b.slot === 'home_ads')
+                .filter((b) => b.slot === activeTab)
                 .sort((a, b) => b.priority - a.priority || a.order - b.order),
-        [banners],
+        [banners, activeTab],
     );
 
     const fetchBanners = async () => {
@@ -95,13 +130,15 @@ export default function CampaignBannersPanel() {
         }
     };
 
-    useEffect(() => {
-        void fetchBanners();
-    }, []);
+    useEffect(() => { void fetchBanners(); }, []);
 
     /* ── Modal helpers ── */
     const openCreate = () => {
-        setForm({ ...EMPTY_FORM, order: campaigns.length });
+        setForm({
+            ...EMPTY_FORM,
+            order: campaigns.length,
+            popupConfig: { ...DEFAULT_POPUP_CONFIG },
+        });
         setModal('create');
     };
 
@@ -118,39 +155,51 @@ export default function CampaignBannersPanel() {
             order: Number(banner.order || 0),
             startDate: banner.startDate ? new Date(banner.startDate).toISOString().slice(0, 16) : '',
             endDate: banner.endDate ? new Date(banner.endDate).toISOString().slice(0, 16) : '',
+            popupConfig: banner.popupConfig
+                ? { ...DEFAULT_POPUP_CONFIG, ...banner.popupConfig }
+                : { ...DEFAULT_POPUP_CONFIG },
         });
         setModal(banner);
     };
 
-    /* ── Image upload ── */
+    const setPopup = (key: keyof PopupConfig, val: number) =>
+        setForm((p) => ({ ...p, popupConfig: { ...p.popupConfig, [key]: val } }));
+
     /* ── Save ── */
     const saveBanner = async () => {
         if (!form.imageUrl.trim()) {
-            toast.error('Desktop banner image is required');
+            toast.error('Banner image is required');
             return;
         }
         setSaving(true);
         try {
-            const payload = {
+            const payload: Record<string, unknown> = {
                 ...form,
-                slot: 'home_ads',
+                slot: activeTab,
                 status: form.isActive ? 'published' : 'draft',
                 priority: Number(form.priority),
                 order: Number(form.order),
                 startDate: form.startDate || undefined,
                 endDate: form.endDate || undefined,
             };
+
+            if (activeTab === 'popup') {
+                payload.popupConfig = { ...form.popupConfig };
+            } else {
+                delete payload.popupConfig;
+            }
+
             if (modal === 'create') {
                 await adminCreateBanner(payload);
-                toast.success('Campaign banner created');
+                toast.success(activeTab === 'popup' ? 'Popup campaign created' : 'Campaign banner created');
             } else if (modal && typeof modal === 'object') {
                 await adminUpdateBanner(modal._id, payload);
-                toast.success('Campaign banner updated');
+                toast.success(activeTab === 'popup' ? 'Popup campaign updated' : 'Campaign banner updated');
             }
             setModal(null);
             await fetchBanners();
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Failed to save banner');
+            toast.error(err.response?.data?.message || 'Failed to save');
         } finally {
             setSaving(false);
         }
@@ -158,18 +207,18 @@ export default function CampaignBannersPanel() {
 
     const removeBanner = async (id: string) => {
         const confirmed = await showConfirmDialog({
-            title: 'Delete campaign banner',
-            message: 'Delete this campaign banner?',
+            title: activeTab === 'popup' ? 'Delete popup campaign' : 'Delete campaign banner',
+            message: activeTab === 'popup' ? 'Delete this popup campaign?' : 'Delete this campaign banner?',
             confirmLabel: 'Delete',
             tone: 'danger',
         });
         if (!confirmed) return;
         try {
             await adminDeleteBanner(id);
-            toast.success('Banner deleted');
+            toast.success('Deleted');
             await fetchBanners();
         } catch {
-            toast.error('Failed to delete banner');
+            toast.error('Failed to delete');
         }
     };
 
@@ -208,7 +257,7 @@ export default function CampaignBannersPanel() {
                         <Megaphone className="w-5 h-5 text-[var(--primary)]" /> Campaign Banners
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        Manage promotional banners displayed on the home screen carousel.
+                        Manage promotional banners and popup ad campaigns.
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -222,9 +271,33 @@ export default function CampaignBannersPanel() {
                         onClick={openCreate}
                         className="bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white text-sm px-4 py-2 rounded-xl flex items-center gap-2 hover:opacity-90 shadow-lg shadow-[var(--primary)]/20"
                     >
-                        <Plus className="w-4 h-4" /> New Campaign
+                        <Plus className="w-4 h-4" />{activeTab === 'popup' ? 'New Popup' : 'New Campaign'}
                     </button>
                 </div>
+            </div>
+
+            {/* Tab switcher */}
+            <div className="flex gap-1 p-1 bg-slate-900/60 border border-indigo-500/10 rounded-xl w-fit">
+                <button
+                    onClick={() => setActiveTab('home_ads')}
+                    className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${
+                        activeTab === 'home_ads'
+                            ? 'bg-[var(--primary)] text-white shadow'
+                            : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                    <span className="flex items-center gap-1.5"><Image className="w-3.5 h-3.5" /> Home Banners</span>
+                </button>
+                <button
+                    onClick={() => setActiveTab('popup')}
+                    className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${
+                        activeTab === 'popup'
+                            ? 'bg-[var(--primary)] text-white shadow'
+                            : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                    <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5" /> Popup Campaigns</span>
+                </button>
             </div>
 
             {/* Stats row */}
@@ -233,13 +306,24 @@ export default function CampaignBannersPanel() {
                     const count = campaigns.filter((b) => getScheduleState(b) === st).length;
                     const badge = SCHEDULE_BADGE[st];
                     return (
-                        <div key={st} className={`rounded-xl border border-indigo-500/10 bg-slate-900/60 px-4 py-3`}>
+                        <div key={st} className="rounded-xl border border-indigo-500/10 bg-slate-900/60 px-4 py-3">
                             <p className="text-2xl font-bold text-white">{count}</p>
                             <p className={`text-xs font-medium ${badge.text}`}>{badge.label}</p>
                         </div>
                     );
                 })}
             </div>
+
+            {/* Popup explanation banner */}
+            {activeTab === 'popup' && (
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-sm text-slate-300">
+                    <AlertCircle className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-indigo-200 mb-1">Popup Campaigns</p>
+                        <p className="text-xs text-slate-400">Popup ads appear as full-screen overlay when visitors land on your public website. You can control the close-button delay, auto-dismiss timer, and how often each visitor sees the popup.</p>
+                    </div>
+                </div>
+            )}
 
             {/* Banner list */}
             <div className="bg-slate-900/60 backdrop-blur-sm rounded-2xl border border-indigo-500/10 overflow-hidden">
@@ -249,8 +333,16 @@ export default function CampaignBannersPanel() {
                     </div>
                 ) : campaigns.length === 0 ? (
                     <div className="p-12 text-center">
-                        <Megaphone className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                        <p className="text-slate-500">No campaign banners yet. Create one to promote on the home screen.</p>
+                        {activeTab === 'popup'
+                            ? <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                            : <Megaphone className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                        }
+                        <p className="text-slate-500">
+                            {activeTab === 'popup'
+                                ? 'No popup campaigns yet. Create one to show full-screen ads to all visitors.'
+                                : 'No campaign banners yet. Create one to promote on the home screen.'
+                            }
+                        </p>
                     </div>
                 ) : (
                     <div className="divide-y divide-indigo-500/10">
@@ -264,7 +356,7 @@ export default function CampaignBannersPanel() {
                                         {banner.imageUrl ? (
                                             <img
                                                 src={banner.imageUrl}
-                                                alt={banner.altText || banner.title || 'Campaign'}
+                                                alt={banner.altText || banner.title || 'Banner'}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
@@ -278,11 +370,16 @@ export default function CampaignBannersPanel() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <p className="text-sm font-semibold text-white truncate">
-                                                {banner.title || 'Untitled Campaign'}
+                                                {banner.title || 'Untitled'}
                                             </p>
                                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${badge.bg} ${badge.text}`}>
                                                 {badge.label}
                                             </span>
+                                            {activeTab === 'popup' && (
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 bg-indigo-500/20 text-indigo-400">
+                                                    Popup
+                                                </span>
+                                            )}
                                         </div>
                                         {banner.subtitle && (
                                             <p className="text-xs text-slate-400 truncate mb-1">{banner.subtitle}</p>
@@ -290,17 +387,22 @@ export default function CampaignBannersPanel() {
                                         <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
                                             <span className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
-                                                {banner.startDate
-                                                    ? new Date(banner.startDate).toLocaleDateString()
-                                                    : 'No start'}
+                                                {banner.startDate ? new Date(banner.startDate).toLocaleDateString() : 'No start'}
                                                 {' → '}
-                                                {banner.endDate
-                                                    ? new Date(banner.endDate).toLocaleDateString()
-                                                    : 'No end'}
+                                                {banner.endDate ? new Date(banner.endDate).toLocaleDateString() : 'No end'}
                                             </span>
-                                            <span className="flex items-center gap-1">
-                                                Priority: {banner.priority}
-                                            </span>
+                                            {activeTab === 'popup' && banner.popupConfig && (
+                                                <>
+                                                    <span className="flex items-center gap-1">
+                                                        <Timer className="w-3 h-3 text-amber-400" />
+                                                        X after {banner.popupConfig.closeButtonDelaySeconds}s
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Users className="w-3 h-3 text-blue-400" />
+                                                        {banner.popupConfig.maxViewsPerDay}×/day
+                                                    </span>
+                                                </>
+                                            )}
                                             {banner.linkUrl && (
                                                 <a
                                                     href={banner.linkUrl}
@@ -321,11 +423,10 @@ export default function CampaignBannersPanel() {
                                             className="p-1.5 rounded-lg hover:bg-emerald-500/10"
                                             title={state === 'live' ? 'Unpublish' : 'Publish'}
                                         >
-                                            {banner.status === 'published' ? (
-                                                <Eye className="w-4 h-4 text-emerald-400" />
-                                            ) : (
-                                                <EyeOff className="w-4 h-4 text-slate-400" />
-                                            )}
+                                            {banner.status === 'published'
+                                                ? <Eye className="w-4 h-4 text-emerald-400" />
+                                                : <EyeOff className="w-4 h-4 text-slate-400" />
+                                            }
                                         </button>
                                         <button
                                             onClick={() => openEdit(banner)}
@@ -370,8 +471,12 @@ export default function CampaignBannersPanel() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-slate-900 border border-indigo-500/15 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-indigo-500/10">
-                            <h3 className="text-base font-semibold text-white">
-                                {modal === 'create' ? 'New Campaign Banner' : 'Edit Campaign Banner'}
+                            <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                                {activeTab === 'popup' ? <Zap className="w-4 h-4 text-indigo-400" /> : <Megaphone className="w-4 h-4 text-[var(--primary)]" />}
+                                {modal === 'create'
+                                    ? (activeTab === 'popup' ? 'New Popup Campaign' : 'New Campaign Banner')
+                                    : (activeTab === 'popup' ? 'Edit Popup Campaign' : 'Edit Campaign Banner')
+                                }
                             </h3>
                             <button onClick={() => setModal(null)} className="p-1 hover:bg-white/10 rounded-lg">
                                 <X className="w-5 h-5 text-slate-400" />
@@ -386,7 +491,7 @@ export default function CampaignBannersPanel() {
                                     value={form.title}
                                     onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                                     className="w-full bg-slate-800/60 border border-indigo-500/15 rounded-xl px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                                    placeholder="Campaign title"
+                                    placeholder={activeTab === 'popup' ? 'e.g. Summer Offer — 30% Off!' : 'Campaign title'}
                                 />
                             </div>
 
@@ -403,54 +508,131 @@ export default function CampaignBannersPanel() {
 
                             {/* Desktop image */}
                             <AdminImageUploadField
-                                label="Desktop Image"
+                                label={activeTab === 'popup' ? 'Popup Image / Banner' : 'Desktop Image'}
                                 value={form.imageUrl}
                                 onChange={(nextValue) => setForm((p) => ({ ...p, imageUrl: nextValue }))}
-                                helper="Required main creative for the home campaign banner carousel."
+                                helper={
+                                    activeTab === 'popup'
+                                        ? 'Recommended: 800×600 px or 4:3 ratio for popup display.'
+                                        : 'Required main creative for the home campaign banner carousel.'
+                                }
                                 required
-                                previewAlt={form.altText || form.title || 'Desktop banner preview'}
+                                previewAlt={form.altText || form.title || 'Banner preview'}
                                 onUpload={uploadSignedBannerAsset}
-                                uploadSuccessMessage="Desktop image uploaded"
-                                uploadErrorMessage="Failed to upload desktop image"
+                                uploadSuccessMessage="Image uploaded"
+                                uploadErrorMessage="Failed to upload image"
                                 panelClassName="bg-slate-800/45 border-indigo-500/15"
                                 previewClassName="min-h-[170px] bg-slate-900/70"
                             />
 
-                            {/* Mobile image */}
-                            <AdminImageUploadField
-                                label="Mobile Image"
-                                value={form.mobileImageUrl}
-                                onChange={(nextValue) => setForm((p) => ({ ...p, mobileImageUrl: nextValue }))}
-                                helper="Optional mobile-specific version. Leave empty to reuse the desktop image."
-                                previewAlt={form.altText || form.title || 'Mobile banner preview'}
-                                onUpload={uploadSignedBannerAsset}
-                                uploadSuccessMessage="Mobile image uploaded"
-                                uploadErrorMessage="Failed to upload mobile image"
-                                panelClassName="bg-slate-800/45 border-indigo-500/15"
-                                previewClassName="min-h-[170px] bg-slate-900/70"
-                            />
+                            {/* Mobile image (home banners only) */}
+                            {activeTab === 'home_ads' && (
+                                <AdminImageUploadField
+                                    label="Mobile Image"
+                                    value={form.mobileImageUrl}
+                                    onChange={(nextValue) => setForm((p) => ({ ...p, mobileImageUrl: nextValue }))}
+                                    helper="Optional mobile-specific version. Leave empty to reuse the desktop image."
+                                    previewAlt={form.altText || form.title || 'Mobile banner preview'}
+                                    onUpload={uploadSignedBannerAsset}
+                                    uploadSuccessMessage="Mobile image uploaded"
+                                    uploadErrorMessage="Failed to upload mobile image"
+                                    panelClassName="bg-slate-800/45 border-indigo-500/15"
+                                    previewClassName="min-h-[170px] bg-slate-900/70"
+                                />
+                            )}
 
                             {/* Link URL */}
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Link URL</label>
+                                <label className="text-xs text-slate-400 mb-1 block flex items-center gap-1">
+                                    <ExternalLink className="w-3 h-3" />
+                                    Click Destination URL
+                                </label>
                                 <input
                                     value={form.linkUrl}
                                     onChange={(e) => setForm((p) => ({ ...p, linkUrl: e.target.value }))}
                                     className="w-full bg-slate-800/60 border border-indigo-500/15 rounded-xl px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                                    placeholder="https://example.com/promo"
+                                    placeholder="https://example.com/offer"
                                 />
+                                {activeTab === 'popup' && (
+                                    <p className="text-[10px] text-slate-500 mt-0.5">Where the user is taken when they click the popup. Leave empty to make popup non-clickable.</p>
+                                )}
                             </div>
 
                             {/* Alt text */}
                             <div>
-                                <label className="text-xs text-slate-400 mb-1 block">Alt Text</label>
+                                <label className="text-xs text-slate-400 mb-1 block">Alt Text (Accessibility)</label>
                                 <input
                                     value={form.altText}
                                     onChange={(e) => setForm((p) => ({ ...p, altText: e.target.value }))}
                                     className="w-full bg-slate-800/60 border border-indigo-500/15 rounded-xl px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-                                    placeholder="Accessible description of the banner"
+                                    placeholder="Accessible description of the image"
                                 />
                             </div>
+
+                            {/* ── Popup Config Section ── */}
+                            {activeTab === 'popup' && (
+                                <div className="space-y-3 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/15">
+                                    <p className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5 mb-2">
+                                        <Zap className="w-3.5 h-3.5" /> Popup Behaviour Settings
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <NumInput
+                                            label="Close Button Delay (seconds)"
+                                            value={form.popupConfig.closeButtonDelaySeconds}
+                                            onChange={(v) => setPopup('closeButtonDelaySeconds', v)}
+                                            helper="How long before the ✕ button appears. 0 = immediately."
+                                        />
+                                        <NumInput
+                                            label="Auto-Close After (seconds)"
+                                            value={form.popupConfig.autoCloseAfterSeconds}
+                                            onChange={(v) => setPopup('autoCloseAfterSeconds', v)}
+                                            helper="Popup auto-dismisses after this time. 0 = manual close only."
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <NumInput
+                                            label="Max Views Per Day"
+                                            value={form.popupConfig.maxViewsPerDay}
+                                            onChange={(v) => setPopup('maxViewsPerDay', v)}
+                                            min={0}
+                                            helper="Max times to show per browser per day. 0 = unlimited."
+                                        />
+                                        <NumInput
+                                            label="Cooldown Between Shows (hours)"
+                                            value={form.popupConfig.cooldownHours}
+                                            onChange={(v) => setPopup('cooldownHours', v)}
+                                            min={0}
+                                            helper="Min hours before showing again. 0 = no cooldown."
+                                        />
+                                    </div>
+
+                                    {/* Live preview of settings */}
+                                    <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300">
+                                            ✕ shows after {form.popupConfig.closeButtonDelaySeconds}s
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300">
+                                            {form.popupConfig.autoCloseAfterSeconds > 0
+                                                ? `Auto-closes after ${form.popupConfig.autoCloseAfterSeconds}s`
+                                                : 'No auto-close'
+                                            }
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">
+                                            {form.popupConfig.maxViewsPerDay === 0
+                                                ? 'Unlimited views/day'
+                                                : `${form.popupConfig.maxViewsPerDay}×/day per browser`
+                                            }
+                                        </span>
+                                        {form.popupConfig.cooldownHours > 0 && (
+                                            <span className="px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300">
+                                                {form.popupConfig.cooldownHours}h cooldown
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Priority + order */}
                             <div className="grid grid-cols-2 gap-3">

@@ -150,6 +150,7 @@ const STUDENT_STANDALONE_ROUTES = new Set<string>([]);
 import { useWebsiteSettings } from './hooks/useWebsiteSettings';
 import useHomeLiveUpdates from './hooks/useHomeLiveUpdates';
 import SEO from './components/common/SEO';
+import GlobalPopupManager from './components/common/GlobalPopupManager';
 
 function resolveRouteTitle(pathname: string, siteName: string, defaultTitle: string): string | null {
     const withSite = (label: string) => `${label} | ${siteName}`;
@@ -306,6 +307,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1">{children}</main>
             {!isStudentAppRoute && <Footer />}
             <ForceLogoutModal />
+            {/* Global Popup Ad Campaigns – shown to all public visitors */}
+            <GlobalPopupManager />
         </div>
     );
 }
