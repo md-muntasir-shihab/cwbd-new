@@ -23,7 +23,7 @@ import { startExamCronJobs } from './cron/examJobs';
 import { startModernExamCronJobs } from './cron/modernExamJobs';
 import { startStudentDashboardCronJobs } from './cron/dashboardJobs';
 import { startFinanceRecurringCronJobs } from './cron/financeRecurringJobs';
-import { seedDefaultChartOfAccounts } from './services/financeSeedService';
+import { seedDefaultChartOfAccounts } from './services/financeCenterService';
 import { startNewsV2CronJobs } from './cron/newsJobs';
 import { startNotificationJobCron } from './cron/notificationJobs';
 import { startRetentionCronJobs } from './cron/retentionJobs';
