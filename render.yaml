@@ -1,7 +1,7 @@
 services:
   - type: web
     name: campusway-backend
-    env: docker
+    runtime: docker
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
     region: singapore
@@ -30,3 +30,4 @@ services:
         value: https://campuswaybd.web.app
       - key: BACKEND_URL
         value: https://campusway-backend.onrender.com
+
