@@ -60,6 +60,7 @@ import {
     autosaveExam,
     submitExam,
     getExamResult,
+    getDetailedExamResult,
     getExamAttemptState,
     saveExamAttemptAnswer,
     submitExamAttempt,
@@ -96,6 +97,7 @@ import {
 import {
     getPublicNewsV2List,
     getPublicNewsV2BySlug,
+    getPublicNewsV2OGMeta,
     getPublicNewsV2Appearance,
     getPublicNewsV2DiagnosticArticle,
     getPublicNewsV2DiagnosticDelivery,
@@ -231,6 +233,7 @@ router.get('/news/featured', getPublicFeaturedNews);
 router.get('/news/trending', getTrendingNews);
 router.get('/news/categories', getPublicNewsCategories);
 router.get('/news/:slug', getPublicNewsV2BySlug);
+router.get('/news/:slug/og-meta', getPublicNewsV2OGMeta);
 router.post('/news/share/track', requireAppCheck, trackPublicNewsV2Share);
 router.post('/events/track', requireAppCheck, optionalAuthenticate, trackEvent);
 
@@ -268,6 +271,7 @@ router.post('/exams/:id/start', ...examAccessMiddlewares, examStartRateLimiter, 
 router.put('/exams/:id/autosave', ...examAccessMiddlewares, autosaveExam);
 router.post('/exams/:id/submit', ...examAccessMiddlewares, examSubmitRateLimiter, validateBody(examSubmitSchema), submitExam);
 router.get('/exams/:id/result', ...examAccessMiddlewares, getExamResult);
+router.get('/exams/:id/detailed-result', ...examAccessMiddlewares, getDetailedExamResult);
 router.get('/exams/:examId/questions', ...examAccessMiddlewares, getStudentExamQuestions);
 router.get('/exams/:examId/attempt/:attemptId', ...examAccessMiddlewares, getExamAttemptState);
 router.get('/exams/:examId/attempt/:attemptId/stream', ...examAccessMiddlewares, streamExamAttempt);

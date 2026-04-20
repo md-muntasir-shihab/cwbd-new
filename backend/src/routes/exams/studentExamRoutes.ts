@@ -10,6 +10,7 @@ import {
   saveExamAttemptAnswer,
   startExam,
   submitExamAttempt,
+  getDetailedExamResult,
 } from "../../controllers/examController";
 import { processSignalController } from "../../controllers/antiCheatController";
 import { generateAnswersPdf, generateQuestionsPdf, generateSolutionsPdf } from "../../controllers/examPdfController";
@@ -52,6 +53,10 @@ studentExamRoutes.get("/exams/:examId/sessions/:sessionId/result", requireAuth, 
 
 studentExamRoutes.get("/exams/:examId/sessions/:sessionId/solutions", requireAuth, requireAuthStudent, async (req, res) => {
   await getExamAttemptSolutions(withLegacyExamId(req, String(req.params.examId || "")), res);
+});
+
+studentExamRoutes.get("/exams/:examId/detailed-result", requireAuth, requireAuthStudent, async (req, res) => {
+  await getDetailedExamResult(withLegacyExamId(req, String(req.params.examId || "")), res);
 });
 
 studentExamRoutes.get("/exams/:examId/pdf/questions", requireAuth, requireAuthStudent, generateQuestionsPdf);

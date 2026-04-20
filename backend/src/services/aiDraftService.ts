@@ -132,3 +132,91 @@ Remember: Output strict JSON fitting the specified schema. Ensure "fullContent" 
     return generateFallbackDraft(input, (error as Error).message);
   }
 };
+
+/**
+ * AI-powered full article extraction.
+ * Fetches the original article URL, sends the raw HTML to the AI,
+ * and asks it to extract and structure the complete article content.
+ * Used when standard RSS/Readability extraction fails or is incomplete.
+ */
+export const extractFullArticleWithAi = async (
+  articleUrl: string,
+  sourceName: string,
+  apiProviderUrl?: string,
+  apiKeyOverride?: string,
+): Promise<string> => {
+  const effectiveKey = apiKeyOverride || apiKey;
+  if (!effectiveKey) {
+    console.warn("[AI Extract] No API key available for AI extraction.");
+    return "";
+  }
+
+  try {
+    // Fetch the raw HTML from the article URL
+    const { default: fetch } = await import("node-fetch");
+    const response = await fetch(articleUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5,bn;q=0.3",
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[AI Extract] Failed to fetch ${articleUrl} (status: ${response.status})`);
+      return "";
+    }
+
+    const html = await response.text();
+
+    // Trim HTML to avoid exceeding token limits — keep first ~30KB
+    const trimmedHtml = html.length > 30000 ? html.slice(0, 30000) : html;
+
+    const effectiveGenAI = apiKeyOverride
+      ? new GoogleGenerativeAI(apiKeyOverride)
+      : genAI;
+
+    const model = effectiveGenAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction:
+        "You are an expert content extractor. Your task is to extract the COMPLETE main article content from the provided HTML page. " +
+        "Remove all navigation, ads, sidebars, footers, and non-article content. " +
+        "Return ONLY the article body formatted with clean semantic HTML tags (<p>, <h2>, <h3>, <ul>, <li>, <blockquote>). " +
+        "Do NOT add any content that is not in the original article. Do NOT summarize — extract the FULL text.",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: SchemaType.OBJECT,
+          properties: {
+            articleContent: {
+              type: SchemaType.STRING,
+              description: "The full article content extracted from the HTML, formatted with semantic HTML tags.",
+            },
+            extractionQuality: {
+              type: SchemaType.STRING,
+              description: "Quality assessment: 'complete', 'partial', or 'failed'.",
+            },
+          },
+          required: ["articleContent", "extractionQuality"],
+        },
+        temperature: 0.1,
+      },
+    });
+
+    const prompt = `Extract the complete main article content from this webpage HTML.\n\nSource: ${sourceName}\nURL: ${articleUrl}\n\nHTML:\n${trimmedHtml}`;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const parsed = JSON.parse(responseText);
+
+    if (parsed.extractionQuality === "failed" || !parsed.articleContent?.trim()) {
+      console.warn(`[AI Extract] Extraction quality: ${parsed.extractionQuality} for ${articleUrl}`);
+      return "";
+    }
+
+    return sanitizeNewsHtml(parsed.articleContent);
+  } catch (error) {
+    console.error(`[AI Extract] Error extracting ${articleUrl}:`, (error as Error).message);
+    return "";
+  }
+};

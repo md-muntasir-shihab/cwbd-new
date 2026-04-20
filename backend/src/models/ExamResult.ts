@@ -14,8 +14,30 @@ export interface IExamResult extends Document {
         selectedAnswer: string;
         writtenAnswerUrl?: string;
         isCorrect: boolean;
-        timeTaken: number
+        timeTaken: number;
+        marks?: number;
+        marksObtained?: number;
+        explanation?: string;
+        correctWrongIndicator?: 'correct' | 'wrong' | 'unanswered';
+        topic?: string;
     }[];
+    detailedAnswers?: {
+        question: mongoose.Types.ObjectId;
+        questionType: 'mcq' | 'written';
+        selectedAnswer: string;
+        isCorrect: boolean;
+        marks: number;
+        marksObtained: number;
+        explanation: string;
+        correctWrongIndicator: 'correct' | 'wrong' | 'unanswered';
+        topic: string;
+    }[];
+    performanceSummary?: {
+        totalScore: number;
+        percentage: number;
+        strengths: string[];
+        weaknesses: string[];
+    };
     totalMarks: number;
     obtainedMarks: number;
     correctCount: number;
@@ -63,7 +85,32 @@ const ExamResultSchema = new Schema<IExamResult>({
         writtenAnswerUrl: String,
         isCorrect: Boolean,
         timeTaken: Number,
+        marks: Number,
+        marksObtained: Number,
+        explanation: String,
+        correctWrongIndicator: { type: String, enum: ['correct', 'wrong', 'unanswered'] },
+        topic: String,
     }],
+    detailedAnswers: [{
+        question: { type: Schema.Types.ObjectId, ref: 'Question' },
+        questionType: { type: String, enum: ['mcq', 'written'] },
+        selectedAnswer: String,
+        isCorrect: Boolean,
+        marks: Number,
+        marksObtained: Number,
+        explanation: String,
+        correctWrongIndicator: { type: String, enum: ['correct', 'wrong', 'unanswered'] },
+        topic: String,
+    }],
+    performanceSummary: {
+        type: {
+            totalScore: Number,
+            percentage: Number,
+            strengths: [String],
+            weaknesses: [String],
+        },
+        default: undefined,
+    },
     totalMarks: { type: Number, required: true },
     obtainedMarks: { type: Number, default: 0 },
     correctCount: { type: Number, default: 0 },

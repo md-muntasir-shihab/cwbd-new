@@ -62,6 +62,13 @@ export async function adminCreateBanner(req: AuthRequest, res: Response): Promis
                 closeButtonDelaySeconds: Number((body.popupConfig as Record<string, unknown>).closeButtonDelaySeconds ?? 0),
                 maxViewsPerDay: Number((body.popupConfig as Record<string, unknown>).maxViewsPerDay ?? 1),
                 cooldownHours: Number((body.popupConfig as Record<string, unknown>).cooldownHours ?? 24),
+                ctaText: String((body.popupConfig as Record<string, unknown>).ctaText ?? ''),
+                homePageOnly: (body.popupConfig as Record<string, unknown>).homePageOnly !== false,
+                targetAudience: (['all', 'guests', 'logged_in'].includes(String((body.popupConfig as Record<string, unknown>).targetAudience)))
+                    ? String((body.popupConfig as Record<string, unknown>).targetAudience)
+                    : 'all',
+                showOnMobile: (body.popupConfig as Record<string, unknown>).showOnMobile !== false,
+                showOnDesktop: (body.popupConfig as Record<string, unknown>).showOnDesktop !== false,
             }
             : undefined;
 
@@ -105,6 +112,11 @@ export async function adminUpdateBanner(req: Request, res: Response): Promise<vo
                 closeButtonDelaySeconds: Number(pc.closeButtonDelaySeconds ?? 0),
                 maxViewsPerDay: Number(pc.maxViewsPerDay ?? 1),
                 cooldownHours: Number(pc.cooldownHours ?? 24),
+                ctaText: String(pc.ctaText ?? ''),
+                homePageOnly: pc.homePageOnly !== false,
+                targetAudience: (['all', 'guests', 'logged_in'].includes(String(pc.targetAudience))) ? String(pc.targetAudience) : 'all',
+                showOnMobile: pc.showOnMobile !== false,
+                showOnDesktop: pc.showOnDesktop !== false,
             };
         } else if (body.popupConfig === null) {
             update.popupConfig = undefined;

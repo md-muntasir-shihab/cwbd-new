@@ -12,6 +12,9 @@ export interface INotificationTemplate extends Document {
     category: NotificationTemplateCategory;
     subject?: string;
     body: string;
+    htmlBody?: string;
+    bodyFormat: 'plain' | 'html';
+    designPreset?: string;
     placeholdersAllowed: string[];
     isEnabled: boolean;
     versionNo: number;
@@ -58,6 +61,9 @@ const NotificationTemplateSchema = new Schema<INotificationTemplate>(
         },
         subject: { type: String, trim: true },
         body: { type: String, required: true },
+        htmlBody: { type: String, trim: true, default: '' },
+        bodyFormat: { type: String, enum: ['plain', 'html'], default: 'plain' },
+        designPreset: { type: String, trim: true, default: '' },
         placeholdersAllowed: {
             type: [String],
             default: [],

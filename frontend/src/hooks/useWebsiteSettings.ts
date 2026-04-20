@@ -35,6 +35,18 @@ function normalizeSettingsPayload(raw: unknown): ApiWebsiteSettings | null {
     } as ApiWebsiteSettings;
 }
 
+/** Read localStorage cache and normalize it for use as initialData. */
+function getCachedSettings(): ApiWebsiteSettings | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        const raw = window.localStorage.getItem(WEBSITE_SETTINGS_CACHE_KEY);
+        if (!raw) return null;
+        return normalizeSettingsPayload(JSON.parse(raw));
+    } catch {
+        return null;
+    }
+}
+
 export function useWebsiteSettings() {
     return useQuery<ApiWebsiteSettings | null>({
         queryKey: queryKeys.websiteSettings,
@@ -58,6 +70,7 @@ export function useWebsiteSettings() {
                 }
             }
         },
-        staleTime: 300000, // 5 minutes cache
+        staleTime: 60_000, // 1 minute — reduced from 5 min to pick up admin updates faster
+        initialData: getCachedSettings() ?? undefined,
     });
 }

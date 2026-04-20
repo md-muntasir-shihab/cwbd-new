@@ -1,9 +1,20 @@
 import BannerPanel from '../components/admin/BannerPanel';
 import AdminGuardShell from '../components/admin/AdminGuardShell';
+import AdminTabNav from '../components/admin/AdminTabNav';
+import { Home, Image, Megaphone, Settings } from 'lucide-react';
+import { ADMIN_PATHS } from '../routes/adminPaths';
 import { FormEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { adminGetNewsSettings, adminNewsV2UploadMedia, adminUpdateNewsSettings } from '../services/api';
+import { extractUploadUrl, extractUploadError } from '../components/common/CompressedImageInput';
+
+const WEBSITE_CONTROL_TABS = [
+    { key: 'home', label: 'Home Settings', path: ADMIN_PATHS.homeControl, icon: Home },
+    { key: 'banners', label: 'Banner Manager', path: ADMIN_PATHS.bannerManager, icon: Image },
+    { key: 'campaign', label: 'Campaign Banners', path: ADMIN_PATHS.campaignBanners, icon: Megaphone },
+    { key: 'site', label: 'Site Settings', path: ADMIN_PATHS.siteSettings, icon: Settings },
+];
 
 export default function AdminSettingsBannersPage() {
     return (
@@ -11,6 +22,7 @@ export default function AdminSettingsBannersPage() {
             title="Banner Manager"
             description="Create, update, and publish banner content used across the site, including News fallback banners."
         >
+            <AdminTabNav tabs={WEBSITE_CONTROL_TABS} />
             <div className="space-y-6">
                 <BannerPanel />
                 <NewsBannerDefaultsCard />
@@ -64,14 +76,14 @@ function NewsBannerDefaultsCard() {
         setUploading(type);
         try {
             const response = await adminNewsV2UploadMedia(file, { altText: `news-${type}` });
-            const url = response.data?.item?.url || '';
-            if (!url) throw new Error('Upload failed');
+            const url = extractUploadUrl(response.data);
+            if (!url) throw new Error('Upload returned empty URL');
             if (type === 'banner') setDefaultBannerUrl(url);
             if (type === 'thumb') setDefaultThumbUrl(url);
             if (type === 'icon') setDefaultSourceIconUrl(url);
             toast.success('Uploaded');
-        } catch (error: any) {
-            toast.error(error?.response?.data?.message || 'Upload failed');
+        } catch (error: unknown) {
+            toast.error(extractUploadError(error));
         } finally {
             setUploading(null);
         }

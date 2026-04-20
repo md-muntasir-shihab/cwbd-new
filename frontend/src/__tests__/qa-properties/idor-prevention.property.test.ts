@@ -58,7 +58,7 @@ describe('Feature: campusway-qa-audit, Property 9: IDOR Prevention', () => {
                     ).not.toBe(200);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

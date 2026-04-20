@@ -9,6 +9,26 @@ import { registerAllMocks } from './mocks/registerMocks';
 
 import { HelmetProvider } from 'react-helmet-async';
 
+// Pre-load Three.js onto window.THREE so Vanta effects can find it at module evaluation time.
+// Vanta's UMD bundles capture `window.THREE` into local vars when first evaluated by Vite's
+// pre-bundler, so this must run before any Vanta import.
+import * as THREE from 'three';
+(() => {
+    const w = window as any;
+    if (!w.THREE) {
+        const proxy: Record<string, unknown> = Object.create(null);
+        for (const key of Object.keys(THREE)) proxy[key] = (THREE as any)[key];
+        // Polyfill deprecated geometry classes (removed in Three.js r125+, Vanta 0.5.24 still uses them)
+        if (!proxy.PlaneBufferGeometry) proxy.PlaneBufferGeometry = THREE.PlaneGeometry;
+        if (!proxy.BoxBufferGeometry) proxy.BoxBufferGeometry = THREE.BoxGeometry;
+        if (!proxy.CylinderBufferGeometry) proxy.CylinderBufferGeometry = THREE.CylinderGeometry;
+        if (!proxy.SphereBufferGeometry) proxy.SphereBufferGeometry = THREE.SphereGeometry;
+        // THREE.VertexColors was removed in r136 — Vanta birds/net use it
+        if (!('VertexColors' in proxy)) proxy.VertexColors = true;
+        w.THREE = proxy;
+    }
+})();
+
 initFirebaseClient();
 void initFirebaseAnalytics();
 void initFirebaseAppCheck();

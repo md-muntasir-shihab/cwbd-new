@@ -30,6 +30,8 @@ import {
 import { getHome, type HomeApiResponse, type ApiUniversityCardPreview, type ApiClusterCardPreview, type ApiCategoryCardPreview, type HomeExamWidgetItem, type ApiNews, type SubscriptionPlanPublic } from '../services/api';
 import type { UrgencyState } from '../lib/apiClient';
 import { daysUntilUniversityDate, parseUniversityDate } from '../lib/universityPresentation';
+import PageHeroBanner from '../components/common/PageHeroBanner';
+import { usePageHeroSettings } from '../hooks/usePageHeroSettings';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -79,6 +81,18 @@ const SECTION_ID_ALIAS_MAP: Record<string, string> = {
     globalctacontentblock: 'content_blocks',
     stats: 'stats',
     quickstats: 'stats',
+    home_hero: 'home_hero',
+    homehero: 'home_hero',
+    homeherocmsblock: 'home_hero',
+    home_features: 'home_features',
+    homefeatures: 'home_features',
+    homefeaturescmsblock: 'home_features',
+    home_testimonials: 'home_testimonials',
+    hometestimonials: 'home_testimonials',
+    hometestimonialscmsblock: 'home_testimonials',
+    home_cta: 'home_cta',
+    homecta: 'home_cta',
+    homectacmsblock: 'home_cta',
 };
 
 function normalizeSectionId(value: unknown): string {
@@ -199,9 +213,9 @@ function buildApplicationUrgency(
 
 function UnitDateChip({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 px-3 py-2 dark:border-slate-700/80 dark:bg-slate-950/55">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-500">{label}</p>
-            <p className="mt-1 text-xs font-semibold text-slate-900 dark:text-slate-100">{formatMetaDate(value)}</p>
+        <div className="rounded-xl border border-slate-200/60 bg-white/80 px-2.5 py-2 text-center dark:border-slate-700/60 dark:bg-slate-950/50">
+            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{label}</p>
+            <p className="mt-1 text-xs font-bold text-slate-800 dark:text-slate-100">{formatMetaDate(value)}</p>
         </div>
     );
 }
@@ -299,18 +313,54 @@ function normalizeHomeSubscriptionPlan(raw: Record<string, unknown>): Subscripti
 /*  Shared UI primitives                                               */
 /* ------------------------------------------------------------------ */
 const fadeInUp = { hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0 } };
+const staggerContainer = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+    },
+};
+const staggerItem = {
+    hidden: { opacity: 0, y: 24, scale: 0.97 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
+};
 
 function SectionWrap({ children, className = '' }: { children: ReactNode; className?: string }) {
     return (
         <motion.section
             variants={fadeInUp}
             initial="hidden"
-            animate="show"
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            whileInView="show"
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className={`w-full ${className}`}
         >
             {children}
         </motion.section>
+    );
+}
+
+/** Wrap a horizontal carousel or grid of cards to get staggered reveal on scroll */
+function StaggeredCardContainer({ children, className = '' }: { children: ReactNode; className?: string }) {
+    return (
+        <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-40px' }}
+            className={className}
+        >
+            {children}
+        </motion.div>
+    );
+}
+
+/** Wrap each card inside a StaggeredCardContainer for individual stagger delay */
+function StaggeredCardItem({ children, className = '' }: { children: ReactNode; className?: string }) {
+    return (
+        <motion.div variants={staggerItem} className={className}>
+            {children}
+        </motion.div>
     );
 }
 
@@ -338,79 +388,67 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
     const appMeta = buildApplicationUrgency(cluster.applicationStartDate, cluster.applicationEndDate);
 
     return (
-        <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_14px_30px_rgba(15,23,42,0.10)] dark:border-slate-700/70 dark:bg-slate-900/95 dark:shadow-[0_14px_30px_rgba(4,12,24,0.26)]">
-            <div className="flex items-start gap-3 p-3 pb-2.5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs font-black uppercase tracking-[0.18em] text-cyan-600 dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-300">
+        <article className="group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/70 bg-white/95 shadow-[0_8px_30px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(15,23,42,0.14)] dark:border-slate-700/60 dark:bg-slate-900/95 dark:shadow-[0_8px_30px_rgba(4,12,24,0.2)] dark:hover:shadow-[0_20px_50px_rgba(4,12,24,0.3)] dark:hover:border-indigo-500/15">
+            {/* Accent line */}
+            <div className="h-[2px] w-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-cyan-500 opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+
+            <div className="flex items-start gap-3 p-4 pb-2.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/60 bg-white text-xs font-black uppercase tracking-[0.18em] text-cyan-600 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:border-slate-700/60 dark:bg-slate-950 dark:text-cyan-300">
                     {fallbackText}
                 </div>
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">Cluster</p>
-                            <Link to={`/universities/cluster/${cluster.slug}`} className="mt-1 block line-clamp-2 text-sm font-semibold leading-snug text-slate-900 transition-colors hover:text-cyan-600 dark:text-white dark:hover:text-cyan-200">
+                            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Cluster</p>
+                            <Link to={`/universities/cluster/${cluster.slug}`} className="mt-1 block truncate text-sm font-bold leading-snug text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-cyan-300" title={cluster.name}>
                                 {cluster.name}
                             </Link>
                         </div>
-                        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-cyan-700 dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-200">
+                        <span className="shrink-0 rounded-lg border border-cyan-200/60 bg-cyan-50/80 px-2 py-0.5 text-[10px] font-bold text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-200">
                             {cluster.memberCount} members
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 px-3 pb-2">
+            <div className="flex flex-wrap gap-1.5 px-4 pb-2">
                 {cluster.categories.slice(0, 2).map((category) => (
-                    <span
-                        key={category}
-                        className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:text-sky-200"
-                    >
-                        {category}
-                    </span>
+                    <span key={category} className="rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">{category}</span>
                 ))}
             </div>
 
-            <div className="space-y-2 px-3 pb-3">
+            <div className="space-y-2 px-4 pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <DaysLeftChip daysLeft={appMeta.daysLeft} urgencyState={appMeta.urgencyState} />
                     <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{appMeta.endLabel}</span>
                 </div>
-                <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 p-2.5 dark:border-slate-700/80 dark:bg-slate-950/55">
+                <div className="rounded-xl border border-slate-200/60 bg-slate-50/80 p-2.5 dark:border-slate-700/60 dark:bg-slate-950/40">
                     <CompactMetaLine label="Application Window" value={appMeta.windowLabel} />
-                    <div className="mt-2 grid grid-cols-1 gap-1.5">
-                        <CompactMetaLine label="Nearest Deadline" value={formatMetaDate(cluster.nearestDeadline)} />
-                    </div>
+                    <div className="mt-1.5"><CompactMetaLine label="Nearest Deadline" value={formatMetaDate(cluster.nearestDeadline)} /></div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                     <UnitDateChip label="Science" value={cluster.scienceExamDate} />
                     <UnitDateChip label="Arts" value={cluster.artsExamDate} />
                     <UnitDateChip label="Business" value={cluster.businessExamDate} />
                 </div>
             </div>
 
-            <div className="mt-auto border-t border-slate-200/80 px-3 py-2.5 dark:border-slate-700/80">
-                <p className="text-xs text-slate-500 dark:text-slate-400">{centersText ? `Centers: ${centersText}` : 'Centers: N/A'}</p>
-                <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <div className="mt-auto border-t border-slate-100/80 px-4 py-3 dark:border-slate-800/60">
+                {centersText && <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-2.5">Centers: {centersText}</p>}
+                <div className="grid grid-cols-2 gap-2">
                     {cluster.admissionWebsite ? (
-                        <a
-                            href={cluster.admissionWebsite}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
-                        >
+                        <a href={cluster.admissionWebsite} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/15 transition-all hover:shadow-lg hover:shadow-cyan-500/25">
                             Apply Now
                         </a>
                     ) : (
-                        <Link
-                            to={`/universities/cluster/${cluster.slug}`}
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
-                        >
+                        <Link to={`/universities/cluster/${cluster.slug}`}
+                            className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
                             View Cluster
                         </Link>
                     )}
-                    <Link
-                        to={`/universities/cluster/${cluster.slug}`}
-                        className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
-                    >
+                    <Link to={`/universities/cluster/${cluster.slug}`}
+                        className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
                         Details
                     </Link>
                 </div>
@@ -427,75 +465,63 @@ function CategoryPreviewCard({ category }: { category: ApiCategoryCardPreview })
     return (
         <Link
             to={`/universities/category/${category.slug}`}
-            className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white/95 shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.14)] dark:border-slate-700/70 dark:bg-slate-900/95 dark:shadow-[0_14px_30px_rgba(4,12,24,0.26)] dark:hover:shadow-[0_20px_40px_rgba(4,12,24,0.30)]"
+            className="group relative flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-slate-200/70 bg-white/95 shadow-[0_8px_30px_rgba(15,23,42,0.08)] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(15,23,42,0.14)] dark:border-slate-700/60 dark:bg-slate-900/95 dark:shadow-[0_8px_30px_rgba(4,12,24,0.2)] dark:hover:shadow-[0_20px_50px_rgba(4,12,24,0.3)] dark:hover:border-indigo-500/15"
             data-testid="highlighted-category-card"
         >
-            <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-r from-cyan-500/10 via-sky-500/10 to-transparent dark:from-cyan-500/8 dark:via-sky-500/6" />
+            {/* Accent gradient */}
+            <div className="h-[2px] w-full bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+
             <div className="relative flex h-full flex-col p-4">
                 <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-xs font-black uppercase tracking-[0.18em] text-cyan-600 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-300">
-                        <div className="flex h-full w-full items-center justify-center px-1 text-center">
-                            {fallbackText}
-                        </div>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200/60 bg-white text-xs font-black uppercase tracking-[0.18em] text-cyan-600 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:border-slate-700/60 dark:bg-slate-950 dark:text-cyan-300">
+                        <div className="flex h-full w-full items-center justify-center px-1 text-center">{fallbackText}</div>
                     </div>
-
                     <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-500">Highlighted Category</p>
-                                <h3 className="mt-1 line-clamp-2 text-base font-semibold leading-snug text-slate-900 dark:text-white" title={category.name}>
-                                    {category.name}
-                                </h3>
+                                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Highlighted Category</p>
+                                <h3 className="mt-1 truncate text-base font-bold leading-snug text-slate-900 dark:text-white" title={category.name}>{category.name}</h3>
                             </div>
-                            <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-cyan-700 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-cyan-200">
+                            <span className="shrink-0 rounded-lg border border-cyan-200/60 bg-cyan-50/80 px-2 py-0.5 text-[10px] font-bold text-cyan-700 shadow-sm dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-200">
                                 {category.memberCount} universities
                             </span>
                         </div>
-
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-200">
-                                Home Highlight
-                            </span>
-                            {category.badgeText ? (
-                                <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
-                                    {category.badgeText}
-                                </span>
-                            ) : null}
+                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                            <span className="rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">Home Highlight</span>
+                            {category.badgeText && <span className="rounded-lg border border-amber-200/60 bg-amber-50/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">{category.badgeText}</span>}
                             <DeadlineBadge urgencyState={categoryUrgency.urgencyState} />
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                     <DaysLeftChip daysLeft={categoryUrgency.daysLeft} urgencyState={categoryUrgency.urgencyState} />
                     <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Nearest deadline {formatMetaDate(category.nearestDeadline)}</span>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Nearest Exam</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{formatMetaDate(category.nearestExam)}</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/80 p-2.5 dark:border-slate-700/60 dark:bg-slate-950/40">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Nearest Exam</p>
+                        <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">{formatMetaDate(category.nearestExam)}</p>
                     </div>
-                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">Coverage</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{category.memberCount} universities</p>
-                        <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{clusterCount} clusters linked</p>
+                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/80 p-2.5 dark:border-slate-700/60 dark:bg-slate-950/40">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Coverage</p>
+                        <p className="mt-1 text-sm font-bold text-slate-800 dark:text-slate-100">{category.memberCount} universities</p>
+                        <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">{clusterCount} clusters linked</p>
                     </div>
                 </div>
 
                 {clusterCount > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                         {category.clusterGroups.slice(0, 3).map((group) => (
-                            <span key={group} className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-1 text-[11px] font-semibold text-purple-700 dark:text-purple-200">
-                                {group}
-                            </span>
+                            <span key={group} className="rounded-lg border border-purple-200/60 bg-purple-50/80 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-200">{group}</span>
                         ))}
                     </div>
                 )}
 
-                <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-700 transition-colors group-hover:text-cyan-600 dark:text-cyan-200 dark:group-hover:text-cyan-100">
+                <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-indigo-600 transition-colors group-hover:text-indigo-500 dark:text-cyan-300 dark:group-hover:text-cyan-200">
                     Explore category
-                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </div>
             </div>
         </Link>
@@ -519,6 +545,10 @@ const DEFAULT_ORDER: SectionOrderItem[] = [
     { id: 'resources', title: 'Resources', order: 10 },
     { id: 'content_blocks', title: 'Content Blocks', order: 11 },
     { id: 'stats', title: 'Quick Stats', order: 12 },
+    { id: 'home_hero', title: 'Home Hero CMS Block', order: 13 },
+    { id: 'home_features', title: 'Home Features CMS Block', order: 14 },
+    { id: 'home_testimonials', title: 'Home Testimonials CMS Block', order: 15 },
+    { id: 'home_cta', title: 'Home CTA CMS Block', order: 16 },
 ];
 
 /* ================================================================== */
@@ -526,6 +556,7 @@ const DEFAULT_ORDER: SectionOrderItem[] = [
 /* ================================================================== */
 export default function HomeModern() {
     const navigate = useNavigate();
+    const hero = usePageHeroSettings('home');
     /* ---------- data ---------- */
     const { data, isLoading, isError } = useQuery<HomeApiResponse>({
         queryKey: ['home'],
@@ -649,7 +680,7 @@ export default function HomeModern() {
     const stats = data?.stats;
     const cardConfig = hs?.universityCardConfig;
     const animLevel = hs?.ui?.animationLevel ?? 'minimal';
-    const compactCarouselCardClass = 'snap-start shrink-0 w-[264px] sm:w-[286px] md:w-[308px]';
+    const compactCarouselCardClass = 'snap-start shrink-0 w-[280px] sm:w-[300px] md:w-[320px] h-full flex flex-col';
 
     const handleHorizontalWheel = (event: React.WheelEvent<HTMLDivElement>) => {
         const container = event.currentTarget;
@@ -717,109 +748,12 @@ export default function HomeModern() {
     /*  SECTION RENDERERS                                                */
     /* ================================================================ */
 
-    /* 1 ─ Search */
+    /* 1 ─ Search (disabled) */
     function renderSearch() {
-        if (hs?.hero?.showSearch === false) return null;
-        const placeholder = hs?.hero?.searchPlaceholder || 'Search universities, news, exams…';
-        return (
-            <div className="sticky top-0 z-30 bg-white/70 dark:bg-gray-950/70 backdrop-blur-2xl border-b border-gray-200/40 dark:border-gray-800/40 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.02)]">
-                <div className="max-w-3xl mx-auto px-4 py-3.5">
-                    <div className="relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400 group-focus-within:text-[var(--primary)] transition-colors duration-300" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={placeholder}
-                            aria-label="Search universities, news, exams and resources"
-                            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-md text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-200/60 dark:border-gray-700/60 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 focus:bg-white dark:focus:bg-gray-800/80 outline-none transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus:shadow-[0_4px_20px_rgba(13,95,219,0.12)]"
-                        />
-                        {search && (
-                            <button
-                                onClick={() => setSearch('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-                                aria-label="Clear search"
-                            >
-                                ✕
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
+        return null;
     }
 
-    /* 2 ─ Hero Banner */
-    function renderHero() {
-        if (!hs?.sectionVisibility?.hero) return null;
-        const hero = hs.hero;
-        if (!hero) return null;
-        return (
-            <SectionWrap>
-                <div className="relative overflow-hidden rounded-2xl md:rounded-3xl text-white mx-4 md:mx-0 min-h-[280px] md:min-h-[340px]" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #4338ca 40%, #7c3aed 70%, #a855f7 100%)', backgroundSize: '200% 200%', animation: 'gradientShift 8s ease-in-out infinite' }}>
-                    {/* Decorative floating orbs */}
-                    <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-white/[0.07] blur-2xl animate-float-slow pointer-events-none" />
-                    <div className="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-purple-300/[0.08] blur-2xl animate-float-slow-reverse pointer-events-none" />
-                    <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-cyan-300/[0.06] blur-xl animate-float-slow pointer-events-none" style={{ animationDelay: '2s' }} />
-                    {/* Grid pattern overlay */}
-                    <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-                    {hero.heroImageUrl && (
-                        <img src={hero.heroImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-15 mix-blend-overlay" />
-                    )}
-                    <div className="relative z-10 px-6 py-12 md:px-14 md:py-16 max-w-3xl">
-                        {hero.pillText && (
-                            <motion.span
-                                initial={{ opacity: 0, y: -12, scale: 0.9 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                                className="inline-flex items-center gap-2 px-4 py-1.5 mb-5 text-xs font-semibold rounded-full bg-white/15 backdrop-blur-md border border-white/20 shadow-lg shadow-black/10"
-                            >
-                                <Sparkles className="w-3.5 h-3.5" />
-                                {hero.pillText}
-                            </motion.span>
-                        )}
-                        <motion.h1
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                            className="font-heading text-2xl md:text-4xl lg:text-5xl font-extrabold leading-[1.1] mb-4 drop-shadow-md"
-                        >
-                            {hero.title}
-                        </motion.h1>
-                        {hero.subtitle && (
-                            <motion.p
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                                className="text-sm md:text-base text-white/80 mb-8 max-w-lg leading-relaxed"
-                            >
-                                {hero.subtitle}
-                            </motion.p>
-                        )}
-                        <motion.div
-                            initial={{ opacity: 0, y: 12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex flex-wrap gap-3"
-                        >
-                            {hero.primaryCTA?.label && hero.primaryCTA?.url && (
-                                <SmartActionLink href={hero.primaryCTA.url}
-                                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-white text-[var(--primary)] font-bold text-sm hover:bg-blue-50 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 shadow-[0_8px_24px_rgba(0,0,0,0.15)]">
-                                    {hero.primaryCTA.label}
-                                </SmartActionLink>
-                            )}
-                            {hero.secondaryCTA?.label && hero.secondaryCTA?.url && (
-                                <SmartActionLink href={hero.secondaryCTA.url}
-                                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl border border-white/30 text-white font-semibold text-sm hover:bg-white/15 hover:border-white/50 transition-all duration-300 backdrop-blur-sm">
-                                    {hero.secondaryCTA.label}
-                                </SmartActionLink>
-                            )}
-                        </motion.div>
-                    </div>
-                </div>
-            </SectionWrap>
-        );
-    }
+
 
     /* 3 ─ Campaign Banners */
     function renderCampaignBanners() {
@@ -879,8 +813,8 @@ export default function HomeModern() {
                                         ))}
                                     </PremiumCarousel>
                                 ) : (
-                                    <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/80 px-5 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
-                                        Featured universities are not available for the current filter, but the highlighted categories remain active.
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                                        No featured universities for this filter.
                                     </div>
                                 )}
                             </div>
@@ -973,11 +907,10 @@ export default function HomeModern() {
                         >
                             <button
                                 onClick={() => { setSelectedCategory(''); setSelectedCluster(''); }}
-                                className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                                    !selectedCategory
-                                        ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/25'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                                }`}>
+                                className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${!selectedCategory
+                                    ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/25'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                                    }`}>
                                 All
                             </button>
                             {sortedCategories.map(cat => {
@@ -989,11 +922,10 @@ export default function HomeModern() {
                                             setSelectedCategory(isActive ? '' : cat.categoryName);
                                             setSelectedCluster('');
                                         }}
-                                        className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5 ${
-                                            isActive
-                                                ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/25'
-                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-                                        }`}>
+                                        className={`shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5 ${isActive
+                                            ? 'bg-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/25'
+                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                                            }`}>
                                         {cat.categoryName}
                                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20' : 'bg-gray-200/80 dark:bg-gray-700'}`}>
                                             {cat.count}
@@ -1010,11 +942,10 @@ export default function HomeModern() {
                                 type="button"
                                 onClick={() => scrollChipRow('category', 'left')}
                                 disabled={!categoryScrollState.canLeft}
-                                className={`pointer-events-auto ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${
-                                    categoryScrollState.canLeft
-                                        ? 'hover:bg-white'
-                                        : 'cursor-not-allowed opacity-35'
-                                }`}
+                                className={`pointer-events-auto ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${categoryScrollState.canLeft
+                                    ? 'hover:bg-white'
+                                    : 'cursor-not-allowed opacity-35'
+                                    }`}
                                 aria-label="Scroll categories left"
                             >
                                 <ChevronLeft className="h-4 w-4" />
@@ -1025,11 +956,10 @@ export default function HomeModern() {
                                 type="button"
                                 onClick={() => scrollChipRow('category', 'right')}
                                 disabled={!categoryScrollState.canRight}
-                                className={`pointer-events-auto mr-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${
-                                    categoryScrollState.canRight
-                                        ? 'hover:bg-white'
-                                        : 'cursor-not-allowed opacity-35'
-                                }`}
+                                className={`pointer-events-auto mr-1 inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${categoryScrollState.canRight
+                                    ? 'hover:bg-white'
+                                    : 'cursor-not-allowed opacity-35'
+                                    }`}
                                 aria-label="Scroll categories right"
                             >
                                 <ChevronRight className="h-4 w-4" />
@@ -1049,21 +979,19 @@ export default function HomeModern() {
                         >
                             <button
                                 onClick={() => setSelectedCluster('')}
-                                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                                    !selectedCluster
-                                        ? 'bg-purple-600 text-white shadow-sm'
-                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-                                }`}>
+                                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${!selectedCluster
+                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                                    }`}>
                                 All Clusters
                             </button>
                             {currentClusters.map(cl => (
                                 <button key={cl}
                                     onClick={() => setSelectedCluster(selectedCluster === cl ? '' : cl)}
-                                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                                        selectedCluster === cl
-                                            ? 'bg-purple-600 text-white shadow-sm'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-                                    }`}>
+                                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${selectedCluster === cl
+                                        ? 'bg-purple-600 text-white shadow-sm'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                                        }`}>
                                     {cl}
                                 </button>
                             ))}
@@ -1075,11 +1003,10 @@ export default function HomeModern() {
                                 type="button"
                                 onClick={() => scrollChipRow('cluster', 'left')}
                                 disabled={!clusterScrollState.canLeft}
-                                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${
-                                    clusterScrollState.canLeft
-                                        ? 'hover:bg-white'
-                                        : 'cursor-not-allowed opacity-35'
-                                }`}
+                                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${clusterScrollState.canLeft
+                                    ? 'hover:bg-white'
+                                    : 'cursor-not-allowed opacity-35'
+                                    }`}
                                 aria-label="Scroll clusters left"
                             >
                                 <ChevronLeft className="h-4 w-4" />
@@ -1088,11 +1015,10 @@ export default function HomeModern() {
                                 type="button"
                                 onClick={() => scrollChipRow('cluster', 'right')}
                                 disabled={!clusterScrollState.canRight}
-                                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${
-                                    clusterScrollState.canRight
-                                        ? 'hover:bg-white'
-                                        : 'cursor-not-allowed opacity-35'
-                                }`}
+                                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200/80 bg-white/85 text-gray-600 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/85 dark:text-gray-200 ${clusterScrollState.canRight
+                                    ? 'hover:bg-white'
+                                    : 'cursor-not-allowed opacity-35'
+                                    }`}
                                 aria-label="Scroll clusters right"
                             >
                                 <ChevronRight className="h-4 w-4" />
@@ -1355,11 +1281,132 @@ export default function HomeModern() {
     }
 
     /* ================================================================ */
+    /*  CMS-driven section renderers (HOME_HERO, HOME_FEATURES, etc.)   */
+    /* ================================================================ */
+
+    /** Filter content blocks by a specific placement */
+    function getBlocksByPlacement(placement: string): ContentBlockItem[] {
+        return contentBlocks.filter((block) => block.placements?.includes(placement));
+    }
+
+    /** Render a single CMS content block */
+    function renderCmsBlock(block: ContentBlockItem) {
+        if (block.type === 'cta_strip' || block.type === 'campaign_card') {
+            return (
+                <motion.div key={block._id} whileHover={{ scale: 1.005 }}
+                    className="rounded-2xl overflow-hidden bg-gradient-to-r from-[var(--primary)] to-purple-600 text-white p-6 md:p-8 flex flex-col md:flex-row items-center gap-5 shadow-elevated">
+                    {block.imageUrl && <img src={block.imageUrl} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover shrink-0 ring-2 ring-white/20" />}
+                    <div className="flex-1 text-center md:text-left">
+                        {block.title && <h3 className="font-heading font-bold text-lg md:text-xl mb-1">{block.title}</h3>}
+                        {block.body && <p className="text-sm text-white/75 line-clamp-2">{block.body}</p>}
+                    </div>
+                    {block.ctaLabel && block.ctaUrl && (
+                        <SmartActionLink href={block.ctaUrl}
+                            className="shrink-0 px-6 py-3 rounded-xl bg-white text-[var(--primary)] font-semibold text-sm hover:bg-blue-50 transition-colors shadow-elevated">
+                            {block.ctaLabel}
+                        </SmartActionLink>
+                    )}
+                </motion.div>
+            );
+        }
+        if (block.type === 'notice_ribbon' || block.type === 'info_banner') {
+            return (
+                <div key={block._id}
+                    className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20 p-4 md:p-5 flex items-start gap-3 shadow-card">
+                    <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/40 shrink-0">
+                        <Megaphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                        {block.title && <p className="font-semibold text-sm text-amber-900 dark:text-amber-200 mb-0.5">{block.title}</p>}
+                        {block.body && <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">{block.body}</p>}
+                    </div>
+                    {block.ctaLabel && block.ctaUrl && (
+                        <SmartActionLink href={block.ctaUrl}
+                            className="shrink-0 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors">
+                            {block.ctaLabel} →
+                        </SmartActionLink>
+                    )}
+                </div>
+            );
+        }
+        /* hero_card or generic fallback */
+        return (
+            <motion.div key={block._id} whileHover={{ y: -2 }}
+                className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-5 shadow-card hover:shadow-card-hover transition-shadow flex flex-col md:flex-row items-center gap-5">
+                {block.imageUrl && <img src={block.imageUrl} alt="" className="w-full md:w-44 h-36 md:h-32 rounded-xl object-cover shrink-0" />}
+                <div className="flex-1">
+                    {block.title && <h3 className="font-heading font-bold text-base text-gray-900 dark:text-white mb-1">{block.title}</h3>}
+                    {block.body && <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed">{block.body}</p>}
+                </div>
+                {block.ctaLabel && block.ctaUrl && (
+                    <SmartActionLink href={block.ctaUrl}
+                        className="shrink-0 px-5 py-2.5 rounded-xl bg-[var(--primary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity shadow-card">
+                        {block.ctaLabel}
+                    </SmartActionLink>
+                )}
+            </motion.div>
+        );
+    }
+
+    /* Home Hero CMS Block */
+    function renderHomeHero() {
+        const blocks = getBlocksByPlacement('HOME_HERO');
+        if (!blocks.length) return null;
+        return (
+            <SectionWrap>
+                <div className="px-4 md:px-0 space-y-4" data-testid="home-hero-cms-section">
+                    {blocks.map((block) => renderCmsBlock(block))}
+                </div>
+            </SectionWrap>
+        );
+    }
+
+    /* Home Features CMS Block */
+    function renderHomeFeatures() {
+        const blocks = getBlocksByPlacement('HOME_FEATURES');
+        if (!blocks.length) return null;
+        return (
+            <SectionWrap>
+                <div className="px-4 md:px-0 space-y-4" data-testid="home-features-cms-section">
+                    <SectionHeader title="Features" subtitle="What makes us different" icon={Sparkles} />
+                    {blocks.map((block) => renderCmsBlock(block))}
+                </div>
+            </SectionWrap>
+        );
+    }
+
+    /* Home Testimonials CMS Block */
+    function renderHomeTestimonials() {
+        const blocks = getBlocksByPlacement('HOME_TESTIMONIALS');
+        if (!blocks.length) return null;
+        return (
+            <SectionWrap>
+                <div className="px-4 md:px-0 space-y-4" data-testid="home-testimonials-cms-section">
+                    <SectionHeader title="Testimonials" subtitle="What our users say" icon={Megaphone} />
+                    {blocks.map((block) => renderCmsBlock(block))}
+                </div>
+            </SectionWrap>
+        );
+    }
+
+    /* Home CTA CMS Block */
+    function renderHomeCta() {
+        const blocks = getBlocksByPlacement('HOME_CTA');
+        if (!blocks.length) return null;
+        return (
+            <SectionWrap>
+                <div className="px-4 md:px-0 space-y-4" data-testid="home-cta-cms-section">
+                    {blocks.map((block) => renderCmsBlock(block))}
+                </div>
+            </SectionWrap>
+        );
+    }
+
+    /* ================================================================ */
     /*  Section renderer map                                             */
     /* ================================================================ */
     const sectionRenderers: Record<string, () => ReactNode> = {
         search: renderSearch,
-        hero: renderHero,
         subscription_banner: renderSubscriptionPreview,
         campaign_banners: renderCampaignBanners,
         featured: renderFeatured,
@@ -1371,6 +1418,10 @@ export default function HomeModern() {
         resources: renderResourcesPreview,
         content_blocks: renderContentBlocks,
         stats: renderStats,
+        home_hero: renderHomeHero,
+        home_features: renderHomeFeatures,
+        home_testimonials: renderHomeTestimonials,
+        home_cta: renderHomeCta,
     };
 
     /* ================================================================ */
@@ -1405,7 +1456,21 @@ export default function HomeModern() {
 
     return (
         <div className="bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
-            <div className="max-w-7xl mx-auto space-y-10 md:space-y-14 pb-20">
+            {hero.enabled && (
+                <PageHeroBanner
+                    title={hero.title}
+                    subtitle={hero.subtitle}
+                    pillText={hero.pillText}
+                    vantaEffect={hero.vantaEffect}
+                    vantaColor={hero.vantaColor}
+                    vantaBackgroundColor={hero.vantaBackgroundColor}
+                    gradientFrom={hero.gradientFrom}
+                    gradientTo={hero.gradientTo}
+                    primaryCTA={hero.primaryCTA}
+                    secondaryCTA={hero.secondaryCTA}
+                />
+            )}
+            <div className="max-w-7xl mx-auto space-y-10 md:space-y-14 pt-6 pb-20">
                 {sectionOrder.map(section => {
                     const renderer = sectionRenderers[section.id];
                     if (!renderer) return null;

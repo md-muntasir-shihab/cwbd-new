@@ -1,13 +1,15 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
     useFcTransactions, useFcCreateTransaction, useFcUpdateTransaction,
     useFcDeleteTransaction, useFcBulkApprove, useFcBulkMarkPaid,
+    useFcTransaction,
 } from '../../../hooks/useFinanceCenterQueries';
 import type { FcTransaction, TransactionStatus, PaymentMethod, SourceType } from '../../../types/finance';
 import {
     Plus, Search, Filter, Trash2, Eye, ChevronLeft, ChevronRight,
-    Receipt, Clock, AlertCircle, CreditCard, X,
+    Receipt, Clock, AlertCircle, CreditCard, X, Loader2,
 } from 'lucide-react';
+import { displayName } from '../../../utils/displayName';
 import { showConfirmDialog } from '../../../lib/appDialog';
 
 type Params = Record<string, string | number | boolean | undefined>;
@@ -34,7 +36,7 @@ export default function FinanceExpensesPage() {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [showCreate, setShowCreate] = useState(false);
     const [editTxn, setEditTxn] = useState<FcTransaction | null>(null);
-    const [detailTxn, setDetailTxn] = useState<FcTransaction | null>(null);
+    const [detailId, setDetailId] = useState<string | null>(null);
 
     const params: Params = {
         page, limit: 20, direction: 'expense',
@@ -174,7 +176,7 @@ export default function FinanceExpensesPage() {
                                         <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{new Date(t.dateUTC).toLocaleDateString()}</td>
                                         <td className="px-3 py-2 text-right">
                                             <div className="flex items-center justify-end gap-1">
-                                                <button onClick={() => setDetailTxn(t)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" title="View">
+                                                <button onClick={() => setDetailId(t._id)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" title="View" aria-label="View details">
                                                     <Eye size={13} className="text-slate-500" />
                                                 </button>
                                                 <button onClick={() => setEditTxn(t)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" title="Edit">
@@ -219,7 +221,7 @@ export default function FinanceExpensesPage() {
                                         <span className="text-[10px] text-slate-500">{t.method} &middot; {new Date(t.dateUTC).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex gap-1">
-                                        <button onClick={() => setDetailTxn(t)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><Eye size={13} className="text-slate-500" /></button>
+                                        <button onClick={() => setDetailId(t._id)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="View details"><Eye size={13} className="text-slate-500" /></button>
                                         <button onClick={() => setEditTxn(t)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><Receipt size={13} className="text-blue-600" /></button>
                                     </div>
                                 </div>
@@ -241,7 +243,7 @@ export default function FinanceExpensesPage() {
             )}
 
             {/* Detail drawer */}
-            {detailTxn && <ExpenseDetailDrawer txn={detailTxn} onClose={() => setDetailTxn(null)} />}
+            {detailId && <ExpenseDetailDrawer id={detailId} onClose={() => setDetailId(null)} />}
 
             {/* Create / Edit modal */}
             {(showCreate || editTxn) && (
@@ -286,39 +288,81 @@ function FilterSelect({ label, value, options, onChange }: { label: string; valu
 }
 
 /* ── Detail Drawer ──────────────────────────────────────── */
-function ExpenseDetailDrawer({ txn, onClose }: { txn: FcTransaction; onClose: () => void }) {
+function ExpenseDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) {
+    const { data, isLoading, isError, error } = useFcTransaction(id);
+    const closeRef = useRef<HTMLButtonElement>(null);
+
+    // Focus close button on mount
+    useEffect(() => {
+        closeRef.current?.focus();
+    }, []);
+
+    // Escape key handler
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+
+    const txn = (data as { data?: FcTransaction })?.data ?? data as FcTransaction | undefined;
+    const is404 = isError && (error as { response?: { status?: number } })?.response?.status === 404;
+
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
-            <div className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-900" onClick={e => e.stopPropagation()}>
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Expense Details"
+                className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-900 sm:max-w-md"
+                onClick={e => e.stopPropagation()}
+            >
                 <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-800 dark:text-white">Expense Details</h3>
-                    <button onClick={onClose} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><X size={18} /></button>
+                    <button ref={closeRef} onClick={onClose} aria-label="Close" className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><X size={18} /></button>
                 </div>
-                <dl className="space-y-3 text-sm">
-                    <DetailRow label="Code" value={txn.txnCode} />
-                    <DetailRow label="Category" value={txn.categoryLabel} />
-                    <DetailRow label="Amount" value={`৳${fmt(txn.amount)}`} />
-                    <DetailRow label="Status" value={txn.status} />
-                    <DetailRow label="Payment Method" value={txn.method} />
-                    <DetailRow label="Source Type" value={txn.sourceType.replace(/_/g, ' ')} />
-                    <DetailRow label="Date" value={new Date(txn.dateUTC).toLocaleDateString()} />
-                    {txn.description && <DetailRow label="Description" value={txn.description} />}
-                    {txn.note && <DetailRow label="Note" value={txn.note} />}
-                    {txn.vendorId && <DetailRow label="Vendor ID" value={txn.vendorId} />}
-                    {txn.tags && txn.tags.length > 0 && <DetailRow label="Tags" value={txn.tags.join(', ')} />}
-                    {txn.attachments && txn.attachments.length > 0 && (
-                        <div>
-                            <dt className="text-xs font-medium text-slate-500 dark:text-slate-400">Attachments</dt>
-                            <dd className="mt-1 space-y-1">
-                                {txn.attachments.map((a, i) => (
-                                    <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="block text-xs text-indigo-600 hover:underline dark:text-indigo-400">
-                                        {a.label || `Attachment ${i + 1}`}
-                                    </a>
-                                ))}
-                            </dd>
-                        </div>
-                    )}
-                </dl>
+
+                {isLoading && (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 size={24} className="animate-spin text-indigo-500" />
+                        <span className="ml-2 text-sm text-slate-500">Loading...</span>
+                    </div>
+                )}
+
+                {isError && (
+                    <div className="py-12 text-center text-sm text-slate-500">
+                        {is404 ? 'Record not found.' : 'Failed to load details. Please try again.'}
+                    </div>
+                )}
+
+                {txn && (
+                    <dl className="space-y-3 text-sm">
+                        <DetailRow label="Transaction Code" value={txn.txnCode} />
+                        <DetailRow label="Direction" value={txn.direction} />
+                        <DetailRow label="Amount" value={`${txn.currency ?? '৳'}${fmt(txn.amount)}`} />
+                        <DetailRow label="Status" value={txn.status} />
+                        <DetailRow label="Method" value={txn.method} />
+                        <DetailRow label="Account Code" value={txn.accountCode} />
+                        <DetailRow label="Category" value={txn.categoryLabel} />
+                        <DetailRow label="Source Type" value={txn.sourceType?.replace(/_/g, ' ') ?? '—'} />
+                        {txn.sourceId && <DetailRow label="Source ID" value={txn.sourceId} />}
+                        <DetailRow label="Date" value={new Date(txn.dateUTC).toLocaleDateString()} />
+                        {txn.description && <DetailRow label="Description" value={txn.description} />}
+                        {txn.note && <DetailRow label="Note" value={txn.note} />}
+                        <DetailRow label="Student" value={displayName(txn.studentId)} />
+                        <DetailRow label="Vendor" value={displayName(txn.vendorId)} />
+                        <DetailRow label="Created By" value={displayName(txn.createdByAdminId)} />
+                        <DetailRow label="Approved By" value={displayName(txn.approvedByAdminId)} />
+                        {txn.approvedAtUTC && <DetailRow label="Approved At" value={new Date(txn.approvedAtUTC).toLocaleDateString()} />}
+                        {txn.paidAtUTC && <DetailRow label="Paid At" value={new Date(txn.paidAtUTC).toLocaleDateString()} />}
+                        {txn.tags && txn.tags.length > 0 && <DetailRow label="Tags" value={txn.tags.join(', ')} />}
+                        {txn.invoiceNo && <DetailRow label="Invoice No" value={txn.invoiceNo} />}
+                        <DetailRow label="Deleted" value={txn.isDeleted ? 'Yes' : 'No'} />
+                        <DetailRow label="Created" value={new Date(txn.createdAt).toLocaleDateString()} />
+                        <DetailRow label="Updated" value={new Date(txn.updatedAt).toLocaleDateString()} />
+                    </dl>
+                )}
             </div>
         </div>
     );

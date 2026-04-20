@@ -10,7 +10,13 @@
  */
 
 import { Router, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { authenticate, authorize } from '../middlewares/auth';
+import { settingsValidator } from '../middlewares/settingsValidator';
+import { settingsRbac } from '../middlewares/settingsRbac';
+import { settingsCacheService } from '../services/settingsCacheService';
+import { log as auditLog, getHistory as getAuditHistory, getVersionSnapshot } from '../services/settingsAuditLoggerService';
+import { simulate } from '../services/campaignEngineService';
 import {
     executeCampaign,
     previewAndEstimate,
@@ -20,7 +26,7 @@ import {
 import NotificationJob from '../models/NotificationJob';
 import NotificationDeliveryLog from '../models/NotificationDeliveryLog';
 import NotificationTemplate from '../models/NotificationTemplate';
-import NotificationSettings from '../models/NotificationSettings';
+import NotificationSettings, { applyMigrationDefaults } from '../models/NotificationSettings';
 import NotificationProvider from '../models/NotificationProvider';
 import AnnouncementNotice from '../models/AnnouncementNotice';
 import {
@@ -287,6 +293,9 @@ router.post('/notifications/templates', ...adminAuth, async (req: Request, res: 
             channel: req.body.channel,
             subject: req.body.subject,
             body: req.body.body,
+            htmlBody: req.body.htmlBody ?? '',
+            bodyFormat: req.body.bodyFormat ?? 'plain',
+            designPreset: req.body.designPreset ?? '',
             placeholdersAllowed: req.body.placeholdersAllowed ?? [],
             isEnabled: req.body.isEnabled ?? true,
             category: req.body.category ?? 'other',
@@ -308,6 +317,9 @@ router.put('/notifications/templates/:id', ...adminAuth, async (req: Request, re
         if (req.body.channel) template.channel = req.body.channel;
         if (req.body.subject !== undefined) template.subject = req.body.subject;
         if (req.body.body) template.body = req.body.body;
+        if (req.body.htmlBody !== undefined) template.htmlBody = req.body.htmlBody;
+        if (req.body.bodyFormat !== undefined) template.bodyFormat = req.body.bodyFormat;
+        if (req.body.designPreset !== undefined) template.designPreset = req.body.designPreset;
         if (req.body.placeholdersAllowed) template.placeholdersAllowed = req.body.placeholdersAllowed;
         if (req.body.isEnabled !== undefined) template.isEnabled = req.body.isEnabled;
         if (req.body.category) template.category = req.body.category;
@@ -873,6 +885,140 @@ router.put('/notifications/triggers', ...adminAuth, async (req: AuthRequest, res
         });
     } catch (err) {
         console.error('PUT /notifications/triggers error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+/* ────────────────────────────────────────────────────────────────
+   Advanced Notification Settings (Req 1.1–1.5, 12.1, 12.4, 15.1, 18.1–18.3, 19.1)
+   ──────────────────────────────────────────────────────────────── */
+
+// GET /notification-settings — read settings with migration defaults merge (Req 1.1, 1.2, 18.3)
+router.get('/notification-settings', ...adminAuth, async (_req: AuthRequest, res: Response) => {
+    try {
+        let doc: Record<string, unknown> | null = await NotificationSettings.findOne().lean();
+        if (!doc) {
+            const created = await NotificationSettings.create({});
+            doc = created.toObject() as unknown as Record<string, unknown>;
+        }
+        const merged = applyMigrationDefaults(doc);
+        res.json(merged);
+    } catch (err) {
+        console.error('GET /notification-settings error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// PUT /notification-settings — update with validation + RBAC + audit + cache invalidation (Req 1.4, 1.5, 12.1, 12.4, 18.1, 19.1)
+router.put('/notification-settings', ...adminAuth, settingsValidator, settingsRbac, async (req: AuthRequest, res: Response) => {
+    try {
+        // Load current settings as the "before" snapshot
+        const before = await NotificationSettings.findOne().lean();
+        if (!before) {
+            res.status(404).json({ message: 'Settings document not found' });
+            return;
+        }
+
+        const beforeSnapshot = before as Record<string, unknown>;
+        const currentVersion = (beforeSnapshot.schemaVersion as number | undefined) ?? 1;
+
+        // Increment schemaVersion (Req 18.1, 1.3)
+        const updateBody = { ...req.body, schemaVersion: currentVersion + 1 };
+
+        const updated = await NotificationSettings.findOneAndUpdate(
+            {},
+            { $set: updateBody },
+            { new: true },
+        );
+
+        if (!updated) {
+            res.status(500).json({ message: 'Failed to update settings' });
+            return;
+        }
+
+        const afterSnapshot = updated.toObject() as unknown as Record<string, unknown>;
+
+        // Compute diff of changed fields
+        const diff: Array<{ field: string; oldValue: unknown; newValue: unknown }> = [];
+        for (const key of Object.keys(req.body)) {
+            diff.push({
+                field: key,
+                oldValue: beforeSnapshot[key] ?? null,
+                newValue: afterSnapshot[key] ?? null,
+            });
+        }
+        // Always include schemaVersion in diff
+        diff.push({
+            field: 'schemaVersion',
+            oldValue: currentVersion,
+            newValue: currentVersion + 1,
+        });
+
+        // Audit log (Req 12.4, 18.1) — store previous snapshot
+        const adminId = assertAdminId(req);
+        const actorRole = assertActorRole(req);
+        await auditLog({
+            actorId: new mongoose.Types.ObjectId(adminId),
+            actorRole,
+            timestamp: new Date(),
+            ipAddress: String(req.ip || 'unknown'),
+            section: 'notification-settings',
+            beforeSnapshot,
+            afterSnapshot,
+            diff,
+        });
+
+        // Invalidate settings cache (Req 19.1)
+        settingsCacheService.invalidate();
+
+        res.json(updated);
+    } catch (err) {
+        console.error('PUT /notification-settings error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// POST /notification-settings/simulate — test configuration simulation (Req 15.1)
+router.post('/notification-settings/simulate', ...adminAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const result = await simulate(req.body);
+        res.json(result);
+    } catch (err) {
+        console.error('POST /notification-settings/simulate error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /notification-settings/versions/:version — read historical version (Req 18.2)
+router.get('/notification-settings/versions/:version', ...adminAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const version = parseInt(String(req.params.version), 10);
+        if (!Number.isFinite(version) || version < 1) {
+            res.status(400).json({ message: 'Invalid version number' });
+            return;
+        }
+        const snapshot = await getVersionSnapshot(version);
+        if (!snapshot) {
+            res.status(404).json({ message: `Version ${version} not found` });
+            return;
+        }
+        res.json(snapshot);
+    } catch (err) {
+        console.error('GET /notification-settings/versions/:version error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /notification-settings/audit-trail — query settings audit trail (Req 12.4, 18.1)
+router.get('/notification-settings/audit-trail', ...adminAuth, async (req: AuthRequest, res: Response) => {
+    try {
+        const section = req.query.section as string | undefined;
+        const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? '50'), 10)));
+        const offset = Math.max(0, parseInt(String(req.query.offset ?? '0'), 10));
+        const entries = await getAuditHistory(section, limit, offset);
+        res.json({ entries, limit, offset });
+    } catch (err) {
+        console.error('GET /notification-settings/audit-trail error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

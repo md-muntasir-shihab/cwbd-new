@@ -1,0 +1,29 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "noData": "No data",
+        "error": "Error",
+        "success": "Success",
+        "confirm": "Confirm",
+        "selected": "Selected",
+        "total": "Total",
+        "close": "Close",
+        "back": "Back",
+        "next": "Next",
+        "yes": "Yes",
+        "no": "No",
+        "search": "Search",
+        "filter": "Filter",
+        "reset": "Reset",
+        "apply": "Apply",
+        "page": "Page",
+        "of": "of",
+        "showing": "Showing",
+        "results": "results",
+        "perPage": "per page",
+        "noResults": "No results found",
+        "language": "Language",
+        "english": "English",
+        "bengali": "বাংলা"
+    }
+}

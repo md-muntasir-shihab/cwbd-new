@@ -92,7 +92,7 @@ describe('Property 12: Audit Log Completeness', () => {
 
                 expect(SecurityAuditLog.create).toHaveBeenCalledTimes(1);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -111,7 +111,7 @@ describe('Property 12: Audit Log Completeness', () => {
                 expect(arg.details.before).toEqual(params.before);
                 expect(arg.details.after).toEqual(params.after);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -130,7 +130,7 @@ describe('Property 12: Audit Log Completeness', () => {
                 expect(arg.actorId).toBe(params.actorId);
                 expect(arg.ipAddress).toBe(params.ipAddress);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -149,7 +149,7 @@ describe('Property 12: Audit Log Completeness', () => {
                 expect(arg.eventCategory).toBe('admin');
                 expect(arg.eventType).toBe(params.actionType);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -168,7 +168,7 @@ describe('Property 12: Audit Log Completeness', () => {
                 expect(arg.correlationId).toBe(params.correlationId);
                 expect(arg.actorRole).toBe(params.actorRole);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

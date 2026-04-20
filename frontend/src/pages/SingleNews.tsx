@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import {
@@ -316,6 +317,16 @@ export default function SingleNewsPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-14 dark:bg-[#060f23]">
+            {/* OG Meta Tags for social sharing */}
+            <Helmet>
+                <title>{newsItem.seoTitle || newsItem.title} | CampusWay News</title>
+                <meta property="og:title" content={(newsItem as any).ogTitle || newsItem.seoTitle || newsItem.title} />
+                <meta property="og:description" content={(newsItem as any).ogDescription || newsItem.seoDescription || newsItem.shortSummary || newsItem.shortDescription || ''} />
+                <meta property="og:image" content={(newsItem as any).ogImage || resolveNewsImage(newsItem, settings)} />
+                <meta property="og:url" content={`${window.location.origin}/news/${newsItem.slug || newsItem._id}`} />
+                <meta property="og:type" content="article" />
+                <meta name="description" content={newsItem.seoDescription || newsItem.shortSummary || newsItem.shortDescription || ''} />
+            </Helmet>
             <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
                 <div className="mb-4 flex items-center justify-between">
                     <Link

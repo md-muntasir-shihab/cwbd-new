@@ -9,6 +9,10 @@ import type { AdminStudentUnifiedPayload } from '../types/studentManagement';
 export const getStudentUnified = (id: string): Promise<AdminStudentUnifiedPayload> =>
   api.get(`/admin/students-v2/${id}/unified`).then(r => r.data);
 
+// ─── Extended Profile (exam history, analytics, device/IP info) ──────────
+export const getStudentExtendedProfile = (id: string) =>
+  api.get(`/admin/students/${id}/extended-profile`).then(r => r.data);
+
 // ─── Metrics ──────────────────────────────────────────────────────────────
 export const getStudentMetrics = () =>
   api.get('/admin/students-v2/metrics').then(r => r.data);

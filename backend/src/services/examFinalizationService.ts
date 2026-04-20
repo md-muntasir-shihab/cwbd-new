@@ -430,6 +430,10 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
     let wrongCount = 0;
     let unansweredCount = 0;
 
+    // Track per-topic performance for strengths/weaknesses analysis
+    const topicCorrect = new Map<string, number>();
+    const topicTotal = new Map<string, number>();
+
     const evaluatedAnswers = questions.map((question) => {
         const qId = String(question._id || '');
         const answer = answerMap.get(qId) || { selectedAnswer: '', writtenAnswerUrl: '' };
@@ -445,6 +449,7 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
             ? (rawType as 'mcq' | 'written')
             : (inferredWritten ? 'written' : 'mcq');
         let isCorrect = false;
+        let marksObtained = 0;
 
         if (questionType === 'mcq') {
             isCorrect = selected === question.correctAnswer;
@@ -452,7 +457,8 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
                 unansweredCount += 1;
             } else if (isCorrect) {
                 correctCount += 1;
-                obtainedMarks += Number(question.marks || 0);
+                marksObtained = Number(question.marks || 0);
+                obtainedMarks += marksObtained;
             } else {
                 wrongCount += 1;
                 if (exam.negativeMarking) {
@@ -462,6 +468,29 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
             }
         } else if (!writtenAnswerUrl) {
             unansweredCount += 1;
+        }
+
+        // Determine correct/wrong/unanswered indicator
+        let correctWrongIndicator: 'correct' | 'wrong' | 'unanswered' = 'unanswered';
+        if (questionType === 'mcq') {
+            if (!selected) {
+                correctWrongIndicator = 'unanswered';
+            } else if (isCorrect) {
+                correctWrongIndicator = 'correct';
+            } else {
+                correctWrongIndicator = 'wrong';
+            }
+        } else {
+            correctWrongIndicator = writtenAnswerUrl ? (isCorrect ? 'correct' : 'wrong') : 'unanswered';
+        }
+
+        // Track topic performance
+        const topic = String((question as Record<string, unknown>).topic || (question as Record<string, unknown>).section || (question as Record<string, unknown>).subject || 'General');
+        if (topic && questionType === 'mcq' && selected) {
+            topicTotal.set(topic, (topicTotal.get(topic) || 0) + 1);
+            if (isCorrect) {
+                topicCorrect.set(topic, (topicCorrect.get(topic) || 0) + 1);
+            }
         }
 
         void Question.findByIdAndUpdate(question._id, {
@@ -478,6 +507,11 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
             writtenAnswerUrl: writtenAnswerUrl || undefined,
             isCorrect,
             timeTaken: 0,
+            marks: Number(question.marks || 0),
+            marksObtained,
+            explanation: String((question as Record<string, unknown>).explanation || ''),
+            correctWrongIndicator,
+            topic,
         };
     });
 
@@ -490,6 +524,25 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
     const hasWrittenQuestions = evaluatedAnswers.some((answer) => answer.questionType === 'written');
     const resultStatus = hasWrittenQuestions ? 'submitted' : 'evaluated';
 
+    // Build performance summary with strengths/weaknesses by topic
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+    for (const [topic, total] of topicTotal.entries()) {
+        const correct = topicCorrect.get(topic) || 0;
+        const topicPct = total > 0 ? (correct / total) * 100 : 0;
+        if (topicPct >= 70) {
+            strengths.push(topic);
+        } else if (topicPct < 50) {
+            weaknesses.push(topic);
+        }
+    }
+    const performanceSummary = {
+        totalScore: obtainedMarks,
+        percentage,
+        strengths,
+        weaknesses,
+    };
+
     const requestUserAgent = String(input.requestMeta?.userAgent || '');
     const requestIp = String(input.requestMeta?.ipAddress || '');
 
@@ -500,6 +553,18 @@ export async function finalizeExamSession(input: FinalizeExamSessionInput): Prom
             student: studentId,
             attemptNo: currentAttemptNo,
             answers: evaluatedAnswers,
+            detailedAnswers: evaluatedAnswers.map((a) => ({
+                question: a.question,
+                questionType: a.questionType,
+                selectedAnswer: a.selectedAnswer,
+                isCorrect: a.isCorrect,
+                marks: a.marks,
+                marksObtained: a.marksObtained,
+                explanation: a.explanation,
+                correctWrongIndicator: a.correctWrongIndicator,
+                topic: a.topic,
+            })),
+            performanceSummary,
             totalMarks,
             obtainedMarks,
             correctCount,

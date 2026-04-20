@@ -673,6 +673,36 @@ export const fetchExamResult = async (examId: string, sessionId: string): Promis
             rank:
                 result.rank === undefined || result.rank === null ? undefined : asNumber(result.rank, 0),
             timeTakenSeconds: asNumber(result.timeTakenSeconds || result.timeTaken, 0),
+            detailedAnswers: Array.isArray(result.detailedAnswers)
+                ? (result.detailedAnswers as unknown[]).map((a) => {
+                    const item = asRecord(a);
+                    return {
+                        questionId: String(item.questionId || ''),
+                        question: String(item.question || ''),
+                        questionImage: item.questionImage ? String(item.questionImage) : undefined,
+                        selectedAnswer: String(item.selectedAnswer || ''),
+                        correctAnswer: String(item.correctAnswer || ''),
+                        isCorrect: Boolean(item.isCorrect),
+                        marks: asNumber(item.marks, 0),
+                        marksObtained: asNumber(item.marksObtained, 0),
+                        explanation: String(item.explanation || ''),
+                        correctWrongIndicator: (String(item.correctWrongIndicator || 'unanswered') as 'correct' | 'wrong' | 'unanswered'),
+                        section: item.section ? String(item.section) : undefined,
+                    };
+                })
+                : undefined,
+            performanceSummary: payload.performanceSummary
+                ? {
+                    totalScore: asNumber(asRecord(payload.performanceSummary).totalScore, 0),
+                    percentage: asNumber(asRecord(payload.performanceSummary).percentage, 0),
+                    strengths: Array.isArray(asRecord(payload.performanceSummary).strengths)
+                        ? (asRecord(payload.performanceSummary).strengths as string[])
+                        : [],
+                    weaknesses: Array.isArray(asRecord(payload.performanceSummary).weaknesses)
+                        ? (asRecord(payload.performanceSummary).weaknesses as string[])
+                        : [],
+                }
+                : undefined,
         };
     }
 };

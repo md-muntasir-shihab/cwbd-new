@@ -562,76 +562,76 @@ function buildHomeClusterCards(
     const cards: HomeClusterCardItem[] = [];
 
     clusters.forEach((cluster) => {
-            const clusterId = String(cluster._id || '');
-            const members = universitiesByCluster.get(clusterId) || universitiesByCluster.get(String(cluster.name || '').trim()) || [];
-            if (members.length === 0) return;
-            const clusterDates = ((cluster as { dates?: Record<string, unknown> }).dates || {}) as Record<string, unknown>;
-            const sharedApplicationStartDate = toIsoDateString(clusterDates.applicationStartDate);
-            const sharedApplicationEndDate = toIsoDateString(clusterDates.applicationEndDate);
-            const sharedScienceExamDate = toIsoDateString(clusterDates.scienceExamDate);
-            const sharedArtsExamDate = toIsoDateString(clusterDates.artsExamDate);
-            const sharedBusinessExamDate = toIsoDateString(clusterDates.commerceExamDate || clusterDates.businessExamDate);
+        const clusterId = String(cluster._id || '');
+        const members = universitiesByCluster.get(clusterId) || universitiesByCluster.get(String(cluster.name || '').trim()) || [];
+        if (members.length === 0) return;
+        const clusterDates = ((cluster as { dates?: Record<string, unknown> }).dates || {}) as Record<string, unknown>;
+        const sharedApplicationStartDate = toIsoDateString(clusterDates.applicationStartDate);
+        const sharedApplicationEndDate = toIsoDateString(clusterDates.applicationEndDate);
+        const sharedScienceExamDate = toIsoDateString(clusterDates.scienceExamDate);
+        const sharedArtsExamDate = toIsoDateString(clusterDates.artsExamDate);
+        const sharedBusinessExamDate = toIsoDateString(clusterDates.commerceExamDate || clusterDates.businessExamDate);
 
-            const nearestDeadline = getPreferredTimelineDateIso(
-                members.map((item) => item.applicationEndDate).filter(Boolean),
-                now,
-            );
-            const nearestExam = getPreferredTimelineDateIso(
-                members.flatMap((item) => [
-                    item.scienceExamDate,
-                    item.artsExamDate,
-                    item.businessExamDate,
-                    item.examDateScience,
-                    item.examDateArts,
-                    item.examDateBusiness,
-                ].filter(Boolean)),
-                now,
-            );
-            const applicationStartDate = sharedApplicationStartDate || getEarliestKnownDateIso(
-                members.map((item) => item.applicationStartDate).filter(Boolean),
-            );
-            const applicationEndDate = sharedApplicationEndDate || nearestDeadline;
-            const scienceExamDate = sharedScienceExamDate || getPreferredTimelineDateIso(
-                members.flatMap((item) => [item.scienceExamDate, item.examDateScience].filter(Boolean)),
-                now,
-            );
-            const artsExamDate = sharedArtsExamDate || getPreferredTimelineDateIso(
-                members.flatMap((item) => [item.artsExamDate, item.examDateArts].filter(Boolean)),
-                now,
-            );
-            const businessExamDate = sharedBusinessExamDate || getPreferredTimelineDateIso(
-                members.flatMap((item) => [item.businessExamDate, item.examDateBusiness].filter(Boolean)),
-                now,
-            );
-            const admissionWebsite = pickString((clusterDates as { admissionWebsite?: unknown }).admissionWebsite)
-                || members.find((item) => item.admissionWebsite)?.admissionWebsite
-                || '';
+        const nearestDeadline = getPreferredTimelineDateIso(
+            members.map((item) => item.applicationEndDate).filter(Boolean),
+            now,
+        );
+        const nearestExam = getPreferredTimelineDateIso(
+            members.flatMap((item) => [
+                item.scienceExamDate,
+                item.artsExamDate,
+                item.businessExamDate,
+                item.examDateScience,
+                item.examDateArts,
+                item.examDateBusiness,
+            ].filter(Boolean)),
+            now,
+        );
+        const applicationStartDate = sharedApplicationStartDate || getEarliestKnownDateIso(
+            members.map((item) => item.applicationStartDate).filter(Boolean),
+        );
+        const applicationEndDate = sharedApplicationEndDate || nearestDeadline;
+        const scienceExamDate = sharedScienceExamDate || getPreferredTimelineDateIso(
+            members.flatMap((item) => [item.scienceExamDate, item.examDateScience].filter(Boolean)),
+            now,
+        );
+        const artsExamDate = sharedArtsExamDate || getPreferredTimelineDateIso(
+            members.flatMap((item) => [item.artsExamDate, item.examDateArts].filter(Boolean)),
+            now,
+        );
+        const businessExamDate = sharedBusinessExamDate || getPreferredTimelineDateIso(
+            members.flatMap((item) => [item.businessExamDate, item.examDateBusiness].filter(Boolean)),
+            now,
+        );
+        const admissionWebsite = pickString((clusterDates as { admissionWebsite?: unknown }).admissionWebsite)
+            || members.find((item) => item.admissionWebsite)?.admissionWebsite
+            || '';
 
-            cards.push({
-                id: clusterId,
-                slug: pickString((cluster as { slug?: unknown }).slug, ''),
-                name: pickString((cluster as { name?: unknown }).name, 'Cluster'),
-                description: pickString((cluster as { description?: unknown }).description, ''),
-                memberCount: members.length,
-                categories: Array.from(new Set(members.map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-                applicationStartDate,
-                applicationEndDate,
-                scienceExamDate,
-                artsExamDate,
-                businessExamDate,
-                admissionWebsite,
-                nearestDeadline,
-                nearestExam,
-                examCentersPreview: Array.from(new Set(members.flatMap((item) => item.examCentersPreview || []))).slice(0, 6),
-                homeVisible: Boolean((cluster as { homeVisible?: unknown }).homeVisible),
-                homeOrder: Number((cluster as { homeOrder?: unknown }).homeOrder || 0),
-            });
+        cards.push({
+            id: clusterId,
+            slug: pickString((cluster as { slug?: unknown }).slug, ''),
+            name: pickString((cluster as { name?: unknown }).name, 'Cluster'),
+            description: pickString((cluster as { description?: unknown }).description, ''),
+            memberCount: members.length,
+            categories: Array.from(new Set(members.map((item) => item.category).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+            applicationStartDate,
+            applicationEndDate,
+            scienceExamDate,
+            artsExamDate,
+            businessExamDate,
+            admissionWebsite,
+            nearestDeadline,
+            nearestExam,
+            examCentersPreview: Array.from(new Set(members.flatMap((item) => item.examCentersPreview || []))).slice(0, 6),
+            homeVisible: Boolean((cluster as { homeVisible?: unknown }).homeVisible),
+            homeOrder: Number((cluster as { homeOrder?: unknown }).homeOrder || 0),
         });
+    });
 
     return cards.sort((a, b) => {
-            if (a.homeOrder !== b.homeOrder) return a.homeOrder - b.homeOrder;
-            return a.name.localeCompare(b.name);
-        });
+        if (a.homeOrder !== b.homeOrder) return a.homeOrder - b.homeOrder;
+        return a.name.localeCompare(b.name);
+    });
 }
 
 function buildHomeCategoryCards(
@@ -676,9 +676,9 @@ function buildHomeCategoryCards(
     });
 
     return cards.sort((a, b) => {
-            if (a.homeOrder !== b.homeOrder) return a.homeOrder - b.homeOrder;
-            return a.name.localeCompare(b.name);
-        });
+        if (a.homeOrder !== b.homeOrder) return a.homeOrder - b.homeOrder;
+        return a.name.localeCompare(b.name);
+    });
 }
 
 export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -1018,12 +1018,12 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
 
         // Build featuredItems based on universityPreview settings
         const uniBySlug = new Map<string, Record<string, unknown>>(
-        universities.map((item) => [pickString((item as { slug?: unknown }).slug), item as Record<string, unknown>])
-    );
-    let featuredItems: UniversityCardPreviewItem[] = [];
-    let manualFeaturedUniversityIds = new Set<string>();
-    const maxFeatured = homeSettings.universityPreview?.maxFeaturedItems ?? uniSettingsDoc?.maxFeaturedItems ?? 12;
-    const featuredMode = homeSettings.universityPreview?.featuredMode ?? 'manual';
+            universities.map((item) => [pickString((item as { slug?: unknown }).slug), item as Record<string, unknown>])
+        );
+        let featuredItems: UniversityCardPreviewItem[] = [];
+        let manualFeaturedUniversityIds = new Set<string>();
+        const maxFeatured = homeSettings.universityPreview?.maxFeaturedItems ?? uniSettingsDoc?.maxFeaturedItems ?? 12;
+        const featuredMode = homeSettings.universityPreview?.featuredMode ?? 'manual';
 
         if (featuredMode === 'auto') {
             const openUnis = previewItems.filter((item) => {
@@ -1341,7 +1341,7 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
                 .lean(),
             ContentBlock.find({
                 isEnabled: true,
-                placements: { $in: ['HOME_TOP', 'HOME_MID', 'HOME_BOTTOM'] },
+                placements: { $in: ['HOME_TOP', 'HOME_MID', 'HOME_BOTTOM', 'HOME_HERO', 'HOME_FEATURES', 'HOME_TESTIMONIALS', 'HOME_CTA'] },
                 $and: [
                     { $or: [{ startAtUTC: { $exists: false } }, { startAtUTC: null }, { startAtUTC: { $lte: now } }] },
                     { $or: [{ endAtUTC: { $exists: false } }, { endAtUTC: null }, { endAtUTC: { $gte: now } }] },
@@ -1473,6 +1473,10 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
             { id: 'resources', title: 'Resources Preview', isActive: true, order: 10 },
             { id: 'content_blocks', title: 'Global CTA / Content Block', isActive: true, order: 11 },
             { id: 'stats', title: 'Quick Stats', isActive: true, order: 12 },
+            { id: 'home_hero', title: 'Home Hero CMS Block', isActive: true, order: 13 },
+            { id: 'home_features', title: 'Home Features CMS Block', isActive: true, order: 14 },
+            { id: 'home_testimonials', title: 'Home Testimonials CMS Block', isActive: true, order: 15 },
+            { id: 'home_cta', title: 'Home CTA CMS Block', isActive: true, order: 16 },
         ];
 
         const SECTION_ID_ALIAS_MAP: Record<string, string> = {
@@ -1513,6 +1517,18 @@ export const getAggregatedHomeData = async (req: AuthRequest, res: Response): Pr
             globalctacontentblock: 'content_blocks',
             stats: 'stats',
             quickstats: 'stats',
+            home_hero: 'home_hero',
+            homehero: 'home_hero',
+            homeherocmsblock: 'home_hero',
+            home_features: 'home_features',
+            homefeatures: 'home_features',
+            homefeaturescmsblock: 'home_features',
+            home_testimonials: 'home_testimonials',
+            hometestimonials: 'home_testimonials',
+            hometestimonialscmsblock: 'home_testimonials',
+            home_cta: 'home_cta',
+            homecta: 'home_cta',
+            homectacmsblock: 'home_cta',
         };
 
         const normalizeSectionId = (value: unknown): string => {

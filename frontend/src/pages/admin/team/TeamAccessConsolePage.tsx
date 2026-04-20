@@ -484,6 +484,35 @@ export default function TeamAccessConsolePage() {
       requiredModule="team_access_control"
     >
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+        {/* Tab Navigation */}
+        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+          {([
+            { key: 'members', label: 'Members', icon: Users, path: ADMIN_PATHS.teamMembers },
+            { key: 'roles', label: 'Roles', icon: Shield, path: ADMIN_PATHS.teamRoles },
+            { key: 'permissions', label: 'Permissions', icon: Lock, path: ADMIN_PATHS.teamPermissions },
+            { key: 'approval-rules', label: 'Approvals', icon: CheckCircle2, path: ADMIN_PATHS.teamApprovalRules },
+            { key: 'activity', label: 'Activity', icon: Activity, path: ADMIN_PATHS.teamActivity },
+            { key: 'security', label: 'Security', icon: Fingerprint, path: ADMIN_PATHS.teamSecurity },
+            { key: 'invites', label: 'Invites', icon: Mail, path: ADMIN_PATHS.teamInvites },
+          ] as const).map((tab) => {
+            const active = view === tab.key;
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => navigate(tab.path)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${active
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                  }`}
+              >
+                <TabIcon className="h-3.5 w-3.5" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Search & action bar */}
         {(view === 'members' || view === 'activity' || view === 'invites') && (
           <div className="flex flex-wrap items-center gap-3">
@@ -961,9 +990,8 @@ export default function TeamAccessConsolePage() {
                                 toast.error(err?.response?.data?.message || 'Failed to toggle 2FA');
                               }
                             }}
-                            className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-white ${
-                              member.twoFactorEnabled ? 'bg-orange-600 hover:bg-orange-500' : 'bg-teal-600 hover:bg-teal-500'
-                            }`}
+                            className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-white ${member.twoFactorEnabled ? 'bg-orange-600 hover:bg-orange-500' : 'bg-teal-600 hover:bg-teal-500'
+                              }`}
                           >
                             <Fingerprint className="h-3 w-3" /> {member.twoFactorEnabled ? 'Disable' : 'Enable'}
                           </button>

@@ -2,6 +2,7 @@ import api, { resolveSensitiveActionHeaders, type SensitiveActionProof } from '.
 import type {
     BankQuestion,
     BankQuestionDetail,
+    BankQuestionFacets,
     BankQuestionFilters,
     BankQuestionListResponse,
     ImportPreviewResponse,
@@ -58,6 +59,9 @@ export const bulkUpdateTags = (ids: string[], tags: string[], mode: 'add' | 'set
 export const bulkDelete = (ids: string[]) =>
     api.post(`${BASE}/bulk/delete`, { ids }).then((r) => r.data.data);
 
+export const bulkCopy = (ids: string[]) =>
+    api.post<{ data: { copied: number; newQuestions: BankQuestion[] } }>(`${BASE}/bulk/copy`, { ids }).then((r) => r.data.data);
+
 /* ── Import / Export ── */
 export const getImportTemplateUrl = () => `${api.defaults.baseURL}${BASE}/import/template`;
 
@@ -92,6 +96,12 @@ export const exportQuestions = async (
             defaultReason: 'Export question bank records',
             proof,
         }),
+    }).then((r) => r.data);
+
+export const exportPdf = (filters: BankQuestionFilters) =>
+    api.get(`${BASE}/export/pdf`, {
+        params: filters,
+        responseType: 'blob',
     }).then((r) => r.data);
 
 /* ── Sets ── */
@@ -130,6 +140,9 @@ export const finalizeExamSnapshot = (examId: string) =>
     api.post(`${BASE}/exam/${examId}/finalize`).then((r) => r.data.data);
 
 /* ── Analytics ── */
+export const getFacets = () =>
+    api.get<{ data: BankQuestionFacets }>(`${BASE}/facets`).then((r) => r.data.data);
+
 export const getAnalytics = (params?: Record<string, string>) =>
     api.get<{ data: AnalyticsSummary }>(`${BASE}/analytics`, { params }).then((r) => r.data.data);
 

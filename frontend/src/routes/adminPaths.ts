@@ -42,6 +42,9 @@ export const ADMIN_PATHS = {
     universities: adminUi('universities'),
     news: adminUi('news'),
     exams: adminUi('exams'),
+    examNew: adminUi('exams/new'),
+    examEdit: adminUi('exams/:examId/edit'),
+    examPreview: adminUi('exams/:examId/preview'),
     examsExternal: `${adminUi('exams')}?tab=external`,
     examsInternal: `${adminUi('exams')}?tab=internal`,
     examsImports: `${adminUi('exams')}?tab=imports`,
@@ -122,6 +125,7 @@ export const ADMIN_PATHS = {
     campaignsTriggers: `${adminUi('campaigns')}?view=triggers`,
     campaignsNotifications: `${adminUi('campaigns')}?view=notifications`,
     campaignsSettings: adminUi('campaigns/settings'),
+    campaignsAdvancedSettings: adminUi('campaigns/advanced-settings'),
     campaignsLogs: adminUi('campaigns/logs'),
     // Data Hub
     dataHub: adminUi('data-hub'),
@@ -151,6 +155,7 @@ export type AdminMenuItem = {
 };
 
 // ─── 13-GROUP ADMIN MENU ─────────────────────────────────────────────────────
+// Children removed — each section uses in-page tab navigation instead of sidebar dropdowns.
 export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
     // 1. Dashboard
     { key: 'dashboard', label: 'Dashboard', path: ADMIN_PATHS.dashboard, icon: LayoutDashboard, module: 'dashboard' },
@@ -168,12 +173,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
             adminUi('campaign-banners'),
             adminUi('settings/site-settings'),
         ],
-        children: [
-            { key: 'wc-home', label: 'Home Settings', path: ADMIN_PATHS.homeControl, icon: Home },
-            { key: 'wc-banners', label: 'Banner Management', path: ADMIN_PATHS.bannerManager, icon: Image },
-            { key: 'wc-campaign', label: 'Campaign Banners', path: ADMIN_PATHS.campaignBanners, icon: Megaphone },
-            { key: 'wc-site', label: 'Site Settings', path: ADMIN_PATHS.siteSettings, icon: Settings },
-        ],
     },
 
     // 3. Universities
@@ -184,10 +183,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: GraduationCap,
         module: 'universities',
         matchPrefixes: [adminUi('universities'), adminUi('settings/university-settings')],
-        children: [
-            { key: 'uni-list', label: 'All Universities', path: ADMIN_PATHS.universities, icon: GraduationCap },
-            { key: 'uni-settings', label: 'University Settings', path: ADMIN_PATHS.universitySettings, icon: SlidersHorizontal },
-        ],
     },
 
     // 4. News Management
@@ -198,18 +193,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: Newspaper,
         module: 'news',
         matchPrefixes: [adminUi('news'), adminUi('settings/news')],
-        children: [
-            { key: 'news-dash', label: 'Overview', path: adminUi('news/dashboard'), icon: LayoutDashboard },
-            { key: 'news-pending', label: 'Items to Review', path: adminUi('news/pending'), icon: AlertCircle },
-            { key: 'news-duplicates', label: 'Possible Duplicates', path: adminUi('news/duplicates'), icon: Copy },
-            { key: 'news-drafts', label: 'Saved Drafts', path: adminUi('news/drafts'), icon: FolderOpen },
-            { key: 'news-published', label: 'Published News', path: adminUi('news/published'), icon: ScrollText },
-            { key: 'news-scheduled', label: 'Scheduled', path: adminUi('news/scheduled'), icon: ScrollText },
-            { key: 'news-rejected', label: 'Rejected', path: adminUi('news/rejected'), icon: ScrollText },
-            { key: 'news-ai', label: 'AI Review', path: adminUi('news/ai-selected'), icon: Sparkles },
-            { key: 'news-rss', label: 'RSS Sources', path: adminUi('news/sources'), icon: Rss },
-            { key: 'news-config', label: 'News Settings', path: ADMIN_PATHS.newsSettings, icon: Settings },
-        ],
     },
 
     // 5. Exams
@@ -220,17 +203,7 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: BookOpen,
         module: 'exams',
         allowedRoles: ['superadmin', 'admin', 'moderator', 'editor'],
-        matchPrefixes: [adminUi('exams')],
-        children: [
-            { key: 'exam-all', label: 'All Exams', path: ADMIN_PATHS.exams, icon: BookOpen },
-            { key: 'exam-external', label: 'External Exams', path: ADMIN_PATHS.examsExternal, icon: Link2 },
-            { key: 'exam-internal', label: 'Internal Exams', path: ADMIN_PATHS.examsInternal, icon: Layers },
-            { key: 'exam-imports', label: 'Imports', path: ADMIN_PATHS.examsImports, icon: Upload },
-            { key: 'exam-templates', label: 'Templates', path: ADMIN_PATHS.examsTemplates, icon: FileText },
-            { key: 'exam-centers', label: 'Exam Centers', path: ADMIN_PATHS.examsCenters, icon: Target },
-            { key: 'exam-sync', label: 'Sync Logs', path: ADMIN_PATHS.examsSyncLogs, icon: History },
-            { key: 'exam-settings', label: 'Exam Settings', path: ADMIN_PATHS.examsSettings, icon: Settings },
-        ],
+        matchPrefixes: [adminUi('exams'), adminUi('exams/new')],
     },
 
     // 6. Question Bank
@@ -241,15 +214,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: BookOpen,
         module: 'question_bank',
         matchPrefixes: [adminUi('question-bank')],
-        children: [
-            { key: 'qb-all', label: 'All Questions', path: ADMIN_PATHS.questionBank, icon: BookOpen },
-            { key: 'qb-new', label: 'Add Question', path: ADMIN_PATHS.questionBankNew, icon: BookOpen },
-            { key: 'qb-import', label: 'Import Questions', path: ADMIN_PATHS.questionBankImport, icon: Upload },
-            { key: 'qb-sets', label: 'Question Sets', path: ADMIN_PATHS.questionBankSets, icon: Layers },
-            { key: 'qb-analytics', label: 'Analytics', path: ADMIN_PATHS.questionBankAnalytics, icon: BarChart3 },
-            { key: 'qb-archive', label: 'Archive', path: ADMIN_PATHS.questionBankArchive, icon: Archive },
-            { key: 'qb-settings', label: 'QB Settings', path: ADMIN_PATHS.questionBankSettings, icon: Settings },
-        ],
     },
 
     // 7. Student Management
@@ -268,17 +232,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
             adminUi('notification-center'),
             adminUi('settings/student-settings'),
         ],
-        children: [
-            { key: 'stu-list', label: 'All Students', path: ADMIN_PATHS.studentMgmtList, icon: UserCog },
-            { key: 'stu-create', label: 'Create Student', path: ADMIN_PATHS.studentMgmtCreate, icon: UserPlus },
-            { key: 'stu-import', label: 'Import / Export', path: ADMIN_PATHS.studentMgmtImportExport, icon: Import },
-            { key: 'stu-groups', label: 'Groups', path: ADMIN_PATHS.studentMgmtGroups, icon: ClipboardList },
-            { key: 'stu-crm', label: 'CRM Timeline', path: ADMIN_PATHS.studentMgmtCrmTimeline, icon: MessageSquare },
-            { key: 'stu-weak', label: 'Weak Topics', path: ADMIN_PATHS.studentMgmtWeakTopics, icon: TrendingDown },
-            { key: 'stu-profile-requests', label: 'Profile Requests', path: ADMIN_PATHS.studentMgmtProfileRequests, icon: ClipboardList },
-            { key: 'stu-notif', label: 'Actionable Alerts', path: ADMIN_PATHS.studentMgmtNotifications, icon: Bell },
-            { key: 'stu-settings', label: 'Settings', path: ADMIN_PATHS.studentMgmtSettings, icon: Settings },
-        ],
     },
 
     // 8. Subscription & Payments
@@ -296,11 +249,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
             adminUi('subscriptions-v2'),
             ADMIN_PATHS.subscriptionContactCenter,
         ],
-        children: [
-            { key: 'sub-plans', label: 'Subscription Plans', path: ADMIN_PATHS.subscriptionPlans, icon: CreditCard },
-            { key: 'sub-v2', label: 'Subscriptions', path: ADMIN_PATHS.subscriptionsV2, icon: CreditCard },
-            { key: 'sub-contact-center', label: 'Subscription Contact Center', path: ADMIN_PATHS.subscriptionContactCenter, icon: Users },
-        ],
     },
 
     // 9. Resources
@@ -311,10 +259,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: FolderOpen,
         module: 'resources',
         matchPrefixes: [adminUi('resources'), adminUi('settings/resource-settings')],
-        children: [
-            { key: 'res-list', label: 'All Resources', path: ADMIN_PATHS.resources, icon: FolderOpen },
-            { key: 'res-settings', label: 'Resource Settings', path: ADMIN_PATHS.resourceSettings, icon: Settings },
-        ],
     },
 
     // 10. Support & Communication
@@ -325,11 +269,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: LifeBuoy,
         module: 'support_center',
         matchPrefixes: [adminUi('support-center'), adminUi('help-center'), adminUi('contact'), adminUi('settings/notifications')],
-        children: [
-            { key: 'sup-center', label: 'Support Center', path: ADMIN_PATHS.supportCenter, icon: LifeBuoy },
-            { key: 'sup-help', label: 'Help Center', path: ADMIN_PATHS.helpCenterAdmin, icon: HelpCircle },
-            { key: 'sup-contact', label: 'Contact Messages', path: ADMIN_PATHS.contact, icon: Mail },
-        ],
     },
 
     // 10b. Campaign Platform
@@ -340,17 +279,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: Send,
         module: 'notifications',
         matchPrefixes: [adminUi('campaigns'), adminUi('notifications/test-send'), adminUi('notifications/triggers')],
-        children: [
-            { key: 'cmp-dash', label: 'Dashboard', path: ADMIN_PATHS.campaignsDashboard, icon: LayoutDashboard },
-            { key: 'cmp-list', label: 'Campaigns', path: ADMIN_PATHS.campaignsList, icon: ScrollText },
-            { key: 'cmp-new', label: 'New Campaign', path: ADMIN_PATHS.campaignsNew, icon: Send },
-            { key: 'cmp-templates', label: 'Templates', path: ADMIN_PATHS.campaignsTemplates, icon: FileText },
-            { key: 'cmp-providers', label: 'Providers', path: ADMIN_PATHS.campaignsProviders, icon: Link2 },
-            { key: 'cmp-triggers', label: 'Smart Triggers', path: ADMIN_PATHS.campaignsTriggers, icon: Zap },
-            { key: 'cmp-notifications', label: 'Notifications', path: ADMIN_PATHS.campaignsNotifications, icon: Bell },
-            { key: 'cmp-logs', label: 'Delivery Logs', path: ADMIN_PATHS.campaignsLogs, icon: ScrollText },
-            { key: 'cmp-settings', label: 'Settings', path: ADMIN_PATHS.campaignsSettings, icon: Settings },
-        ],
     },
 
     // 11. Finance Center
@@ -363,22 +291,9 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         allowedRoles: ['superadmin', 'admin', 'moderator', 'finance_agent'],
         requiredLegacyPermission: 'canManageFinance',
         matchPrefixes: [adminUi('finance'), adminUi('payments')],
-        children: [
-            { key: 'fc-dashboard', label: 'Dashboard', path: ADMIN_PATHS.financeDashboard, icon: LayoutDashboard },
-            { key: 'fc-transactions', label: 'Transactions', path: ADMIN_PATHS.financeTransactions, icon: ScrollText },
-            { key: 'fc-expenses', label: 'Expenses', path: ADMIN_PATHS.financeExpenses, icon: Wallet },
-            { key: 'fc-invoices', label: 'Invoices', path: ADMIN_PATHS.financeInvoices, icon: ScrollText },
-            { key: 'fc-budgets', label: 'Budgets', path: ADMIN_PATHS.financeBudgets, icon: BarChart3 },
-            { key: 'fc-recurring', label: 'Recurring', path: ADMIN_PATHS.financeRecurring, icon: ScrollText },
-            { key: 'fc-vendors', label: 'Vendors', path: ADMIN_PATHS.financeVendors, icon: Users },
-            { key: 'fc-refunds', label: 'Refunds', path: ADMIN_PATHS.financeRefunds, icon: Wallet },
-            { key: 'fc-export', label: 'Export', path: ADMIN_PATHS.financeExport, icon: FolderOpen },
-            { key: 'fc-import', label: 'Import', path: ADMIN_PATHS.financeImport, icon: Upload },
-            { key: 'fc-audit', label: 'Audit Log', path: ADMIN_PATHS.financeAuditLog, icon: ScrollText },
-            { key: 'fc-settings', label: 'Settings', path: ADMIN_PATHS.financeSettings, icon: Settings },
-        ],
     },
 
+    // 11b. Team & Access Control
     {
         key: 'teamAccessControl',
         label: 'Team & Access Control',
@@ -386,15 +301,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: KeyRound,
         module: 'team_access_control',
         matchPrefixes: [adminUi('team')],
-        children: [
-            { key: 'ta-members', label: 'Team Members', path: ADMIN_PATHS.teamMembers, icon: Users },
-            { key: 'ta-roles', label: 'Roles', path: ADMIN_PATHS.teamRoles, icon: UserCog },
-            { key: 'ta-permissions', label: 'Permissions Matrix', path: ADMIN_PATHS.teamPermissions, icon: SlidersHorizontal },
-            { key: 'ta-approval', label: 'Approval Rules', path: ADMIN_PATHS.teamApprovalRules, icon: ClipboardList },
-            { key: 'ta-activity', label: 'Activity / Audit Logs', path: ADMIN_PATHS.teamActivity, icon: ScrollText },
-            { key: 'ta-security', label: 'Login & Security', path: ADMIN_PATHS.teamSecurity, icon: Shield },
-            { key: 'ta-invites', label: 'Invite / Access Requests', path: ADMIN_PATHS.teamInvites, icon: UserPlus },
-        ],
     },
 
     // 12. Security & Logs
@@ -405,12 +311,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: Shield,
         module: 'security_logs',
         matchPrefixes: [adminUi('settings/security-center'), adminUi('settings/system-logs'), adminUi('reports')],
-        children: [
-            { key: 'sec-center', label: 'Security Center', path: ADMIN_PATHS.securityCenter, icon: Shield },
-            { key: 'sec-approvals', label: 'Approval Center', path: ADMIN_PATHS.approvals, icon: CheckCircle },
-            { key: 'sec-logs', label: 'System Logs', path: ADMIN_PATHS.systemLogs, icon: ScrollText },
-            { key: 'sec-reports', label: 'Reports', path: ADMIN_PATHS.reports, icon: BarChart3 },
-        ],
     },
 
     // 13. Admin Profile

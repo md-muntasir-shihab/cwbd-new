@@ -23,6 +23,11 @@ interface PopupConfig {
     closeButtonDelaySeconds: number;
     maxViewsPerDay: number;
     cooldownHours: number;
+    ctaText: string;
+    homePageOnly: boolean;
+    targetAudience: 'all' | 'guests' | 'logged_in';
+    showOnMobile: boolean;
+    showOnDesktop: boolean;
 }
 
 interface CampaignBanner {
@@ -51,6 +56,11 @@ const DEFAULT_POPUP_CONFIG: PopupConfig = {
     closeButtonDelaySeconds: 5,
     maxViewsPerDay: 1,
     cooldownHours: 24,
+    ctaText: 'Learn More',
+    homePageOnly: true,
+    targetAudience: 'all',
+    showOnMobile: true,
+    showOnDesktop: true,
 };
 
 const EMPTY_FORM = {
@@ -281,21 +291,19 @@ export default function CampaignBannersPanel() {
             <div className="flex gap-1 p-1 bg-slate-900/60 border border-indigo-500/10 rounded-xl w-fit">
                 <button
                     onClick={() => setActiveTab('home_ads')}
-                    className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${
-                        activeTab === 'home_ads'
-                            ? 'bg-[var(--primary)] text-white shadow'
-                            : 'text-slate-400 hover:text-white'
-                    }`}
+                    className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${activeTab === 'home_ads'
+                        ? 'bg-[var(--primary)] text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                        }`}
                 >
                     <span className="flex items-center gap-1.5"><Image className="w-3.5 h-3.5" /> Home Banners</span>
                 </button>
                 <button
                     onClick={() => setActiveTab('popup')}
-                    className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${
-                        activeTab === 'popup'
-                            ? 'bg-[var(--primary)] text-white shadow'
-                            : 'text-slate-400 hover:text-white'
-                    }`}
+                    className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${activeTab === 'popup'
+                        ? 'bg-[var(--primary)] text-white shadow'
+                        : 'text-slate-400 hover:text-white'
+                        }`}
                 >
                     <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5" /> Popup Campaigns</span>
                 </button>
@@ -572,65 +580,112 @@ export default function CampaignBannersPanel() {
 
                             {/* ── Popup Config Section ── */}
                             {activeTab === 'popup' && (
-                                <div className="space-y-3 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/15">
-                                    <p className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5 mb-2">
+                                <div className="space-y-4 p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/15">
+                                    <p className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
                                         <Zap className="w-3.5 h-3.5" /> Popup Behaviour Settings
                                     </p>
 
+                                    {/* CTA Button Text */}
+                                    <div>
+                                        <label className="text-xs text-slate-400 mb-1 block">CTA Button Text</label>
+                                        <input
+                                            value={form.popupConfig.ctaText}
+                                            onChange={(e) => setForm((p) => ({ ...p, popupConfig: { ...p.popupConfig, ctaText: e.target.value } }))}
+                                            className="w-full bg-slate-800/60 border border-indigo-500/15 rounded-xl px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                                            placeholder="Learn More"
+                                        />
+                                        <p className="text-[10px] text-slate-500 mt-0.5">Text shown on the action button. Only visible when a link URL is set.</p>
+                                    </div>
+
+                                    {/* Timing row */}
                                     <div className="grid grid-cols-2 gap-3">
                                         <NumInput
-                                            label="Close Button Delay (seconds)"
+                                            label="Close Button Delay (sec)"
                                             value={form.popupConfig.closeButtonDelaySeconds}
                                             onChange={(v) => setPopup('closeButtonDelaySeconds', v)}
-                                            helper="How long before the ✕ button appears. 0 = immediately."
+                                            helper="0 = show ✕ immediately"
                                         />
                                         <NumInput
-                                            label="Auto-Close After (seconds)"
+                                            label="Auto-Close After (sec)"
                                             value={form.popupConfig.autoCloseAfterSeconds}
                                             onChange={(v) => setPopup('autoCloseAfterSeconds', v)}
-                                            helper="Popup auto-dismisses after this time. 0 = manual close only."
+                                            helper="0 = manual close only"
                                         />
                                     </div>
 
+                                    {/* Frequency row */}
                                     <div className="grid grid-cols-2 gap-3">
                                         <NumInput
-                                            label="Max Views Per Day"
+                                            label="Max Views / Day"
                                             value={form.popupConfig.maxViewsPerDay}
                                             onChange={(v) => setPopup('maxViewsPerDay', v)}
                                             min={0}
-                                            helper="Max times to show per browser per day. 0 = unlimited."
+                                            helper="0 = unlimited"
                                         />
                                         <NumInput
-                                            label="Cooldown Between Shows (hours)"
+                                            label="Cooldown (hours)"
                                             value={form.popupConfig.cooldownHours}
                                             onChange={(v) => setPopup('cooldownHours', v)}
                                             min={0}
-                                            helper="Min hours before showing again. 0 = no cooldown."
+                                            helper="0 = no cooldown"
                                         />
                                     </div>
 
-                                    {/* Live preview of settings */}
-                                    <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                                    {/* Audience + Display */}
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <div>
+                                            <label className="text-xs text-slate-400 mb-1 block">Target Audience</label>
+                                            <select
+                                                value={form.popupConfig.targetAudience}
+                                                onChange={(e) => setForm((p) => ({ ...p, popupConfig: { ...p.popupConfig, targetAudience: e.target.value as PopupConfig['targetAudience'] } }))}
+                                                className="w-full bg-slate-800/60 border border-indigo-500/15 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+                                            >
+                                                <option value="all">Everyone</option>
+                                                <option value="guests">Guests only (not logged in)</option>
+                                                <option value="logged_in">Logged-in users only</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Toggle row */}
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {([
+                                            { key: 'homePageOnly', label: 'Show on Home Page only', hint: 'Popup will only appear on the home screen' },
+                                            { key: 'showOnMobile', label: 'Show on Mobile', hint: 'Display on screens < 768px' },
+                                            { key: 'showOnDesktop', label: 'Show on Desktop', hint: 'Display on screens ≥ 768px' },
+                                        ] as { key: keyof PopupConfig; label: string; hint: string }[]).map(({ key, label, hint }) => (
+                                            <label key={key} className="flex items-center justify-between gap-3 cursor-pointer p-2 rounded-lg hover:bg-white/5">
+                                                <div>
+                                                    <p className="text-xs text-slate-300 font-medium">{label}</p>
+                                                    <p className="text-[10px] text-slate-500">{hint}</p>
+                                                </div>
+                                                <div
+                                                    className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${form.popupConfig[key] ? 'bg-indigo-500' : 'bg-slate-600'}`}
+                                                    onClick={() => setForm((p) => ({ ...p, popupConfig: { ...p.popupConfig, [key]: !p.popupConfig[key] } }))}
+                                                >
+                                                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${form.popupConfig[key] ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+
+                                    {/* Live preview chips */}
+                                    <div className="flex flex-wrap gap-2 text-[11px] pt-1 border-t border-indigo-500/10">
                                         <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300">
-                                            ✕ shows after {form.popupConfig.closeButtonDelaySeconds}s
+                                            ✕ after {form.popupConfig.closeButtonDelaySeconds}s
                                         </span>
                                         <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300">
-                                            {form.popupConfig.autoCloseAfterSeconds > 0
-                                                ? `Auto-closes after ${form.popupConfig.autoCloseAfterSeconds}s`
-                                                : 'No auto-close'
-                                            }
+                                            {form.popupConfig.autoCloseAfterSeconds > 0 ? `Auto-close ${form.popupConfig.autoCloseAfterSeconds}s` : 'No auto-close'}
                                         </span>
                                         <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">
-                                            {form.popupConfig.maxViewsPerDay === 0
-                                                ? 'Unlimited views/day'
-                                                : `${form.popupConfig.maxViewsPerDay}×/day per browser`
-                                            }
+                                            {form.popupConfig.maxViewsPerDay === 0 ? 'Unlimited/day' : `${form.popupConfig.maxViewsPerDay}×/day`}
                                         </span>
-                                        {form.popupConfig.cooldownHours > 0 && (
-                                            <span className="px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300">
-                                                {form.popupConfig.cooldownHours}h cooldown
-                                            </span>
+                                        {form.popupConfig.homePageOnly && (
+                                            <span className="px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300">Home only</span>
                                         )}
+                                        <span className="px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-300">
+                                            {form.popupConfig.targetAudience === 'all' ? 'All visitors' : form.popupConfig.targetAudience === 'guests' ? 'Guests only' : 'Logged-in only'}
+                                        </span>
                                     </div>
                                 </div>
                             )}

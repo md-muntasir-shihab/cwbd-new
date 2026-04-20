@@ -1,0 +1,79 @@
+{
+    "exam": {
+        "title": "পরীক্ষাসমূহ",
+        "createExam": "পরীক্ষা তৈরি করুন",
+        "editExam": "পরীক্ষা সম্পাদনা করুন",
+        "deleteExam": "পরীক্ষা মুছুন",
+        "examTitle": "শিরোনাম",
+        "subject": "বিষয়",
+        "duration": "সময়কাল",
+        "durationMinutes": "সময়কাল (মিনিট)",
+        "totalMarks": "মোট নম্বর",
+        "totalQuestions": "মোট প্রশ্ন",
+        "negativeMarking": "নেগেটিভ মার্কিং",
+        "negativeMarkValue": "নেগেটিভ মার্কের মান",
+        "showAnswersAfterExam": "পরীক্ষার পরে উত্তর দেখান",
+        "save": "সংরক্ষণ",
+        "cancel": "বাতিল",
+        "preview": "প্রিভিউ",
+        "clone": "ক্লোন",
+        "duplicate": "ডুপ্লিকেট",
+        "publish": "প্রকাশ",
+        "autoGenerate": "স্বয়ংক্রিয় তৈরি",
+        "status": "অবস্থা",
+        "draft": "খসড়া",
+        "scheduled": "নির্ধারিত",
+        "live": "চলমান",
+        "closed": "বন্ধ",
+        "view": "দেখুন",
+        "edit": "সম্পাদনা",
+        "delete": "মুছুন"
+    },
+    "examPreview": {
+        "previewTitle": "পরীক্ষার প্রিভিউ",
+        "studentView": "শিক্ষার্থীর দৃশ্য",
+        "timeRemaining": "অবশিষ্ট সময়",
+        "questionOf": "প্রশ্ন {{current}} / {{total}}",
+        "marks": "নম্বর"
+    },
+    "examValidation": {
+        "titleRequired": "পরীক্ষার শিরোনাম প্রয়োজন",
+        "subjectRequired": "বিষয় প্রয়োজন",
+        "durationRequired": "সময়কাল ০-এর বেশি হতে হবে",
+        "totalMarksRequired": "মোট নম্বর ০-এর বেশি হতে হবে",
+        "questionsRequired": "কমপক্ষে ১টি প্রশ্ন প্রয়োজন",
+        "marksSum": "প্রশ্নের নম্বরের যোগফল মোট নম্বরের সমান হতে হবে"
+    },
+    "questionSelector": {
+        "availableQuestions": "উপলব্ধ প্রশ্ন",
+        "selectedQuestions": "নির্বাচিত প্রশ্ন",
+        "addQuestion": "যোগ করুন",
+        "removeQuestion": "সরান",
+        "marks": "নম্বর",
+        "defaultMarks": "ডিফল্ট নম্বর",
+        "reorder": "পুনর্বিন্যাস করতে টানুন",
+        "noQuestionsAvailable": "কোনো প্রশ্ন উপলব্ধ নেই",
+        "noQuestionsSelected": "এখনো কোনো প্রশ্ন নির্বাচিত হয়নি",
+        "summary": "সারসংক্ষেপ",
+        "totalSelected": "মোট নির্বাচিত",
+        "totalMarks": "মোট নম্বর"
+    },
+    "autoGenerate": {
+        "title": "স্বয়ংক্রিয়ভাবে প্রশ্ন তৈরি করুন",
+        "subjectFilter": "বিষয় ফিল্টার",
+        "categoryFilter": "বিভাগ ফিল্টার",
+        "difficultyDistribution": "কঠিনতার বিন্যাস",
+        "easyCount": "সহজ সংখ্যা",
+        "mediumCount": "মাঝারি সংখ্যা",
+        "hardCount": "কঠিন সংখ্যা",
+        "generate": "তৈরি করুন",
+        "insufficientQuestions": "পর্যাপ্ত প্রশ্ন উপলব্ধ নেই",
+        "generating": "তৈরি হচ্ছে..."
+    },
+    "examAnalytics": {
+        "totalExams": "মোট পরীক্ষা",
+        "averageScore": "গড় স্কোর",
+        "highestScore": "সর্বোচ্চ স্কোর",
+        "participationCount": "অংশগ্রহণের সংখ্যা"
+    }
+}

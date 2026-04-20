@@ -9,6 +9,8 @@ import {
     type PublicResourceSettings, type ResourceSettingsSort, type ResourceSettingsType,
 } from '../services/api';
 import { isExternalUrl, normalizeInternalOrExternalUrl } from '../utils/url';
+import PageHeroBanner from '../components/common/PageHeroBanner';
+import { usePageHeroSettings } from '../hooks/usePageHeroSettings';
 
 type ResourceType = ResourceSettingsType;
 type SortKey = ResourceSettingsSort;
@@ -209,6 +211,7 @@ function buildCategories(resources: CardResource[], settings: PublicResourceSett
 
 export default function ResourcesPage() {
     const navigate = useNavigate();
+    const hero = usePageHeroSettings('resources');
     const defaultsApplied = useRef(false);
     const [settings, setSettings] = useState<PublicResourceSettings>(DEFAULT_SETTINGS);
     const [resources, setResources] = useState<CardResource[]>([]);
@@ -293,55 +296,55 @@ export default function ResourcesPage() {
     }
 
     return (
-        <div className="min-h-screen">
-            {toast ? <Toast message={toast} onDismiss={() => setToast('')} /> : null}
-            {settings.showHero ? (
-                <section className="page-hero">
-                    <div className="pointer-events-none absolute inset-0 overflow-hidden"><div className="absolute left-1/2 top-20 h-96 w-96 -translate-x-1/2 rounded-full bg-accent/20 blur-3xl" /><div className="absolute bottom-0 right-0 h-64 w-64 rounded-full bg-white/5 blur-2xl" /></div>
-                    <div className="section-container relative py-12 sm:py-16 lg:py-20">
-                        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm"><BookOpen className="h-4 w-4 text-accent" /><span className="text-sm text-white/90">{settings.heroBadgeLabel}</span></div>
-                        <h1 className="text-3xl font-heading font-bold sm:text-4xl lg:text-5xl">{settings.pageTitle}</h1>
-                        <p className="mb-8 mt-3 max-w-xl text-base text-white/70 sm:text-lg">{settings.pageSubtitle}</p>
-                        {settings.showSearch ? <div className="group/search relative mb-10 max-w-xl"><div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-accent/50 to-primary/50 opacity-25 blur transition duration-1000 group-focus-within/search:opacity-100 group-focus-within/search:duration-200" /><div className="relative flex items-center"><Search className="absolute left-5 h-5 w-5 text-indigo-400 transition-colors group-focus-within/search:text-accent" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="w-full rounded-2xl border border-white/20 bg-white/95 py-5 pl-14 pr-4 text-base text-text shadow-2xl backdrop-blur-xl placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent/50 dark:bg-[#0f172a]/90 dark:text-white" /></div></div> : null}
-                        {settings.showStats ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[
-                            { value: loading ? '...' : `${totals.total}+`, label: 'Total Resources', icon: BookOpen },
-                            { value: loading ? '...' : totals.pdfs, label: 'PDFs', icon: FileText },
-                            { value: loading ? '...' : totals.videos, label: 'Videos', icon: Video },
-                            { value: loading ? '...' : totals.featured, label: 'Featured', icon: Star },
-                        ].map((stat) => <div key={stat.label} className="rounded-2xl bg-white/10 p-3 text-center backdrop-blur-sm transition-colors hover:bg-white/15 sm:p-4"><stat.icon className="mx-auto mb-1.5 h-5 w-5 text-accent" /><p className="text-xl font-bold sm:text-2xl">{stat.value}</p><p className="text-xs text-white/60">{stat.label}</p></div>)}</div> : null}
+        <>
+            {hero.enabled && (
+                <PageHeroBanner
+                    title={hero.title}
+                    subtitle={hero.subtitle}
+                    pillText={hero.pillText}
+                    vantaEffect={hero.vantaEffect}
+                    vantaColor={hero.vantaColor}
+                    vantaBackgroundColor={hero.vantaBackgroundColor}
+                    gradientFrom={hero.gradientFrom}
+                    gradientTo={hero.gradientTo}
+                    primaryCTA={hero.primaryCTA}
+                    secondaryCTA={hero.secondaryCTA}
+                />
+            )}
+            <div className="min-h-screen">
+                {toast ? <Toast message={toast} onDismiss={() => setToast('')} /> : null}
+
+
+                <section className="sticky top-16 z-30 border-b border-card-border bg-surface dark:border-dark-border dark:bg-dark-surface">
+                    <div className="section-container space-y-2 py-2.5">
+                        <div className="flex items-center gap-2">
+                            {settings.showSearch ? <div className="relative max-w-xs flex-1 sm:hidden"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="input-field min-h-[40px] py-2 pl-9 text-xs" /></div> : null}
+                            <button type="button" className="btn-ghost flex min-h-[40px] items-center gap-2 rounded-xl border border-card-border p-2.5 sm:hidden dark:border-dark-border" onClick={() => setMobileFilterOpen((current) => !current)} aria-expanded={mobileFilterOpen}><Filter className="h-4 w-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Filters</span></button>
+                            {settings.showTypeFilter ? <div className="relative hidden flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hide after:pointer-events-none after:absolute after:bottom-0 after:right-0 after:top-0 after:w-12 after:bg-gradient-to-l after:from-surface after:to-transparent dark:after:from-dark-surface sm:flex">{typeOptions.map((item) => { const config = item === 'all' ? null : TYPE_CONFIG[item]; return <button key={item} type="button" onClick={() => { setType(item); setPage(1); }} className={`tab-pill flex-shrink-0 gap-1 text-xs ${type === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{config ? <config.icon className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}{item === 'all' ? 'All Types' : config!.label}</button>; })}</div> : <div className="flex-1" />}
+                            <select value={sort} onChange={(event) => { setSort(event.target.value as SortKey); setPage(1); }} className="input-field min-h-[40px] w-auto flex-shrink-0 py-2 text-xs" aria-label="Sort resources">{SORT_OPTIONS.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select>
+                        </div>
+                        {settings.showCategoryFilter ? <div className="relative hidden items-center gap-1.5 overflow-x-auto scrollbar-hide after:pointer-events-none after:absolute after:bottom-0 after:right-0 after:top-0 after:w-16 after:bg-gradient-to-l after:from-surface after:to-transparent dark:after:from-dark-surface sm:flex">{categoryOptions.map((item) => <button key={item} type="button" onClick={() => { setSubject(item); setPage(1); }} className={`tab-pill flex-shrink-0 text-xs ${subject === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{item}</button>)}{(type !== settings.defaultType || subject !== settings.defaultCategory || search) ? <button type="button" onClick={resetFilters} className="ml-2 flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-danger transition-colors hover:bg-danger/10 hover:text-danger/80"><X className="h-3 w-3" />Clear</button> : null}</div> : null}
+                        {mobileFilterOpen ? <div className="space-y-2 pb-1 sm:hidden">{settings.showTypeFilter ? <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">{typeOptions.map((item) => { const config = item === 'all' ? null : TYPE_CONFIG[item]; return <button key={item} type="button" onClick={() => { setType(item); setPage(1); setMobileFilterOpen(false); }} className={`tab-pill flex-shrink-0 gap-1 text-xs ${type === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{config ? <config.icon className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}{item === 'all' ? 'All' : config!.label}</button>; })}</div> : null}{settings.showCategoryFilter ? <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">{categoryOptions.map((item) => <button key={item} type="button" onClick={() => { setSubject(item); setPage(1); setMobileFilterOpen(false); }} className={`tab-pill flex-shrink-0 text-xs ${subject === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{item}</button>)}</div> : null}</div> : null}
                     </div>
                 </section>
-            ) : null}
 
-            <section className="sticky top-16 z-30 border-b border-card-border bg-surface dark:border-dark-border dark:bg-dark-surface">
-                <div className="section-container space-y-2 py-2.5">
-                    <div className="flex items-center gap-2">
-                        {settings.showSearch ? <div className="relative max-w-xs flex-1 sm:hidden"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="input-field min-h-[40px] py-2 pl-9 text-xs" /></div> : null}
-                        <button type="button" className="btn-ghost flex min-h-[40px] items-center gap-2 rounded-xl border border-card-border p-2.5 sm:hidden dark:border-dark-border" onClick={() => setMobileFilterOpen((current) => !current)} aria-expanded={mobileFilterOpen}><Filter className="h-4 w-4" /><span className="text-[10px] font-bold uppercase tracking-widest">Filters</span></button>
-                        {settings.showTypeFilter ? <div className="relative hidden flex-1 items-center gap-1.5 overflow-x-auto scrollbar-hide after:pointer-events-none after:absolute after:bottom-0 after:right-0 after:top-0 after:w-12 after:bg-gradient-to-l after:from-surface after:to-transparent dark:after:from-dark-surface sm:flex">{typeOptions.map((item) => { const config = item === 'all' ? null : TYPE_CONFIG[item]; return <button key={item} type="button" onClick={() => { setType(item); setPage(1); }} className={`tab-pill flex-shrink-0 gap-1 text-xs ${type === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{config ? <config.icon className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}{item === 'all' ? 'All Types' : config!.label}</button>; })}</div> : <div className="flex-1" />}
-                        <select value={sort} onChange={(event) => { setSort(event.target.value as SortKey); setPage(1); }} className="input-field min-h-[40px] w-auto flex-shrink-0 py-2 text-xs" aria-label="Sort resources">{SORT_OPTIONS.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select>
-                    </div>
-                    {settings.showCategoryFilter ? <div className="relative hidden items-center gap-1.5 overflow-x-auto scrollbar-hide after:pointer-events-none after:absolute after:bottom-0 after:right-0 after:top-0 after:w-16 after:bg-gradient-to-l after:from-surface after:to-transparent dark:after:from-dark-surface sm:flex">{categoryOptions.map((item) => <button key={item} type="button" onClick={() => { setSubject(item); setPage(1); }} className={`tab-pill flex-shrink-0 text-xs ${subject === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{item}</button>)}{(type !== settings.defaultType || subject !== settings.defaultCategory || search) ? <button type="button" onClick={resetFilters} className="ml-2 flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-danger transition-colors hover:bg-danger/10 hover:text-danger/80"><X className="h-3 w-3" />Clear</button> : null}</div> : null}
-                    {mobileFilterOpen ? <div className="space-y-2 pb-1 sm:hidden">{settings.showTypeFilter ? <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">{typeOptions.map((item) => { const config = item === 'all' ? null : TYPE_CONFIG[item]; return <button key={item} type="button" onClick={() => { setType(item); setPage(1); setMobileFilterOpen(false); }} className={`tab-pill flex-shrink-0 gap-1 text-xs ${type === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{config ? <config.icon className="h-3 w-3" /> : <BookOpen className="h-3 w-3" />}{item === 'all' ? 'All' : config!.label}</button>; })}</div> : null}{settings.showCategoryFilter ? <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">{categoryOptions.map((item) => <button key={item} type="button" onClick={() => { setSubject(item); setPage(1); setMobileFilterOpen(false); }} className={`tab-pill flex-shrink-0 text-xs ${subject === item ? 'tab-pill-active' : 'tab-pill-inactive'}`}>{item}</button>)}</div> : null}</div> : null}
-                </div>
-            </section>
-
-            <section className="section-container space-y-8 py-8 sm:py-10">
-                {error ? <div className="flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning"><AlertCircle className="h-4 w-4 flex-shrink-0" />Showing fallback page state. Live resource data could not be loaded.</div> : null}
-                {featured.length > 0 ? <div><div className="mb-4 flex items-center gap-2"><Star className="h-4 w-4 fill-accent text-accent" /><h2 className="text-lg font-heading font-bold dark:text-dark-text">{settings.featuredSectionTitle}</h2></div><div className="grid grid-cols-1 gap-3 lg:grid-cols-2">{featured.map((resource) => <FeaturedCard key={resource._id} resource={resource} openLinksInNewTab={settings.openLinksInNewTab} onShare={handleShare} onAction={handleAction} onNavigate={handleNavigate} />)}</div></div> : null}
-                <div>
-                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h2 className="text-lg font-heading font-bold dark:text-dark-text">{settings.showSearch && search ? `Results for "${search}"` : subject !== 'All' ? subject : type !== 'all' ? `${TYPE_CONFIG[type as Exclude<ResourceType, 'all'>].label}s` : 'All Resources'}</h2>
-                            <p className="mt-0.5 text-xs text-text-muted dark:text-dark-text/50">{loading ? 'Loading...' : `${filtered.length} resource${filtered.length !== 1 ? 's' : ''} found`}</p>
+                <section className="section-container space-y-8 py-8 sm:py-10">
+                    {error ? <div className="flex items-center gap-3 rounded-2xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning"><AlertCircle className="h-4 w-4 flex-shrink-0" />Showing fallback page state. Live resource data could not be loaded.</div> : null}
+                    {featured.length > 0 ? <div><div className="mb-4 flex items-center gap-2"><Star className="h-4 w-4 fill-accent text-accent" /><h2 className="text-lg font-heading font-bold dark:text-dark-text">{settings.featuredSectionTitle}</h2></div><div className="grid grid-cols-1 gap-3 lg:grid-cols-2">{featured.map((resource) => <FeaturedCard key={resource._id} resource={resource} openLinksInNewTab={settings.openLinksInNewTab} onShare={handleShare} onAction={handleAction} onNavigate={handleNavigate} />)}</div></div> : null}
+                    <div>
+                        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h2 className="text-lg font-heading font-bold dark:text-dark-text">{settings.showSearch && search ? `Results for "${search}"` : subject !== 'All' ? subject : type !== 'all' ? `${TYPE_CONFIG[type as Exclude<ResourceType, 'all'>].label}s` : 'All Resources'}</h2>
+                                <p className="mt-0.5 text-xs text-text-muted dark:text-dark-text/50">{loading ? 'Loading...' : `${filtered.length} resource${filtered.length !== 1 ? 's' : ''} found`}</p>
+                            </div>
+                            {settings.showSearch ? <div className="hidden items-center gap-2 sm:flex"><div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="input-field min-h-[40px] w-52 py-2 pl-9 text-xs" />{search ? <button type="button" onClick={() => { setSearch(''); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Clear resource search"><X className="h-3.5 w-3.5 text-text-muted hover:text-danger" /></button> : null}</div></div> : null}
                         </div>
-                        {settings.showSearch ? <div className="hidden items-center gap-2 sm:flex"><div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><input type="search" placeholder={settings.searchPlaceholder} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} className="input-field min-h-[40px] w-52 py-2 pl-9 text-xs" />{search ? <button type="button" onClick={() => { setSearch(''); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Clear resource search"><X className="h-3.5 w-3.5 text-text-muted hover:text-danger" /></button> : null}</div></div> : null}
+                        {loading ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} />)}</div> : paginated.length === 0 ? <div className="py-16 text-center sm:py-24"><div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5"><BookOpen className="h-8 w-8 text-primary/30" /></div><h3 className="mb-2 text-lg font-semibold dark:text-dark-text">No resources found</h3><p className="mb-5 text-sm text-text-muted dark:text-dark-text/50">{settings.emptyStateMessage}</p><button type="button" onClick={resetFilters} className="btn-outline gap-2 text-sm"><X className="h-4 w-4" />Reset filters</button></div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{paginated.map((resource) => <ResourceCard key={resource._id} resource={resource} openLinksInNewTab={settings.openLinksInNewTab} onShare={handleShare} onAction={handleAction} onNavigate={handleNavigate} />)}</div>}
+                        {totalPages > 1 ? <><div className="mt-10 flex items-center justify-center gap-2" role="navigation" aria-label="Pagination"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} className="btn-ghost rounded-xl border border-card-border p-2 disabled:opacity-40 dark:border-dark-border" aria-label="Previous page"><ChevronLeft className="h-4 w-4" /></button>{Array.from({ length: Math.min(totalPages, 7) }, (_, index) => { const pageNumber = totalPages <= 7 ? index + 1 : page <= 4 ? index + 1 : page >= totalPages - 3 ? totalPages - 6 + index : page - 3 + index; return <button key={pageNumber} type="button" onClick={() => setPage(pageNumber)} aria-current={pageNumber === page ? 'page' : undefined} className={`h-9 w-9 rounded-xl text-sm font-medium transition-all ${pageNumber === page ? 'bg-primary text-white shadow-md' : 'btn-ghost border border-card-border dark:border-dark-border'}`}>{pageNumber}</button>; })}<button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages} className="btn-ghost rounded-xl border border-card-border p-2 disabled:opacity-40 dark:border-dark-border" aria-label="Next page"><ChevronRight className="h-4 w-4" /></button></div><p className="mt-3 text-center text-xs text-text-muted dark:text-dark-text/40">Page {page} of {totalPages} · {filtered.length} total results</p></> : null}
                     </div>
-                    {loading ? <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => <Skeleton key={index} />)}</div> : paginated.length === 0 ? <div className="py-16 text-center sm:py-24"><div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5"><BookOpen className="h-8 w-8 text-primary/30" /></div><h3 className="mb-2 text-lg font-semibold dark:text-dark-text">No resources found</h3><p className="mb-5 text-sm text-text-muted dark:text-dark-text/50">{settings.emptyStateMessage}</p><button type="button" onClick={resetFilters} className="btn-outline gap-2 text-sm"><X className="h-4 w-4" />Reset filters</button></div> : <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{paginated.map((resource) => <ResourceCard key={resource._id} resource={resource} openLinksInNewTab={settings.openLinksInNewTab} onShare={handleShare} onAction={handleAction} onNavigate={handleNavigate} />)}</div>}
-                    {totalPages > 1 ? <><div className="mt-10 flex items-center justify-center gap-2" role="navigation" aria-label="Pagination"><button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} className="btn-ghost rounded-xl border border-card-border p-2 disabled:opacity-40 dark:border-dark-border" aria-label="Previous page"><ChevronLeft className="h-4 w-4" /></button>{Array.from({ length: Math.min(totalPages, 7) }, (_, index) => { const pageNumber = totalPages <= 7 ? index + 1 : page <= 4 ? index + 1 : page >= totalPages - 3 ? totalPages - 6 + index : page - 3 + index; return <button key={pageNumber} type="button" onClick={() => setPage(pageNumber)} aria-current={pageNumber === page ? 'page' : undefined} className={`h-9 w-9 rounded-xl text-sm font-medium transition-all ${pageNumber === page ? 'bg-primary text-white shadow-md' : 'btn-ghost border border-card-border dark:border-dark-border'}`}>{pageNumber}</button>; })}<button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages} className="btn-ghost rounded-xl border border-card-border p-2 disabled:opacity-40 dark:border-dark-border" aria-label="Next page"><ChevronRight className="h-4 w-4" /></button></div><p className="mt-3 text-center text-xs text-text-muted dark:text-dark-text/40">Page {page} of {totalPages} · {filtered.length} total results</p></> : null}
-                </div>
-            </section>
-            {loading ? <div className="pointer-events-none fixed inset-0 z-20 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary opacity-30" /></div> : null}
-        </div>
+                </section>
+                {loading ? <div className="pointer-events-none fixed inset-0 z-20 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary opacity-30" /></div> : null}
+            </div>
+        </>
     );
 }

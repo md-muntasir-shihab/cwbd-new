@@ -10,6 +10,7 @@ import InfoHint from '../ui/InfoHint';
 import StaticPagesEditor from './StaticPagesEditor';
 import AdminImageUploadField from './AdminImageUploadField';
 import CompressedImageInput from '../common/CompressedImageInput';
+import PageHeroSettingsEditor from './PageHeroSettingsEditor';
 import { createDefaultWebsiteStaticPages, mergeWebsiteStaticPages } from '../../lib/websiteStaticPages';
 
 const WEBSITE_SETTINGS_CACHE_KEY = 'cw_public_website_settings_cache';
@@ -26,6 +27,14 @@ type SiteSettingsForm = {
     subscriptionDefaultBannerUrl: string;
     subscriptionLoggedOutCtaMode: 'login' | 'contact';
     staticPages: WebsiteStaticPagesConfig;
+    socialPreview: {
+        ogTitle: string;
+        ogDescription: string;
+        ogImageUrl: string;
+        ogType: 'website' | 'article';
+        twitterCard: 'summary' | 'summary_large_image';
+        twitterSite: string;
+    };
     socialLinks: {
         facebook: string;
         whatsapp: string;
@@ -49,6 +58,14 @@ const defaultSettings: SiteSettingsForm = {
     subscriptionDefaultBannerUrl: '',
     subscriptionLoggedOutCtaMode: 'contact',
     staticPages: createDefaultWebsiteStaticPages(),
+    socialPreview: {
+        ogTitle: '',
+        ogDescription: '',
+        ogImageUrl: '',
+        ogType: 'website',
+        twitterCard: 'summary_large_image',
+        twitterSite: '',
+    },
     socialLinks: {
         facebook: '',
         whatsapp: '',
@@ -105,6 +122,10 @@ export default function SiteSettingsPanel() {
             ...defaultSettings,
             ...data,
             staticPages: mergeWebsiteStaticPages(data.staticPages),
+            socialPreview: {
+                ...defaultSettings.socialPreview,
+                ...(data.socialPreview || {}),
+            },
             socialLinks: {
                 ...defaultSettings.socialLinks,
                 ...(data.socialLinks || {}),
@@ -140,6 +161,7 @@ export default function SiteSettingsPanel() {
             formData.append('subscriptionLoggedOutCtaMode', settings.subscriptionLoggedOutCtaMode);
             formData.append('staticPages', JSON.stringify(settings.staticPages));
             formData.append('socialLinks', JSON.stringify(settings.socialLinks));
+            formData.append('socialPreview', JSON.stringify(settings.socialPreview));
 
             if (logoFile) formData.append('logo', logoFile);
             if (faviconFile) formData.append('favicon', faviconFile);
@@ -282,18 +304,27 @@ export default function SiteSettingsPanel() {
 
             {/* Summary Cards */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {summaryCards.map((card) => (
-                    <div key={card.title} className="group relative overflow-hidden rounded-[1.5rem] border border-indigo-500/15 bg-slate-900/60 p-5 transition-all duration-300 hover:border-indigo-400/30 hover:shadow-lg">
-                        <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-gradient-to-br from-indigo-500/10 to-cyan-500/10 blur-2xl transition-all duration-500 group-hover:scale-150" />
-                        <p className="relative text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{card.title}</p>
-                        <p className="relative mt-2 text-sm font-bold text-white">{card.value}</p>
-                        <p className="relative mt-1 text-xs text-slate-400">{card.detail}</p>
-                    </div>
-                ))}
+                {summaryCards.map((card, idx) => {
+                    const IconComponents = [Globe, Mail, FileText];
+                    const bgs = ['bg-indigo-50 dark:bg-indigo-950/30', 'bg-emerald-50 dark:bg-emerald-950/30', 'bg-violet-50 dark:bg-violet-950/30'];
+                    const IconComp = IconComponents[idx];
+                    return (
+                        <div key={card.title} className={`group relative overflow-hidden rounded-2xl border border-slate-200/50 ${bgs[idx]} p-5 transition-all duration-300 hover:shadow-md dark:border-slate-800/50`}>
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{card.title}</p>
+                                    <p className="mt-2 text-sm font-bold text-slate-800 dark:text-white">{card.value}</p>
+                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{card.detail}</p>
+                                </div>
+                                {IconComp && <IconComp className="h-6 w-6 opacity-40 group-hover:scale-110 transition-transform text-slate-500 dark:text-slate-400" />}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Workspace Info Bar */}
-            <div className="rounded-[1.5rem] border border-indigo-500/12 bg-slate-950/50 px-5 py-3.5">
+            <div className="rounded-[1.5rem] border border-slate-700/30 bg-slate-950/40 ring-1 ring-white/[0.03] px-5 py-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <p className="text-sm font-semibold text-white">Global settings workspace</p>
@@ -309,18 +340,19 @@ export default function SiteSettingsPanel() {
                 </div>
             </div>
 
+            {/* ── Identity & Branding + Contact ── */}
             <div className="grid gap-6 xl:grid-cols-2">
-                <div className="bg-slate-900/60 rounded-2xl border border-indigo-500/10 p-6 space-y-4">
+                <div className="bg-slate-900/50 rounded-2xl border border-slate-700/30 ring-1 ring-white/[0.03] p-6 space-y-4">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2"><Globe className="w-4 h-4 text-indigo-400" /> Identity & Branding</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs text-slate-400 font-medium block mb-2">Primary Logo</label>
                             <div className="flex items-center gap-3">
-                                <div className="w-14 h-14 rounded-xl bg-slate-950/65 border border-indigo-500/20 flex items-center justify-center overflow-hidden">
+                                <div className="w-14 h-14 rounded-xl bg-slate-950/50 border border-slate-700/40 flex items-center justify-center overflow-hidden">
                                     {previewLogo ? <img src={previewLogo} alt="Logo preview" className="max-w-full max-h-full object-contain" /> : <span className="text-xs text-slate-500">No Logo</span>}
                                 </div>
                                 <CompressedImageInput ref={logoRef} hidden accept="image/*" onChange={(file) => handleFileChange(file, 'logo')} />
-                                <button onClick={() => logoRef.current?.click()} className="text-xs flex items-center gap-2 bg-indigo-500/10 text-indigo-300 px-3 py-2 rounded-lg hover:bg-indigo-500/20">
+                                <button onClick={() => logoRef.current?.click()} className="text-xs flex items-center gap-2 bg-indigo-500/15 text-indigo-300 px-3 py-2 rounded-lg hover:bg-indigo-500/25 transition-colors">
                                     <Upload className="w-3 h-3" /> Upload
                                 </button>
                             </div>
@@ -328,115 +360,84 @@ export default function SiteSettingsPanel() {
                         <div>
                             <label className="text-xs text-slate-400 font-medium block mb-2">Favicon</label>
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-slate-950/65 border border-indigo-500/20 flex items-center justify-center overflow-hidden">
+                                <div className="w-10 h-10 rounded-lg bg-slate-950/50 border border-slate-700/40 flex items-center justify-center overflow-hidden">
                                     {previewFavicon ? <img src={previewFavicon} alt="Favicon preview" className="w-6 h-6 object-contain" /> : <span className="text-[10px] text-slate-500">Icon</span>}
                                 </div>
                                 <CompressedImageInput ref={faviconRef} hidden accept="image/*" onChange={(file) => handleFileChange(file, 'favicon')} />
-                                <button onClick={() => faviconRef.current?.click()} className="text-xs flex items-center gap-2 bg-indigo-500/10 text-indigo-300 px-3 py-2 rounded-lg hover:bg-indigo-500/20">
+                                <button onClick={() => faviconRef.current?.click()} className="text-xs flex items-center gap-2 bg-indigo-500/15 text-indigo-300 px-3 py-2 rounded-lg hover:bg-indigo-500/25 transition-colors">
                                     <Upload className="w-3 h-3" /> Upload
                                 </button>
                             </div>
                         </div>
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label className="text-xs text-slate-400 font-medium">Website Name</label>
                             <input value={settings.websiteName} onChange={e => setSettings({ ...settings, websiteName: e.target.value })}
-                                className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" />
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                         </div>
                         <div>
                             <label className="text-xs text-slate-400 font-medium">Motto</label>
                             <input value={settings.motto} onChange={e => setSettings({ ...settings, motto: e.target.value })}
-                                className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" />
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                         </div>
                     </div>
-
                     <div>
                         <label className="text-xs text-slate-400 font-medium">Meta Title</label>
                         <input value={settings.metaTitle} onChange={e => setSettings({ ...settings, metaTitle: e.target.value })}
-                            className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" />
+                            className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                     </div>
                     <div>
                         <label className="text-xs text-slate-400 font-medium">Meta Description</label>
                         <textarea rows={3} value={settings.metaDescription} onChange={e => setSettings({ ...settings, metaDescription: e.target.value })}
-                            className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" />
+                            className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y" />
                     </div>
                 </div>
 
                 <div className="space-y-6">
-                    <div className="bg-slate-900/60 rounded-2xl border border-indigo-500/10 p-6 space-y-4">
-                        <h3 className="text-sm font-bold text-white flex items-center gap-2"><Mail className="w-4 h-4 text-indigo-400" /> Contact</h3>
+                    <div className="bg-slate-900/50 rounded-2xl border border-slate-700/30 ring-1 ring-white/[0.03] p-6 space-y-4">
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2"><Mail className="w-4 h-4 text-emerald-400" /> Contact Information</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label className="text-xs text-slate-400 flex items-center gap-1"><Mail className="w-3 h-3" /> Email</label>
                                 <input value={settings.contactEmail} onChange={e => setSettings({ ...settings, contactEmail: e.target.value })}
-                                    className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" />
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                             </div>
                             <div>
                                 <label className="text-xs text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</label>
                                 <input value={settings.contactPhone} onChange={e => setSettings({ ...settings, contactPhone: e.target.value })}
-                                    className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" />
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-slate-900/60 rounded-2xl border border-indigo-500/10 p-6 space-y-4">
-                        <h3 className="text-sm font-bold text-white flex items-center gap-2"><Globe className="w-4 h-4 text-indigo-400" /> Standard Social Links</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {['facebook', 'whatsapp', 'messenger', 'telegram', 'twitter', 'youtube', 'instagram'].map((platform) => (
-                                <div key={platform}>
-                                    <label className="text-xs text-slate-400 capitalize">{platform}</label>
-                                    <input 
-                                        value={settings.socialLinks[platform as keyof typeof settings.socialLinks] || ''} 
-                                        onChange={e => setSettings({ ...settings, socialLinks: { ...settings.socialLinks, [platform]: e.target.value }})}
-                                        className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white" 
-                                        placeholder={['whatsapp', 'phone'].includes(platform) ? `Number or Link` : `https://${platform}.com/...`}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-900/60 rounded-2xl border border-indigo-500/10 p-6 space-y-4">
-                        <h3 className="text-sm font-bold text-white flex items-center gap-2"><Globe className="w-4 h-4 text-indigo-400" /> Subscription Page</h3>
+                    <div className="bg-slate-900/50 rounded-2xl border border-slate-700/30 ring-1 ring-white/[0.03] p-6 space-y-4">
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2"><Globe className="w-4 h-4 text-violet-400" /> Subscription Page</h3>
                         <div className="grid grid-cols-1 gap-3">
                             <div>
                                 <label className="text-xs text-slate-400">Page Title</label>
-                                <input
-                                    value={settings.subscriptionPageTitle}
-                                    onChange={(e) => setSettings({ ...settings, subscriptionPageTitle: e.target.value })}
-                                    className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white"
-                                />
+                                <input value={settings.subscriptionPageTitle} onChange={(e) => setSettings({ ...settings, subscriptionPageTitle: e.target.value })}
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                             </div>
                             <div>
                                 <label className="text-xs text-slate-400">Page Subtitle</label>
-                                <textarea
-                                    rows={2}
-                                    value={settings.subscriptionPageSubtitle}
-                                    onChange={(e) => setSettings({ ...settings, subscriptionPageSubtitle: e.target.value })}
-                                    className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white"
-                                />
+                                <textarea rows={2} value={settings.subscriptionPageSubtitle} onChange={(e) => setSettings({ ...settings, subscriptionPageSubtitle: e.target.value })}
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y" />
                             </div>
-                            <div>
-                                <AdminImageUploadField
-                                    label="Default Plan Banner"
-                                    value={settings.subscriptionDefaultBannerUrl}
-                                    onChange={(nextValue) => setSettings({ ...settings, subscriptionDefaultBannerUrl: nextValue })}
-                                    helper="Fallback banner used on the subscription page when a plan-specific banner is missing."
-                                    category="admin_upload"
-                                    previewAlt="Default subscription banner"
-                                    previewClassName="min-h-[170px]"
-                                    panelClassName="bg-slate-950/35 dark:bg-slate-950/65"
-                                />
-                            </div>
+                            <AdminImageUploadField
+                                label="Default Plan Banner"
+                                value={settings.subscriptionDefaultBannerUrl}
+                                onChange={(nextValue) => setSettings({ ...settings, subscriptionDefaultBannerUrl: nextValue })}
+                                helper="Fallback banner used on the subscription page when a plan-specific banner is missing."
+                                category="admin_upload"
+                                previewAlt="Default subscription banner"
+                                previewClassName="min-h-[170px]"
+                                panelClassName="bg-slate-950/35 dark:bg-slate-950/65"
+                            />
                             <div>
                                 <label className="text-xs text-slate-400">Logged-out CTA Behavior</label>
-                                <select
-                                    value={settings.subscriptionLoggedOutCtaMode}
-                                    onChange={(e) => setSettings({ ...settings, subscriptionLoggedOutCtaMode: e.target.value as 'login' | 'contact' })}
-                                    className="mt-1 w-full rounded-xl bg-slate-950/65 border border-indigo-500/15 px-3 py-2.5 text-sm text-white"
-                                >
+                                <select value={settings.subscriptionLoggedOutCtaMode} onChange={(e) => setSettings({ ...settings, subscriptionLoggedOutCtaMode: e.target.value as 'login' | 'contact' })}
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                                     <option value="login">Send to Login</option>
                                     <option value="contact">Send to Contact</option>
                                 </select>
@@ -446,7 +447,93 @@ export default function SiteSettingsPanel() {
                 </div>
             </div>
 
-            <div className="bg-slate-900/60 rounded-2xl border border-indigo-500/10 p-6 space-y-5">
+            {/* ── Social Preview (Open Graph) ── */}
+            <div className="bg-slate-900/50 rounded-2xl border border-slate-700/30 ring-1 ring-white/[0.03] p-6 space-y-4">
+                <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-violet-400" /> Social Preview (Open Graph)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">Controls what appears when your link is shared on Facebook, Twitter, WhatsApp, etc.</p>
+                </div>
+                <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="space-y-3">
+                        <div>
+                            <label className="text-xs text-slate-400 font-medium">OG Title</label>
+                            <input value={settings.socialPreview.ogTitle} onChange={e => setSettings({ ...settings, socialPreview: { ...settings.socialPreview, ogTitle: e.target.value } })}
+                                placeholder="Leave empty to use Meta Title"
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-slate-400 font-medium">OG Description</label>
+                            <textarea rows={2} value={settings.socialPreview.ogDescription} onChange={e => setSettings({ ...settings, socialPreview: { ...settings.socialPreview, ogDescription: e.target.value } })}
+                                placeholder="Leave empty to use Meta Description"
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-slate-400 font-medium">Twitter @site handle</label>
+                            <input value={settings.socialPreview.twitterSite} onChange={e => setSettings({ ...settings, socialPreview: { ...settings.socialPreview, twitterSite: e.target.value } })}
+                                placeholder="@campusway"
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs text-slate-400 font-medium">OG Type</label>
+                                <select value={settings.socialPreview.ogType} onChange={e => setSettings({ ...settings, socialPreview: { ...settings.socialPreview, ogType: e.target.value as 'website' | 'article' } })}
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
+                                    <option value="website">website</option>
+                                    <option value="article">article</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400 font-medium">Twitter Card</label>
+                                <select value={settings.socialPreview.twitterCard} onChange={e => setSettings({ ...settings, socialPreview: { ...settings.socialPreview, twitterCard: e.target.value as 'summary' | 'summary_large_image' } })}
+                                    className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
+                                    <option value="summary_large_image">Large Image</option>
+                                    <option value="summary">Summary</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <div>
+                            <label className="text-xs text-slate-400 font-medium">OG Image URL</label>
+                            <input value={settings.socialPreview.ogImageUrl} onChange={e => setSettings({ ...settings, socialPreview: { ...settings.socialPreview, ogImageUrl: e.target.value } })}
+                                placeholder="https://... (1200×630 recommended)"
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                        </div>
+                        {settings.socialPreview.ogImageUrl ? (
+                            <div className="rounded-xl border border-slate-700/30 bg-slate-950/30 p-3">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Preview</p>
+                                <img src={settings.socialPreview.ogImageUrl} alt="OG preview" className="rounded-lg max-h-40 w-full object-cover border border-slate-700/20" />
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-dashed border-slate-700/30 bg-slate-950/20 p-8 text-center">
+                                <p className="text-xs text-slate-500">No OG image set. Add a URL above to see a preview.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Standard Social Links ── */}
+            <div className="bg-slate-900/50 rounded-2xl border border-slate-700/30 ring-1 ring-white/[0.03] p-6 space-y-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2"><Globe className="w-4 h-4 text-indigo-400" /> Standard Social Links</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {['facebook', 'whatsapp', 'messenger', 'telegram', 'twitter', 'youtube', 'instagram'].map((platform) => (
+                        <div key={platform}>
+                            <label className="text-xs text-slate-400 capitalize font-medium">{platform}</label>
+                            <input
+                                value={settings.socialLinks[platform as keyof typeof settings.socialLinks] || ''}
+                                onChange={e => setSettings({ ...settings, socialLinks: { ...settings.socialLinks, [platform]: e.target.value } })}
+                                className="mt-1 w-full rounded-xl bg-slate-950/50 border border-slate-700/40 px-3 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
+                                placeholder={['whatsapp', 'phone'].includes(platform) ? 'Number or Link' : `https://${platform}.com/...`}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="bg-slate-900/50 rounded-2xl border border-slate-700/30 ring-1 ring-white/[0.03] p-6 space-y-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -467,6 +554,8 @@ export default function SiteSettingsPanel() {
             </div>
 
             <SocialLinksManager />
+
+            <PageHeroSettingsEditor />
         </div>
     );
 }

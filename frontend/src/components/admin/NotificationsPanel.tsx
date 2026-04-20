@@ -95,15 +95,19 @@ export default function NotificationsPanel() {
         setUploadingAttachment(true);
         const uploadToast = toast.loading('Uploading attachment...');
         try {
-                        const res = await adminUploadMedia(file, {
+            const res = await adminUploadMedia(file, {
                 visibility: 'protected',
                 category: 'admin_upload',
                 accessRoles: getAttachmentAccessRoles(form.targetRole),
             });
-            setForm((prev) => ({ ...prev, attachmentUrl: res.data.url || '' }));
+            const payload = res.data as { url?: string; absoluteUrl?: string };
+            setForm((prev) => ({ ...prev, attachmentUrl: String(payload?.url || payload?.absoluteUrl || '') }));
             toast.success('Protected attachment uploaded', { id: uploadToast });
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Attachment upload failed', { id: uploadToast });
+        } catch (error: unknown) {
+            const errMsg = (error as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+                || (error as { message?: string })?.message
+                || 'Attachment upload failed';
+            toast.error(errMsg, { id: uploadToast });
         } finally {
             setUploadingAttachment(false);
         }

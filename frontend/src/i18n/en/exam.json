@@ -1,0 +1,79 @@
+{
+    "exam": {
+        "title": "Exams",
+        "createExam": "Create Exam",
+        "editExam": "Edit Exam",
+        "deleteExam": "Delete Exam",
+        "examTitle": "Title",
+        "subject": "Subject",
+        "duration": "Duration",
+        "durationMinutes": "Duration (minutes)",
+        "totalMarks": "Total Marks",
+        "totalQuestions": "Total Questions",
+        "negativeMarking": "Negative Marking",
+        "negativeMarkValue": "Negative Mark Value",
+        "showAnswersAfterExam": "Show Answers After Exam",
+        "save": "Save",
+        "cancel": "Cancel",
+        "preview": "Preview",
+        "clone": "Clone",
+        "duplicate": "Duplicate",
+        "publish": "Publish",
+        "autoGenerate": "Auto Generate",
+        "status": "Status",
+        "draft": "Draft",
+        "scheduled": "Scheduled",
+        "live": "Live",
+        "closed": "Closed",
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete"
+    },
+    "examPreview": {
+        "previewTitle": "Exam Preview",
+        "studentView": "Student View",
+        "timeRemaining": "Time Remaining",
+        "questionOf": "Question {{current}} of {{total}}",
+        "marks": "Marks"
+    },
+    "examValidation": {
+        "titleRequired": "Exam title is required",
+        "subjectRequired": "Subject is required",
+        "durationRequired": "Duration must be greater than 0",
+        "totalMarksRequired": "Total marks must be greater than 0",
+        "questionsRequired": "At least 1 question is required",
+        "marksSum": "Sum of question marks must equal total marks"
+    },
+    "questionSelector": {
+        "availableQuestions": "Available Questions",
+        "selectedQuestions": "Selected Questions",
+        "addQuestion": "Add",
+        "removeQuestion": "Remove",
+        "marks": "Marks",
+        "defaultMarks": "Default Marks",
+        "reorder": "Drag to reorder",
+        "noQuestionsAvailable": "No questions available",
+        "noQuestionsSelected": "No questions selected yet",
+        "summary": "Summary",
+        "totalSelected": "Total Selected",
+        "totalMarks": "Total Marks"
+    },
+    "autoGenerate": {
+        "title": "Auto Generate Questions",
+        "subjectFilter": "Subject Filter",
+        "categoryFilter": "Category Filter",
+        "difficultyDistribution": "Difficulty Distribution",
+        "easyCount": "Easy Count",
+        "mediumCount": "Medium Count",
+        "hardCount": "Hard Count",
+        "generate": "Generate",
+        "insufficientQuestions": "Insufficient questions available",
+        "generating": "Generating..."
+    },
+    "examAnalytics": {
+        "totalExams": "Total Exams",
+        "averageScore": "Average Score",
+        "highestScore": "Highest Score",
+        "participationCount": "Participation Count"
+    }
+}

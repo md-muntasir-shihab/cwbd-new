@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useExamDetail, useSaveAnswers, useSessionQuestions, useStartSession, useSubmitExam } from "../../hooks/useExamQueries";
 import { useExamAntiCheat } from "../../hooks/useExamAntiCheat";
+import { useProactiveTokenRefresh } from "../../hooks/useProactiveTokenRefresh";
 import type { BlockReason, ExamAnswer, PendingAnswerRow, RunnerCache, SelectedOptionKey } from "../../types/exam";
 
 type SubmitMode = "manual" | "timeout";
@@ -113,6 +114,9 @@ export const ExamRunnerPage = () => {
     const { examId = "" } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+
+    // Proactive token refresh — keeps the access token fresh for the entire exam session
+    useProactiveTokenRefresh(true);
 
     const [sessionId, setSessionId] = useState<string | undefined>(searchParams.get("sessionId") || readSessionPointer(examId));
     const [answers, setAnswers] = useState<Record<string, ExamAnswer>>({});

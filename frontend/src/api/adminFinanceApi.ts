@@ -44,6 +44,8 @@ export const fcApi = {
     // ── Invoices ────────────────────────────────────────
     getInvoices: (p: Params = {}) =>
         api.get<FcPaginatedResponse<FcInvoice>>(`${FC}/invoices${qs(p)}`).then(r => r.data),
+    getInvoice: (id: string) =>
+        api.get<{ data: FcInvoice }>(`${FC}/invoices/${id}`).then(r => r.data),
     createInvoice: (data: Partial<FcInvoice>) =>
         api.post<{ data: FcInvoice }>(`${FC}/invoices`, data).then(r => r.data),
     updateInvoice: (id: string, data: Partial<FcInvoice>) =>

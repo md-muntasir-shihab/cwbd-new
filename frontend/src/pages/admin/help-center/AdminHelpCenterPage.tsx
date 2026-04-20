@@ -3,6 +3,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
+import AdminTabNav from '../../../components/admin/AdminTabNav';
+import { ADMIN_PATHS } from '../../../routes/adminPaths';
+import { LifeBuoy, HelpCircle, Mail } from 'lucide-react';
 import ModernToggle from '../../../components/ui/ModernToggle';
 import {
     createAdminHelpArticle,
@@ -116,6 +119,11 @@ export default function AdminHelpCenterPage() {
 
     return (
         <AdminGuardShell title="Help Center Control" description="Manage the live public help center from admin." requiredModule="support_center">
+            <AdminTabNav tabs={[
+                { key: 'center', label: 'Support Center', path: ADMIN_PATHS.supportCenter, icon: LifeBuoy },
+                { key: 'help', label: 'Help Center', path: ADMIN_PATHS.helpCenterAdmin, icon: HelpCircle },
+                { key: 'contact', label: 'Contact Messages', path: ADMIN_PATHS.contact, icon: Mail },
+            ]} />
             <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
                 <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
                     <div className="flex items-center justify-between gap-2">

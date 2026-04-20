@@ -279,3 +279,263 @@ export const createMockUser = (overrides: Partial<any> = {}) => {
         ...overrides,
     };
 };
+
+// ─── Session Hint Constants and Types ────────────────────────────────
+
+/**
+ * localStorage key for the session hint
+ */
+export const SESSION_HINT_KEY = 'campusway-auth-session-hint';
+
+/**
+ * Valid portal values for session hints
+ */
+export type PortalType = 'student' | 'admin' | 'chairman' | 'unknown';
+
+/**
+ * Session hint structure as stored in localStorage
+ */
+export interface SessionHint {
+    active: true;
+    portal: PortalType;
+    updatedAt: number;
+}
+
+/**
+ * Create a mock session hint object
+ * @param portal - The portal type (default: 'student')
+ * @param updatedAt - Timestamp in ms (default: Date.now())
+ * @returns A SessionHint object
+ */
+export const createMockSessionHint = (
+    portal: PortalType = 'student',
+    updatedAt: number = Date.now()
+): SessionHint => ({
+    active: true,
+    portal,
+    updatedAt,
+});
+
+/**
+ * Write a session hint to the provided localStorage mock
+ * @param storage - The mock localStorage instance
+ * @param portal - The portal type
+ * @param updatedAt - Optional timestamp
+ */
+export const writeSessionHint = (
+    storage: ReturnType<typeof createMockLocalStorage>,
+    portal: PortalType,
+    updatedAt: number = Date.now()
+): void => {
+    const hint = createMockSessionHint(portal, updatedAt);
+    storage.setItem(SESSION_HINT_KEY, JSON.stringify(hint));
+};
+
+/**
+ * Read and parse a session hint from the provided localStorage mock
+ * @param storage - The mock localStorage instance
+ * @returns The parsed SessionHint or null if not present/invalid
+ */
+export const readSessionHint = (
+    storage: ReturnType<typeof createMockLocalStorage>
+): SessionHint | null => {
+    const raw = storage.getItem(SESSION_HINT_KEY);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw) as SessionHint;
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Check if a session hint exists in the provided localStorage mock
+ * @param storage - The mock localStorage instance
+ * @returns true if a hint exists (even if malformed)
+ */
+export const hasSessionHint = (
+    storage: ReturnType<typeof createMockLocalStorage>
+): boolean => {
+    const raw = storage.getItem(SESSION_HINT_KEY);
+    return raw !== null && raw.length > 0;
+};
+
+/**
+ * Clear the session hint from the provided localStorage mock
+ * @param storage - The mock localStorage instance
+ */
+export const clearSessionHint = (
+    storage: ReturnType<typeof createMockLocalStorage>
+): void => {
+    storage.removeItem(SESSION_HINT_KEY);
+};
+
+// ─── Exam Progress Preservation Constants ────────────────────────────
+
+/**
+ * localStorage key for preserved exam progress on force logout
+ */
+export const EXAM_PROGRESS_PRESERVATION_KEY = 'cw_exam_force_logout_preserved';
+
+/**
+ * Structure for preserved exam progress
+ */
+export interface PreservedExamProgress {
+    examId: string;
+    sessionId: string;
+    preservedAt: string;
+    cache: string;
+}
+
+/**
+ * Create a mock preserved exam progress object
+ * @param examId - The exam ID
+ * @param sessionId - The session ID
+ * @param cache - The cached exam state (JSON string)
+ * @returns A PreservedExamProgress object
+ */
+export const createMockPreservedExamProgress = (
+    examId: string = 'exam-123',
+    sessionId: string = 'session-456',
+    cache: string = '{}'
+): PreservedExamProgress => ({
+    examId,
+    sessionId,
+    preservedAt: new Date().toISOString(),
+    cache,
+});
+
+// ─── Call Order Tracking ─────────────────────────────────────────────
+
+/**
+ * Create a call order tracker for verifying function call sequences
+ * Useful for testing that operations happen in the correct order
+ * (e.g., exam progress preserved BEFORE clearAuthState)
+ */
+export const createCallOrderTracker = () => {
+    const calls: Array<{ name: string; timestamp: number; args?: any[] }> = [];
+
+    return {
+        /**
+         * Record a function call
+         * @param name - Name of the function being called
+         * @param args - Optional arguments passed to the function
+         */
+        record: (name: string, args?: any[]): void => {
+            calls.push({ name, timestamp: Date.now(), args });
+        },
+
+        /**
+         * Get all recorded calls in order
+         */
+        getCalls: () => [...calls],
+
+        /**
+         * Get the order of function names called
+         */
+        getCallOrder: () => calls.map(c => c.name),
+
+        /**
+         * Check if function A was called before function B
+         * @param fnA - Name of the first function
+         * @param fnB - Name of the second function
+         * @returns true if fnA was called before fnB
+         */
+        wasCalledBefore: (fnA: string, fnB: string): boolean => {
+            const indexA = calls.findIndex(c => c.name === fnA);
+            const indexB = calls.findIndex(c => c.name === fnB);
+            if (indexA === -1 || indexB === -1) return false;
+            return indexA < indexB;
+        },
+
+        /**
+         * Check if a function was called
+         * @param name - Name of the function
+         * @returns true if the function was called
+         */
+        wasCalled: (name: string): boolean => {
+            return calls.some(c => c.name === name);
+        },
+
+        /**
+         * Get the number of times a function was called
+         * @param name - Name of the function
+         * @returns The call count
+         */
+        getCallCount: (name: string): number => {
+            return calls.filter(c => c.name === name).length;
+        },
+
+        /**
+         * Clear all recorded calls
+         */
+        clear: (): void => {
+            calls.length = 0;
+        },
+    };
+};
+
+// ─── Protected Paths for Testing ─────────────────────────────────────
+
+/**
+ * List of protected path prefixes that should trigger session bootstrap
+ * Matches the paths defined in Requirements 1.5
+ */
+export const PROTECTED_PATH_PREFIXES = [
+    '/exam/',
+    '/exams',
+    '/dashboard',
+    '/results',
+    '/payments',
+    '/notifications',
+    '/support',
+    '/profile',
+    '/student/',
+    '/profile-center',
+] as const;
+
+/**
+ * Check if a pathname matches a protected path
+ * @param pathname - The pathname to check
+ * @returns true if the pathname is protected
+ */
+export const isProtectedPath = (pathname: string): boolean => {
+    return PROTECTED_PATH_PREFIXES.some(prefix =>
+        pathname === prefix || pathname.startsWith(prefix)
+    );
+};
+
+/**
+ * Generate a random protected pathname for property testing
+ * @param prefix - Optional specific prefix to use
+ * @param suffix - Optional suffix to append
+ * @returns A protected pathname
+ */
+export const generateProtectedPathname = (
+    prefix?: typeof PROTECTED_PATH_PREFIXES[number],
+    suffix: string = ''
+): string => {
+    const selectedPrefix = prefix || PROTECTED_PATH_PREFIXES[
+        Math.floor(Math.random() * PROTECTED_PATH_PREFIXES.length)
+    ];
+    return `${selectedPrefix}${suffix}`;
+};
+
+/**
+ * Generate a random non-protected pathname for property testing
+ * @returns A non-protected pathname
+ */
+export const generateNonProtectedPathname = (): string => {
+    const nonProtectedPaths = [
+        '/',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/about',
+        '/contact',
+        '/news',
+        '/universities',
+        '/services',
+    ];
+    return nonProtectedPaths[Math.floor(Math.random() * nonProtectedPaths.length)];
+};

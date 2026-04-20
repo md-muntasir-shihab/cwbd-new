@@ -3,16 +3,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-    CalendarDays,
     Filter,
     Search,
     Share2,
     Tag,
-    Globe2,
     ArrowRight,
     X,
     Sparkles,
 } from 'lucide-react';
+import PageHeroBanner from '../components/common/PageHeroBanner';
+import { usePageHeroSettings } from '../hooks/usePageHeroSettings';
 import toast from 'react-hot-toast';
 import {
     ApiNews,
@@ -109,6 +109,7 @@ function shouldOpenOriginalSource(news: ApiNews, settings: ApiNewsPublicSettings
 }
 
 export default function NewsPage() {
+    const hero = usePageHeroSettings('news');
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
@@ -234,7 +235,7 @@ export default function NewsPage() {
         if (!exists) setPreview(renderedItems[0]);
     }, [renderedItems, preview]);
 
-async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'messenger' | 'telegram' | 'copy_link' | 'copy_text') {
+    async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'messenger' | 'telegram' | 'copy_link' | 'copy_text') {
         try {
             const newsTarget = news.slug || news._id;
             const shareUrl = news.shareUrl || `${window.location.origin}/news/${newsTarget}`;
@@ -269,47 +270,26 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
     }
 
     return (
-        <div className="min-h-screen bg-background dark:bg-[#081322]">
-            <section
-                className="border-b border-card-border/80 bg-gradient-to-r from-cyan-500/10 via-sky-500/8 to-emerald-500/6 py-8 dark:border-dark-border/80 dark:from-cyan-500/8 dark:via-indigo-500/10 dark:to-transparent"
-                style={settings.headerBannerUrl ? { backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.72), rgba(2, 6, 23, 0.72)), url(${buildMediaUrl(settings.headerBannerUrl)})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
-            >
-                <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">CampusWay News Hub</p>
-                        <h1 className="text-3xl font-black text-text dark:text-dark-text sm:text-4xl">{pageTitle}</h1>
-                        <p className="mt-2 max-w-2xl text-sm text-text-muted dark:text-dark-text/75">{pageSubtitle}</p>
-                    </div>
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-2 rounded-xl border border-card-border bg-white px-3 py-2 text-sm font-semibold text-text shadow-sm lg:hidden dark:border-dark-border dark:bg-dark-surface dark:text-dark-text"
-                        onClick={() => setMobileFilterOpen(true)}
-                    >
-                        <Filter className="h-4 w-4" />
-                        Filters
-                    </button>
-                </div>
-            </section>
+        <>
+            {hero.enabled && (
+                <PageHeroBanner
+                    title={hero.title}
+                    subtitle={hero.subtitle}
+                    pillText={hero.pillText}
+                    vantaEffect={hero.vantaEffect}
+                    vantaColor={hero.vantaColor}
+                    vantaBackgroundColor={hero.vantaBackgroundColor}
+                    gradientFrom={hero.gradientFrom}
+                    gradientTo={hero.gradientTo}
+                    primaryCTA={hero.primaryCTA}
+                    secondaryCTA={hero.secondaryCTA}
+                />
+            )}
+            <div className="min-h-screen bg-background dark:bg-[#081322]">
 
-            <div className={`mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-6 sm:px-6 lg:px-8 ${layoutMode === 'rss_reader' ? 'lg:grid-cols-[260px_1fr_320px]' : ''}`}>
-                <aside className={`${showSourceSidebar ? 'hidden lg:block' : 'hidden'} space-y-4`}>
-                    <FilterPanel
-                        search={search}
-                        onSearch={setSearch}
-                        category={category}
-                        onCategory={setCategory}
-                        categories={categories}
-                        source={source}
-                        onSource={setSource}
-                        sources={sources}
-                        tag={tag}
-                        onTag={setTag}
-                        tags={tags}
-                    />
-                </aside>
 
-                <section className="space-y-3">
-                    {!showSourceSidebar ? (
+                <div className={`mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-6 sm:px-6 lg:px-8 ${layoutMode === 'rss_reader' ? 'lg:grid-cols-[260px_1fr_320px]' : ''}`}>
+                    <aside className={`${showSourceSidebar ? 'hidden lg:block' : 'hidden'} space-y-4`}>
                         <FilterPanel
                             search={search}
                             onSearch={setSearch}
@@ -323,324 +303,210 @@ async function handleShare(news: ApiNews, channel: 'whatsapp' | 'facebook' | 'me
                             onTag={setTag}
                             tags={tags}
                         />
-                    ) : null}
-                    {isLoading && (
-                        <div className="space-y-3">
-                            {Array.from({ length: 6 }).map((_, idx) => (
-                                <div key={idx} className="skeleton h-36 w-full rounded-2xl" />
-                            ))}
-                        </div>
-                    )}
+                    </aside>
 
-                    {!isLoading && renderedItems.length === 0 && (
-                        <div className="rounded-2xl border border-dashed border-card-border bg-white px-6 py-10 text-center text-sm text-text-muted dark:border-dark-border dark:bg-dark-surface/55 dark:text-dark-text/75">
-                            No news found for this filter.
-                        </div>
-                    )}
+                    <section className="space-y-3">
+                        {!showSourceSidebar ? (
+                            <FilterPanel
+                                search={search}
+                                onSearch={setSearch}
+                                category={category}
+                                onCategory={setCategory}
+                                categories={categories}
+                                source={source}
+                                onSource={setSource}
+                                sources={sources}
+                                tag={tag}
+                                onTag={setTag}
+                                tags={tags}
+                            />
+                        ) : null}
+                        {isLoading && (
+                            <div className="space-y-3">
+                                {Array.from({ length: 6 }).map((_, idx) => (
+                                    <div key={idx} className="skeleton h-36 w-full rounded-2xl" />
+                                ))}
+                            </div>
+                        )}
 
-                    {!isLoading && (
-                        <motion.div
-                            initial="hidden"
-                            animate="show"
-                            variants={{
-                                hidden: { opacity: 0 },
-                                show: { opacity: 1, transition: { staggerChildren: 0.06 } },
-                            }}
-                            className={layoutMode === 'grid' ? 'grid grid-cols-1 gap-3 md:grid-cols-2' : 'space-y-3'}
-                        >
-                            {renderedItems.map((news) => (
-                                <motion.article
-                                    key={news._id}
-                                    variants={{
-                                        hidden: { opacity: 0, y: 12 },
-                                        show: { opacity: 1, y: 0 },
-                                    }}
-                                    whileHover={{ y: -2, scale: 1.003 }}
-                                    transition={{ duration: 0.18 }}
-                                    onClick={() => {
-                                        if (window.matchMedia('(max-width: 1023px)').matches) {
-                                            const target = news.slug || news._id;
-                                            if (target) {
-                                                navigate(`/news/${target}`);
+                        {!isLoading && renderedItems.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-card-border bg-white px-6 py-10 text-center text-sm text-text-muted dark:border-dark-border dark:bg-dark-surface/55 dark:text-dark-text/75">
+                                No news found for this filter.
+                            </div>
+                        )}
+
+                        {!isLoading && (
+                            <motion.div
+                                initial="hidden"
+                                animate="show"
+                                variants={{
+                                    hidden: { opacity: 0 },
+                                    show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+                                }}
+                                className={layoutMode === 'grid' ? 'grid grid-cols-1 gap-3 md:grid-cols-2' : 'space-y-3'}
+                            >
+                                {renderedItems.map((news) => (
+                                    <NewsArticleCard
+                                        key={news._id}
+                                        news={news}
+                                        settings={settings}
+                                        isSelected={preview?._id === news._id}
+                                        layoutMode={layoutMode}
+                                        shareButtons={shareButtons}
+                                        onSelect={() => {
+                                            if (window.matchMedia('(max-width: 1023px)').matches) {
+                                                const target = news.slug || news._id;
+                                                if (target) navigate(`/news/${target}`);
+                                                return;
                                             }
-                                            return;
-                                        }
-                                        setPreview(news);
-                                    }}
-                                    className={`cursor-pointer rounded-2xl border bg-white/95 p-3 shadow-sm transition dark:bg-dark-surface/85 ${
-                                        preview?._id === news._id
-                                            ? 'border-cyan-500/60 ring-2 ring-cyan-500/20'
-                                            : 'border-card-border/80 hover:border-cyan-400/50 dark:border-dark-border/80'
-                                    }`}
+                                            setPreview(news);
+                                        }}
+                                        onShare={handleShare}
+                                    />
+                                ))}
+                            </motion.div>
+                        )}
+
+                        {paginationMode === 'infinite' ? (
+                            <div className="flex items-center justify-center gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    disabled={page >= pages}
+                                    onClick={() => setPage((prev) => Math.min(pages, prev + 1))}
                                 >
-                                    <div className={`grid grid-cols-1 gap-3 ${layoutMode === 'list' ? 'sm:grid-cols-[220px_1fr]' : 'sm:grid-cols-[200px_1fr]'}`}>
+                                    {page >= pages ? 'No More News' : 'Load More'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    disabled={page <= 1}
+                                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm text-slate-500 dark:text-slate-300">
+                                    Page {page} / {pages}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="btn-outline"
+                                    disabled={page >= pages}
+                                    onClick={() => setPage((prev) => Math.min(pages, prev + 1))}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </section>
+
+                    <aside className={`${showPreviewPanel ? 'hidden lg:block' : 'hidden'}`}>
+                        <motion.div
+                            key={preview?._id || 'empty'}
+                            initial={{ opacity: 0, x: 12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="sticky top-24 space-y-4 rounded-2xl border border-card-border/60 bg-white/95 p-5 shadow-card dark:border-dark-border/60 dark:bg-dark-surface/90 backdrop-blur-sm"
+                        >
+                            {preview ? (
+                                <>
+                                    <div className="relative overflow-hidden rounded-xl">
                                         <img
-                                            src={getArticleImage(news, settings)}
-                                            alt={news.title}
-                                            className="h-36 w-full rounded-xl object-cover sm:h-full"
+                                            src={getArticleImage(preview, settings)}
+                                            alt={preview.title}
+                                            className="h-48 w-full object-cover"
                                             loading="lazy"
                                         />
-                                        <div className="space-y-2">
-                                            <h2 className="line-clamp-2 text-lg font-semibold text-text dark:text-dark-text">{news.title}</h2>
-                                            <p className="line-clamp-2 text-sm text-text-muted dark:text-dark-text/75">
-                                                {news.shortSummary || news.shortDescription}
-                                            </p>
-                                            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted dark:text-dark-text/75">
-                                                {settings.appearance.showSourceIcons && (
-                                                    <img
-                                                        src={buildMediaUrl(news.sourceIconUrl || settings.defaultSourceIconUrl || '/logo.svg')}
-                                                        alt={news.sourceName || 'Source'}
-                                                        className="h-4 w-4 rounded-full object-cover"
-                                                        onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
-                                                    />
-                                                )}
-                                                <span className="inline-flex items-center gap-1">
-                                                    <Globe2 className="h-3 w-3" />
-                                                    {news.sourceName || 'CampusWay'}
-                                                </span>
-                                                <span className="text-slate-400 dark:text-slate-500">&middot;</span>
-                                                <span className="inline-flex items-center gap-1">
-                                                    <CalendarDays className="h-3 w-3" />
-                                                    {renderDate(news.publishedAt || news.publishDate || news.createdAt)}
-                                                </span>
-                                                {(news.sourceType === 'rss' || news.sourceType === 'ai_assisted') ? (
-                                                    <span className="rounded-full border border-cyan-500/35 bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-700 dark:text-cyan-200">
-                                                        RSS
-                                                    </span>
-                                                ) : null}
-                                                {news.aiUsed ? (
-                                                    <span
-                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                                            news.aiMeta?.noHallucinationPassed
-                                                                ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200'
-                                                                : 'border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-200'
-                                                        }`}
-                                                    >
-                                                        <Sparkles className="h-3 w-3" />
-                                                        {news.aiMeta?.noHallucinationPassed ? 'AI verified' : 'AI review'}
-                                                    </span>
-                                                ) : null}
-                                            </div>
-                                            {news.tags?.length ? (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {news.tags.slice(0, 4).map((item) => (
-                                                        <span key={`${news._id}-${item}`} className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[11px] font-medium text-cyan-700 dark:text-cyan-200">
-                                                            {item}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : null}
-                                            <div className="flex flex-wrap items-center gap-2 pt-1">
-                                                {shouldOpenOriginalSource(news, settings) ? (
-                                                    <a
-                                                        href={getOriginalArticleUrl(news)}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-2 py-1 text-xs font-semibold text-white hover:bg-cyan-500"
-                                                    >
-                                                        Read Source
-                                                        <ArrowRight className="h-3 w-3" />
-                                                    </a>
-                                                ) : (
-                                                    <Link
-                                                        to={`/news/${news.slug || news._id}`}
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-2 py-1 text-xs font-semibold text-white hover:bg-cyan-500"
-                                                    >
-                                                        Read
-                                                        <ArrowRight className="h-3 w-3" />
-                                                    </Link>
-                                                )}
-                                                {shareButtons.whatsapp ? (
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleShare(news, 'whatsapp');
-                                                        }}
-                                                    >
-                                                        WhatsApp
-                                                    </button>
-                                                ) : null}
-                                                {shareButtons.facebook ? (
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleShare(news, 'facebook');
-                                                        }}
-                                                    >
-                                                        Facebook
-                                                    </button>
-                                                ) : null}
-                                                {shareButtons.messenger ? (
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleShare(news, 'messenger');
-                                                        }}
-                                                    >
-                                                        Messenger
-                                                    </button>
-                                                ) : null}
-                                                {shareButtons.telegram ? (
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleShare(news, 'telegram');
-                                                        }}
-                                                    >
-                                                        Telegram
-                                                    </button>
-                                                ) : null}
-                                                {shareButtons.copyLink ? (
-                                                    <button
-                                                        type="button"
-                                                        className="inline-flex items-center gap-1 rounded-lg border border-card-border px-2 py-1 text-xs text-text-muted hover:border-cyan-500 hover:text-cyan-600 dark:border-dark-border dark:text-dark-text/80"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleShare(news, 'copy_link');
-                                                        }}
-                                                    >
-                                                        <Share2 className="h-3 w-3" />
-                                                        Copy
-                                                    </button>
-                                                ) : null}
-                                            </div>
-                                        </div>
+                                        {preview.category && (
+                                            <span className="absolute top-3 left-3 rounded-full bg-white/90 dark:bg-slate-900/90 px-2.5 py-0.5 text-[10px] font-semibold text-[var(--primary)] backdrop-blur-sm shadow-sm">
+                                                {preview.category}
+                                            </span>
+                                        )}
                                     </div>
-                                </motion.article>
-                            ))}
-                        </motion.div>
-                    )}
-
-                    {paginationMode === 'infinite' ? (
-                        <div className="flex items-center justify-center gap-2 pt-2">
-                            <button
-                                type="button"
-                                className="btn-outline"
-                                disabled={page >= pages}
-                                onClick={() => setPage((prev) => Math.min(pages, prev + 1))}
-                            >
-                                {page >= pages ? 'No More News' : 'Load More'}
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                className="btn-outline"
-                                disabled={page <= 1}
-                                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                            >
-                                Previous
-                            </button>
-                            <span className="text-sm text-slate-500 dark:text-slate-300">
-                                Page {page} / {pages}
-                            </span>
-                            <button
-                                type="button"
-                                className="btn-outline"
-                                disabled={page >= pages}
-                                onClick={() => setPage((prev) => Math.min(pages, prev + 1))}
-                            >
-                                Next
-                            </button>
-                        </div>
-                    )}
-                </section>
-
-                <aside className={`${showPreviewPanel ? 'hidden lg:block' : 'hidden'}`}>
-                    <motion.div
-                        key={preview?._id || 'empty'}
-                        initial={{ opacity: 0, x: 12 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="sticky top-24 space-y-3 rounded-2xl border border-card-border/80 bg-white/95 p-4 shadow-sm dark:border-dark-border/80 dark:bg-dark-surface/85"
-                    >
-                        {preview ? (
-                            <>
-                                <img
-                                    src={getArticleImage(preview, settings)}
-                                    alt={preview.title}
-                                    className="h-44 w-full rounded-xl object-cover"
-                                    loading="lazy"
-                                />
-                                <h3 className="text-lg font-semibold text-text dark:text-dark-text">{preview.title}</h3>
-                                <p className="text-sm text-text-muted dark:text-dark-text/75">
-                                    {preview.shortSummary || preview.shortDescription}
-                                </p>
-                                <div className="text-xs text-text-muted dark:text-dark-text/75">
-                                    <p>Source: {preview.sourceName || 'CampusWay'}</p>
-                                    <p>{renderDate(preview.publishedAt || preview.publishDate || preview.createdAt)}</p>
+                                    <h3 className="text-lg font-bold text-text dark:text-dark-text leading-snug">{preview.title}</h3>
+                                    <p className="text-sm text-text-muted dark:text-dark-text/70 leading-relaxed">
+                                        {preview.shortSummary || preview.shortDescription}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-text-muted dark:text-dark-text/60">
+                                        <img
+                                            src={buildMediaUrl(preview.sourceIconUrl || settings.defaultSourceIconUrl || '/logo.svg')}
+                                            alt=""
+                                            className="h-4 w-4 rounded-full"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
+                                        />
+                                        <span className="font-medium">{preview.sourceName || 'CampusWay'}</span>
+                                        <span className="text-slate-300 dark:text-slate-600">·</span>
+                                        <span>{renderDate(preview.publishedAt || preview.publishDate || preview.createdAt)}</span>
+                                    </div>
+                                    {shouldOpenOriginalSource(preview, settings) ? (
+                                        <a
+                                            href={getOriginalArticleUrl(preview)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 w-full justify-center"
+                                        >
+                                            Read Original Source
+                                            <ArrowRight className="h-4 w-4" />
+                                        </a>
+                                    ) : (
+                                        <Link
+                                            to={`/news/${preview.slug || preview._id}`}
+                                            className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 w-full justify-center"
+                                        >
+                                            Read full article
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                                    <div className="rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
+                                        <Sparkles className="h-5 w-5 text-slate-400" />
+                                    </div>
+                                    <p className="text-sm text-text-muted dark:text-dark-text/60">Click an article to preview it here.</p>
                                 </div>
-                                {shouldOpenOriginalSource(preview, settings) ? (
-                                    <a
-                                        href={getOriginalArticleUrl(preview)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
-                                    >
-                                        Read Original Source
-                                        <ArrowRight className="h-4 w-4" />
-                                    </a>
-                                ) : (
-                                    <Link
-                                        to={`/news/${preview.slug || preview._id}`}
-                                        className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500"
-                                    >
-                                        Read full article
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                )}
-                            </>
-                        ) : (
-                            <p className="text-sm text-text-muted dark:text-dark-text/75">Select a card to preview.</p>
-                        )}
-                    </motion.div>
-                </aside>
-            </div>
-
-            {mobileFilterOpen && (
-                <div className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setMobileFilterOpen(false)}>
-                    <div
-                        className="absolute bottom-0 left-0 right-0 max-h-[84vh] overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl dark:bg-slate-950"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="mb-3 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Filter News</h2>
-                            <button
-                                type="button"
-                                className="rounded-lg border border-slate-300 p-2 dark:border-white/20"
-                                onClick={() => setMobileFilterOpen(false)}
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                        <FilterPanel
-                            search={search}
-                            onSearch={setSearch}
-                            category={category}
-                            onCategory={setCategory}
-                            categories={categories}
-                            source={source}
-                            onSource={setSource}
-                            sources={sources}
-                            tag={tag}
-                            onTag={setTag}
-                            tags={tags}
-                        />
-                    </div>
+                            )}
+                        </motion.div>
+                    </aside>
                 </div>
-            )}
-        </div>
+
+                {mobileFilterOpen && (
+                    <div className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setMobileFilterOpen(false)}>
+                        <div
+                            className="absolute bottom-0 left-0 right-0 max-h-[84vh] overflow-y-auto rounded-t-3xl bg-white p-4 shadow-2xl dark:bg-slate-950"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="mb-3 flex items-center justify-between">
+                                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Filter News</h2>
+                                <button
+                                    type="button"
+                                    className="rounded-lg border border-slate-300 p-2 dark:border-white/20"
+                                    onClick={() => setMobileFilterOpen(false)}
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <FilterPanel
+                                search={search}
+                                onSearch={setSearch}
+                                category={category}
+                                onCategory={setCategory}
+                                categories={categories}
+                                source={source}
+                                onSource={setSource}
+                                sources={sources}
+                                tag={tag}
+                                onTag={setTag}
+                                tags={tags}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
     );
 }
 
@@ -703,9 +569,8 @@ function FilterPanel({
                     <button
                         type="button"
                         onClick={() => onSource('')}
-                        className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${
-                            source === '' ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-text-muted hover:bg-slate-100 dark:text-dark-text/75 dark:hover:bg-white/5'
-                        }`}
+                        className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${source === '' ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-text-muted hover:bg-slate-100 dark:text-dark-text/75 dark:hover:bg-white/5'
+                            }`}
                     >
                         <span>All Sources</span>
                     </button>
@@ -714,9 +579,8 @@ function FilterPanel({
                             key={item._id}
                             type="button"
                             onClick={() => onSource(item._id)}
-                            className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${
-                                source === item._id ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-text-muted hover:bg-slate-100 dark:text-dark-text/75 dark:hover:bg-white/5'
-                            }`}
+                            className={`flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm ${source === item._id ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'text-text-muted hover:bg-slate-100 dark:text-dark-text/75 dark:hover:bg-white/5'
+                                }`}
                         >
                             <span className="inline-flex items-center gap-2">
                                 {item.iconUrl ? <img src={buildMediaUrl(item.iconUrl)} alt={item.name} className="h-4 w-4 rounded-full object-cover" /> : null}
@@ -736,11 +600,10 @@ function FilterPanel({
                             key={item}
                             type="button"
                             onClick={() => onCategory(item)}
-                            className={`rounded-full border px-3 py-1 text-xs ${
-                                category === item
-                                    ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200'
-                                    : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
-                            }`}
+                            className={`rounded-full border px-3 py-1 text-xs ${category === item
+                                ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200'
+                                : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
+                                }`}
                         >
                             {item}
                         </button>
@@ -757,9 +620,8 @@ function FilterPanel({
                     <button
                         type="button"
                         onClick={() => onTag('')}
-                        className={`rounded-full border px-3 py-1 text-xs ${
-                            tag === '' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
-                        }`}
+                        className={`rounded-full border px-3 py-1 text-xs ${tag === '' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
+                            }`}
                     >
                         All
                     </button>
@@ -768,11 +630,10 @@ function FilterPanel({
                             key={item}
                             type="button"
                             onClick={() => onTag(item)}
-                            className={`rounded-full border px-3 py-1 text-xs ${
-                                tag === item
-                                    ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200'
-                                    : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
-                            }`}
+                            className={`rounded-full border px-3 py-1 text-xs ${tag === item
+                                ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200'
+                                : 'border-card-border text-text-muted dark:border-dark-border dark:text-dark-text/75'
+                                }`}
                         >
                             {item}
                         </button>
@@ -780,5 +641,158 @@ function FilterPanel({
                 </div>
             </div>
         </div>
+    );
+}
+
+function NewsArticleCard({
+    news,
+    settings,
+    isSelected,
+    layoutMode,
+    shareButtons,
+    onSelect,
+    onShare,
+}: {
+    news: ApiNews;
+    settings: ApiNewsPublicSettings;
+    isSelected: boolean;
+    layoutMode: string;
+    shareButtons: Record<string, boolean>;
+    onSelect: () => void;
+    onShare: (news: ApiNews, channel: 'whatsapp' | 'facebook' | 'messenger' | 'telegram' | 'copy_link' | 'copy_text') => void;
+}) {
+    const [shareOpen, setShareOpen] = useState(false);
+    const hasAnyShare = shareButtons.whatsapp || shareButtons.facebook || shareButtons.messenger || shareButtons.telegram || shareButtons.copyLink;
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        if (!shareOpen) return;
+        const close = () => setShareOpen(false);
+        document.addEventListener('click', close);
+        return () => document.removeEventListener('click', close);
+    }, [shareOpen]);
+
+    return (
+        <motion.article
+            variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.18 }}
+            onClick={onSelect}
+            className={`group relative cursor-pointer rounded-2xl border bg-white/95 shadow-sm transition-all duration-200 dark:bg-dark-surface/85 ${isSelected
+                ? 'border-cyan-500/60 ring-2 ring-cyan-500/20 shadow-md'
+                : 'border-card-border/60 hover:border-cyan-400/40 hover:shadow-card dark:border-dark-border/60'
+                }`}
+        >
+            <div className={`grid grid-cols-1 ${layoutMode === 'list' ? 'sm:grid-cols-[200px_1fr]' : 'sm:grid-cols-[180px_1fr]'}`}>
+                {/* Image */}
+                <div className="relative overflow-hidden rounded-l-2xl">
+                    <img
+                        src={getArticleImage(news, settings)}
+                        alt={news.title}
+                        className="h-40 w-full object-cover sm:h-full transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                    />
+                    {news.category && (
+                        <span className="absolute top-2.5 left-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 px-2.5 py-0.5 text-[10px] font-semibold text-[var(--primary)] backdrop-blur-sm shadow-sm">
+                            {news.category}
+                        </span>
+                    )}
+                </div>
+
+                {/* Content */}
+                <div className="p-4 flex flex-col gap-2">
+                    <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug text-text dark:text-dark-text group-hover:text-[var(--primary)] transition-colors">
+                        {news.title}
+                    </h2>
+                    <p className="line-clamp-2 text-[13px] text-text-muted dark:text-dark-text/70 leading-relaxed">
+                        {news.shortSummary || news.shortDescription}
+                    </p>
+
+                    {/* Meta row */}
+                    <div className="flex items-center gap-2 text-[11px] text-text-muted dark:text-dark-text/60 mt-auto">
+                        {settings.appearance.showSourceIcons && (
+                            <img
+                                src={buildMediaUrl(news.sourceIconUrl || settings.defaultSourceIconUrl || '/logo.svg')}
+                                alt=""
+                                className="h-4 w-4 rounded-full object-cover ring-1 ring-slate-200/60 dark:ring-slate-700/60"
+                                onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
+                            />
+                        )}
+                        <span className="font-medium">{news.sourceName || 'CampusWay'}</span>
+                        <span className="text-slate-300 dark:text-slate-600">·</span>
+                        <span>{renderDate(news.publishedAt || news.publishDate || news.createdAt)}</span>
+                        {news.aiUsed && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-300">
+                                <Sparkles className="h-2.5 w-2.5" />
+                                AI
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Action row — clean: just Read + Share icon */}
+                    <div className="flex items-center gap-2 pt-1">
+                        {shouldOpenOriginalSource(news, settings) ? (
+                            <a
+                                href={getOriginalArticleUrl(news)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                            >
+                                Read Source
+                                <ArrowRight className="h-3 w-3" />
+                            </a>
+                        ) : (
+                            <Link
+                                to={`/news/${news.slug || news._id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                            >
+                                Read
+                                <ArrowRight className="h-3 w-3" />
+                            </Link>
+                        )}
+
+                        {/* Share dropdown */}
+                        {hasAnyShare && (
+                            <div className="relative ml-auto">
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setShareOpen(!shareOpen); }}
+                                    className="rounded-lg border border-card-border/60 p-1.5 text-text-muted hover:border-[var(--primary)]/40 hover:text-[var(--primary)] transition-colors dark:border-dark-border/60"
+                                    aria-label="Share"
+                                >
+                                    <Share2 className="h-3.5 w-3.5" />
+                                </button>
+                                {shareOpen && (
+                                    <div
+                                        className="absolute right-0 bottom-full mb-1 z-50 min-w-[140px] rounded-xl border border-card-border/80 bg-white p-1.5 shadow-lg dark:border-dark-border/80 dark:bg-slate-900"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {shareButtons.whatsapp && <ShareMenuItem label="WhatsApp" onClick={() => { onShare(news, 'whatsapp'); setShareOpen(false); }} />}
+                                        {shareButtons.facebook && <ShareMenuItem label="Facebook" onClick={() => { onShare(news, 'facebook'); setShareOpen(false); }} />}
+                                        {shareButtons.messenger && <ShareMenuItem label="Messenger" onClick={() => { onShare(news, 'messenger'); setShareOpen(false); }} />}
+                                        {shareButtons.telegram && <ShareMenuItem label="Telegram" onClick={() => { onShare(news, 'telegram'); setShareOpen(false); }} />}
+                                        {shareButtons.copyLink && <ShareMenuItem label="Copy Link" onClick={() => { onShare(news, 'copy_link'); setShareOpen(false); }} />}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </motion.article>
+    );
+}
+
+function ShareMenuItem({ label, onClick }: { label: string; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="flex w-full items-center rounded-lg px-3 py-1.5 text-xs text-text-muted hover:bg-slate-50 hover:text-[var(--primary)] transition-colors dark:text-dark-text/75 dark:hover:bg-white/5"
+        >
+            {label}
+        </button>
     );
 }

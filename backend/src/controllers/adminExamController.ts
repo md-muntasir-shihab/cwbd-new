@@ -29,7 +29,9 @@ import { markExternalExamAttemptImported } from '../services/externalExamAttempt
 import { syncExamResultToStudentProfile } from '../services/examProfileSyncEngine';
 import { getCanonicalSubscriptionSnapshot } from '../services/subscriptionAccessService';
 import { VALID_POLICY_KEYS } from '../validators/adminSchemas';
+import { validateExamPayload } from '../validators/examValidation';
 import { getClientIp, getDeviceInfo } from '../utils/requestMeta';
+import QuestionBankQuestion from '../models/QuestionBankQuestion';
 import {
     adminCommitUniversityImport,
     adminInitUniversityImport,
@@ -796,6 +798,13 @@ export async function adminGetExamById(req: AuthRequest, res: Response): Promise
 export async function adminCreateExam(req: AuthRequest, res: Response): Promise<void> {
     try {
         const payload = normalizeExamPayload(req.body as Record<string, unknown>);
+
+        const validation = validateExamPayload(payload);
+        if (!validation.valid) {
+            res.status(400).json({ success: false, message: 'Validation failed', errors: validation.errors });
+            return;
+        }
+
         const incomingShareLink = String(payload.share_link || '').trim();
         payload.share_link = incomingShareLink || await ensureUniqueExamShareLink(generateExamSlugSeed(payload));
         payload.short_link = String(payload.short_link || payload.share_link || '');
@@ -817,6 +826,12 @@ export async function adminCreateExam(req: AuthRequest, res: Response): Promise<
 export async function adminUpdateExam(req: AuthRequest, res: Response): Promise<void> {
     try {
         const payload = normalizeExamPayload(req.body as Record<string, unknown>);
+
+        const validation = validateExamPayload(payload);
+        if (!validation.valid) {
+            res.status(400).json({ success: false, message: 'Validation failed', errors: validation.errors });
+            return;
+        }
 
         // Validate antiCheatOverrides — reject unknown keys (Req 11.6)
         if (payload.antiCheatOverrides !== undefined && payload.antiCheatOverrides !== null) {
@@ -859,6 +874,32 @@ export async function adminUpdateExam(req: AuthRequest, res: Response): Promise<
         res.json({ exam, message: 'Exam updated successfully.' });
     } catch (err) {
         console.error('[adminUpdateExam]', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function adminAssignExamGroups(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const examId = String(req.params.id || '');
+        const { targetGroupIds, visibilityMode } = req.body as { targetGroupIds?: string[]; visibilityMode?: string };
+
+        if (!examId) { res.status(400).json({ message: 'Exam ID is required' }); return; }
+
+        const updatePayload: Record<string, unknown> = {};
+        if (Array.isArray(targetGroupIds)) {
+            updatePayload.targetGroupIds = targetGroupIds;
+        }
+        if (visibilityMode && ['all_students', 'group_only', 'subscription_only', 'custom'].includes(visibilityMode)) {
+            updatePayload.visibilityMode = visibilityMode;
+        }
+
+        const exam = await Exam.findByIdAndUpdate(examId, updatePayload, { new: true, runValidators: true });
+        if (!exam) { res.status(404).json({ message: 'Exam not found' }); return; }
+
+        broadcastStudentDashboardEvent({ type: 'exam_updated', meta: { action: 'assign_groups', examId } });
+        res.json({ exam, message: 'Exam group assignment updated successfully.' });
+    } catch (err) {
+        console.error('[adminAssignExamGroups]', err);
         res.status(500).json({ message: 'Server error' });
     }
 }
@@ -921,7 +962,7 @@ export async function adminCloneExam(req: AuthRequest, res: Response): Promise<v
         const clonedExamPayload = {
             ...source,
             _id: undefined,
-            title: `${String(source.title || 'Exam')} (Clone)`,
+            title: `${String(source.title || 'Exam')} (Copy)`,
             isPublished: false,
             status: 'draft',
             share_link: '',
@@ -932,6 +973,7 @@ export async function adminCloneExam(req: AuthRequest, res: Response): Promise<v
         };
         const clonedExam = await Exam.create(clonedExamPayload);
 
+        // Duplicate legacy Question records
         const sourceQuestions = await Question.find({ exam: source._id }).lean();
         if (sourceQuestions.length > 0) {
             await Question.insertMany(sourceQuestions.map((q) => ({
@@ -941,13 +983,221 @@ export async function adminCloneExam(req: AuthRequest, res: Response): Promise<v
                 createdAt: undefined,
                 updatedAt: undefined,
             })));
-            await Exam.findByIdAndUpdate(clonedExam._id, { totalQuestions: sourceQuestions.length });
+        }
+
+        // Duplicate ExamQuestion records, preserving orderIndex and marks
+        const sourceExamQuestions = await ExamQuestionModel.find({ examId: String(source._id) }).lean();
+        if (sourceExamQuestions.length > 0) {
+            await ExamQuestionModel.insertMany(sourceExamQuestions.map((eq) => ({
+                ...eq,
+                _id: undefined,
+                examId: String(clonedExam._id),
+                createdAt: undefined,
+                updatedAt: undefined,
+            })));
+        }
+
+        // Update totalQuestions on the cloned exam based on all duplicated questions
+        const totalQ = Math.max(sourceQuestions.length, sourceExamQuestions.length);
+        if (totalQ > 0) {
+            const totalMarks = sourceExamQuestions.reduce((sum, eq) => sum + ((eq as any).marks || 0), 0);
+            await Exam.findByIdAndUpdate(clonedExam._id, {
+                totalQuestions: totalQ,
+                ...(totalMarks > 0 ? { totalMarks } : {}),
+            });
         }
 
         broadcastStudentDashboardEvent({ type: 'exam_updated', meta: { action: 'clone', examId: String(clonedExam._id) } });
         res.status(201).json({ exam: clonedExam, message: 'Exam cloned successfully.' });
     } catch (err) {
         console.error('[adminCloneExam]', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+/* ─────── AUTO-GENERATE ─────── */
+
+export async function adminAutoGenerateExam(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const body = (req.body || {}) as Record<string, unknown>;
+        const distribution = body.distribution as Record<string, unknown> | undefined;
+
+        if (!distribution || typeof distribution !== 'object') {
+            res.status(400).json({ message: 'distribution object with easy, medium, hard counts is required.' });
+            return;
+        }
+
+        const easy = Number(distribution.easy) || 0;
+        const medium = Number(distribution.medium) || 0;
+        const hard = Number(distribution.hard) || 0;
+
+        if (easy < 0 || medium < 0 || hard < 0) {
+            res.status(400).json({ message: 'Distribution counts must be non-negative.' });
+            return;
+        }
+
+        if (easy + medium + hard === 0) {
+            res.status(400).json({ message: 'At least one question must be requested.' });
+            return;
+        }
+
+        const subject = body.subject ? String(body.subject).trim() : undefined;
+        const moduleCategory = body.moduleCategory ? String(body.moduleCategory).trim() : undefined;
+        const defaultMarksPerQuestion = Number(body.defaultMarksPerQuestion) || 1;
+
+        const baseFilter: Record<string, unknown> = { isActive: true, isArchived: false };
+        if (subject) baseFilter.subject = subject;
+        if (moduleCategory) baseFilter.moduleCategory = moduleCategory;
+
+        const selectedQuestions: unknown[] = [];
+        const distReport: Record<string, { requested: number; available: number; selected: number }> = {};
+
+        for (const level of ['easy', 'medium', 'hard'] as const) {
+            const count = level === 'easy' ? easy : level === 'medium' ? medium : hard;
+
+            if (count <= 0) {
+                distReport[level] = { requested: 0, available: 0, selected: 0 };
+                continue;
+            }
+
+            const available = await QuestionBankQuestion.countDocuments({
+                ...baseFilter,
+                difficulty: level,
+            });
+
+            if (available < count) {
+                res.status(400).json({
+                    message: `Insufficient ${level} questions: requested ${count}, available ${available}`,
+                    shortage: {
+                        level,
+                        requested: count,
+                        available,
+                    },
+                    distribution: {
+                        easy: { requested: easy, available: level === 'easy' ? available : undefined },
+                        medium: { requested: medium, available: level === 'medium' ? available : undefined },
+                        hard: { requested: hard, available: level === 'hard' ? available : undefined },
+                    },
+                });
+                return;
+            }
+
+            const selected = await QuestionBankQuestion.aggregate([
+                { $match: { ...baseFilter, difficulty: level } },
+                { $sample: { size: count } },
+            ]);
+
+            selectedQuestions.push(...selected);
+            distReport[level] = { requested: count, available, selected: selected.length };
+        }
+
+        res.json({
+            questions: selectedQuestions,
+            distribution: distReport,
+            defaultMarksPerQuestion,
+        });
+    } catch (err) {
+        console.error('[adminAutoGenerateExam]', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+/* ─────── BULK-ATTACH BANK QUESTIONS TO EXAM ─────── */
+
+export async function adminBulkAttachQuestions(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const examId = String(req.params.id || req.params.examId || '');
+        if (!examId || !mongoose.Types.ObjectId.isValid(examId)) {
+            res.status(400).json({ message: 'Invalid exam id.' });
+            return;
+        }
+
+        const exam = await Exam.findById(examId);
+        if (!exam) {
+            res.status(404).json({ message: 'Exam not found.' });
+            return;
+        }
+
+        const body = (req.body || {}) as Record<string, unknown>;
+        const questions = body.questions as Array<{ bankQuestionId: string; marks: number; orderIndex: number }>;
+
+        if (!Array.isArray(questions) || questions.length === 0) {
+            res.status(400).json({ message: 'questions array is required and must not be empty.' });
+            return;
+        }
+
+        // Validate each entry
+        for (const q of questions) {
+            if (!q.bankQuestionId || !mongoose.Types.ObjectId.isValid(q.bankQuestionId)) {
+                res.status(400).json({ message: `Invalid bankQuestionId: ${q.bankQuestionId}` });
+                return;
+            }
+            if (typeof q.marks !== 'number' || q.marks <= 0) {
+                res.status(400).json({ message: `marks must be a positive number for bankQuestionId: ${q.bankQuestionId}` });
+                return;
+            }
+            if (typeof q.orderIndex !== 'number' || q.orderIndex < 0) {
+                res.status(400).json({ message: `orderIndex must be a non-negative number for bankQuestionId: ${q.bankQuestionId}` });
+                return;
+            }
+        }
+
+        // Look up all bank questions
+        const bankQuestionIds = questions.map(q => q.bankQuestionId);
+        const bankQuestions = await QuestionBankQuestion.find({ _id: { $in: bankQuestionIds } }).lean();
+
+        if (bankQuestions.length !== bankQuestionIds.length) {
+            const foundIds = new Set(bankQuestions.map(bq => String(bq._id)));
+            const missing = bankQuestionIds.filter(id => !foundIds.has(id));
+            res.status(404).json({ message: `Bank questions not found: ${missing.join(', ')}` });
+            return;
+        }
+
+        // Build a lookup map
+        const bankMap = new Map(bankQuestions.map(bq => [String(bq._id), bq]));
+
+        // Create ExamQuestion snapshots
+        const examQuestionDocs = questions.map(q => {
+            const bq = bankMap.get(q.bankQuestionId)!;
+            return {
+                examId,
+                fromBankQuestionId: q.bankQuestionId,
+                orderIndex: q.orderIndex,
+                marks: q.marks,
+                question_en: bq.question_en || '',
+                question_bn: bq.question_bn || '',
+                questionImageUrl: bq.questionImageUrl || '',
+                options: (bq.options || []).map((opt: Record<string, unknown>) => ({
+                    key: opt.key,
+                    text_en: opt.text_en || '',
+                    text_bn: opt.text_bn || '',
+                    imageUrl: opt.imageUrl || '',
+                })),
+                correctKey: bq.correctKey,
+                explanation_en: bq.explanation_en || '',
+                explanation_bn: bq.explanation_bn || '',
+                explanationImageUrl: bq.explanationImageUrl || '',
+                difficulty: bq.difficulty || 'medium',
+                topic: bq.topic || '',
+                tags: bq.tags || [],
+            };
+        });
+
+        const created = await ExamQuestionModel.insertMany(examQuestionDocs);
+
+        // Update parent Exam totalQuestions and totalMarks
+        const allExamQuestions = await ExamQuestionModel.find({ examId }).lean();
+        const totalQuestions = allExamQuestions.length;
+        const totalMarks = allExamQuestions.reduce((sum, eq) => sum + (Number(eq.marks) || 0), 0);
+
+        await Exam.findByIdAndUpdate(examId, { totalQuestions, totalMarks });
+
+        res.status(201).json({
+            attached: created.length,
+            examQuestions: created,
+        });
+    } catch (err) {
+        console.error('[adminBulkAttachQuestions]', err);
         res.status(500).json({ message: 'Server error' });
     }
 }
@@ -1192,11 +1442,28 @@ export async function adminDeleteQuestion(req: AuthRequest, res: Response): Prom
 
 export async function adminReorderQuestions(req: AuthRequest, res: Response): Promise<void> {
     try {
-        const { orders } = req.body; // [{ questionId, order }]
-        const updates = (orders as { questionId: string; order: number }[]).map(o =>
-            Question.findByIdAndUpdate(o.questionId, { order: o.order })
+        const { examId } = req.params;
+        const { questions } = req.body as { questions: Array<{ questionId: string; orderIndex: number }> };
+
+        if (!Array.isArray(questions) || questions.length === 0) {
+            res.status(400).json({ message: 'questions array is required and must not be empty.' });
+            return;
+        }
+
+        const exam = await Exam.findById(examId);
+        if (!exam) {
+            res.status(404).json({ message: 'Exam not found.' });
+            return;
+        }
+
+        const updates = questions.map(q =>
+            ExamQuestionModel.findOneAndUpdate(
+                { _id: q.questionId, examId },
+                { orderIndex: q.orderIndex }
+            )
         );
         await Promise.all(updates);
+
         res.json({ message: 'Questions reordered.' });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
@@ -2564,6 +2831,52 @@ export async function adminStartExamPreview(req: AuthRequest, res: Response): Pr
         });
     } catch (err) {
         console.error('[adminStartExamPreview]', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+/* ─────── EXAM PREVIEW (student-view) ─────── */
+
+export async function adminGetExamPreview(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const examId = String(req.params.id || req.params.examId || '');
+        const exam = await Exam.findById(examId).lean();
+        if (!exam) {
+            res.status(404).json({ message: 'Exam not found' });
+            return;
+        }
+
+        const questions = await ExamQuestionModel.find({ examId })
+            .sort({ orderIndex: 1 })
+            .lean();
+
+        const previewQuestions = questions.map((q) => ({
+            orderIndex: q.orderIndex,
+            question_en: q.question_en,
+            question_bn: q.question_bn,
+            questionImageUrl: q.questionImageUrl,
+            options: (q.options || []).map((opt: any) => ({
+                key: opt.key,
+                text_en: opt.text_en,
+                text_bn: opt.text_bn,
+            })),
+            marks: q.marks,
+        }));
+
+        res.json({
+            exam: {
+                title: exam.title,
+                subject: exam.subject,
+                duration: exam.duration,
+                totalMarks: exam.totalMarks,
+                totalQuestions: exam.totalQuestions,
+                negativeMarking: exam.negativeMarking,
+                negativeMarkValue: exam.negativeMarkValue,
+            },
+            questions: previewQuestions,
+        });
+    } catch (err) {
+        console.error('[adminGetExamPreview]', err);
         res.status(500).json({ message: 'Server error' });
     }
 }

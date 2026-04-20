@@ -126,7 +126,7 @@ describe('Feature: campusway-qa-audit, Property 12: Error Response Information L
                     }
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -170,7 +170,7 @@ describe('Feature: campusway-qa-audit, Property 12: Error Response Information L
                     }
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

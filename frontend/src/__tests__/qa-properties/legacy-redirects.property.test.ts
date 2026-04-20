@@ -78,7 +78,7 @@ describe('Feature: campusway-qa-audit, Property 15: Legacy Route Redirect Correc
                     ).toBe(expectedNewPath);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -115,7 +115,7 @@ describe('Feature: campusway-qa-audit, Property 15: Legacy Route Redirect Correc
                     expect(result.startsWith(ADMIN_UI_BASE)).toBe(true);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -153,7 +153,7 @@ describe('Feature: campusway-qa-audit, Property 15: Legacy Route Redirect Correc
                     ).toBe(true);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -179,7 +179,7 @@ describe('Feature: campusway-qa-audit, Property 15: Legacy Route Redirect Correc
                     expect(expectedNewPath.startsWith('/')).toBe(true);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

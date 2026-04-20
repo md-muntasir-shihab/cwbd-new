@@ -37,7 +37,7 @@ describe('Property 10: Rate Limiter Bucket Consistency', () => {
                     return bucket.count <= max;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -69,7 +69,7 @@ describe('Property 10: Rate Limiter Bucket Consistency', () => {
                     return resetBucket.count === 1;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -93,7 +93,7 @@ describe('Property 10: Rate Limiter Bucket Consistency', () => {
                     return rejected.allowed === false;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

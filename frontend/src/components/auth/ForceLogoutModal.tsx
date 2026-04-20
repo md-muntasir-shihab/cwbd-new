@@ -2,11 +2,26 @@ import { useAuth } from '../../hooks/useAuth';
 import { LogOut, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+function getForceLogoutMessage(reason: string | null): string {
+    switch (reason) {
+        case 'SESSION_INVALIDATED':
+            return 'Your session was terminated from another device or by an administrator.';
+        case 'LEGACY_TOKEN_NOT_ALLOWED':
+            return 'Your session format is no longer supported. Please log in again.';
+        case 'SESSION_IDLE_TIMEOUT':
+            return 'Your session expired due to inactivity.';
+        default:
+            return 'Your session has ended. Please log in again.';
+    }
+}
+
 export default function ForceLogoutModal() {
-    const { forceLogoutAlert, setForceLogoutAlert } = useAuth();
+    const { forceLogoutAlert, forceLogoutReason, setForceLogoutAlert } = useAuth();
     const navigate = useNavigate();
 
     if (!forceLogoutAlert) return null;
+
+    const message = getForceLogoutMessage(forceLogoutReason);
 
     const handleDismiss = () => {
         setForceLogoutAlert(false);
@@ -32,8 +47,7 @@ export default function ForceLogoutModal() {
                 <div className="p-6 text-center space-y-3">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Session Terminated</h3>
                     <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 font-medium leading-relaxed">
-                        Your account was just signed in from another device or browser.
-                        For your security, you have been automatically logged out from this session.
+                        {message}
                     </p>
 
                     <button

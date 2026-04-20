@@ -260,13 +260,18 @@ export async function sendNotificationToStudent(
         ? renderTemplate(template.subject, mergedVars)
         : '';
 
+    // Use htmlBody if available and format is html, otherwise fall back to plain body
+    const tpl = template as Record<string, unknown>;
+    const hasHtmlBody = tpl.bodyFormat === 'html' && typeof tpl.htmlBody === 'string' && (tpl.htmlBody as string).trim().length > 0;
+    const renderedHtml = hasHtmlBody ? renderTemplate(tpl.htmlBody as string, mergedVars) : renderedBody;
+
     let result: SendResult;
     try {
         if (channel === 'sms') {
             result = await sendSMS({ to, body: renderedBody }, provider);
         } else {
             result = await sendEmail(
-                { to, subject: renderedSubject, html: renderedBody, text: renderedBody },
+                { to, subject: renderedSubject, html: renderedHtml, text: renderedBody },
                 provider,
             );
         }

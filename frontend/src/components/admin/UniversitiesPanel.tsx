@@ -217,7 +217,7 @@ function AdminDateField({
         type="date"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all"
+        className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
       />
     </div>
   );
@@ -1180,48 +1180,48 @@ export default function UniversitiesPanel() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-slate-900/80 via-slate-900/60 to-slate-900/80 backdrop-blur-md p-4 md:p-5 shadow-lg shadow-indigo-500/5">
+      <header className="rounded-2xl border border-indigo-500/15 bg-gradient-to-r from-slate-950 via-indigo-950/40 to-slate-950 backdrop-blur-md p-4 md:p-5 shadow-xl shadow-indigo-900/20 ring-1 ring-indigo-500/5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-black text-white tracking-tight">University Management <span className="text-xs font-medium text-indigo-300/80">(Admin Console)</span></h2>
             <p className="text-sm text-slate-400">Manage university data, clusters, and bulk imports with premium glassmorphism.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => void loadUniversities()} className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20 transition-all"><RefreshCw className="w-4 h-4" /> Refresh</button>
-              <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-lg shadow-indigo-500/20 transition-all"><Plus className="w-4 h-4" /> Add University</button>
+            <button type="button" onClick={() => void loadUniversities()} className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/20 transition-all"><RefreshCw className="w-4 h-4" /> Refresh</button>
+            <button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-lg shadow-indigo-500/20 transition-all"><Plus className="w-4 h-4" /> Add University</button>
           </div>
         </div>
       </header>
 
       <div className="flex flex-wrap gap-2">
         {(['universities', 'categories', 'clusters', 'import'] as Tab[]).map((t) => (
-            <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${tab === t ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg shadow-indigo-500/20' : 'border border-indigo-500/10 bg-slate-900/60 text-slate-400 hover:text-white hover:border-indigo-500/30'}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+          <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${tab === t ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-md shadow-indigo-500/25 ring-1 ring-white/10' : 'border border-slate-700/40 bg-slate-900/40 text-slate-400 hover:text-white hover:border-indigo-500/30'}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
         ))}
       </div>
 
       {tab === 'universities' && (
         <section className="space-y-4">
-          <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03]">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               <label className="xl:col-span-2 relative block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name/short form/category" className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 py-2 pl-9 pr-3 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name/short form/category" className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 py-2 pl-9 pr-3 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
               </label>
-              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                 <option value="">All categories</option>
                 {homeCategoryOptions.map((cat) => <option key={cat.key} value={cat.name}>{cat.label} ({cat.count})</option>)}
               </select>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} className="rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as StatusFilter)} className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                 <option value="all">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option>
               </select>
-              <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className="rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+              <select value={clusterFilter} onChange={(e) => setClusterFilter(e.target.value)} className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                 <option value="">All Clusters</option>
                 {clusters.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
               </select>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <select value={exportScope} onChange={(e) => setExportScope(e.target.value as BulkScope)} className="rounded-lg border border-indigo-500/10 bg-slate-950/65 px-3 py-1.5 text-xs text-white focus:border-indigo-500/50 outline-none transition-all">
+              <select value={exportScope} onChange={(e) => setExportScope(e.target.value as BulkScope)} className="rounded-lg border border-slate-700/40 bg-slate-950/50 px-3 py-1.5 text-xs text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                 <option value="selected">Export Selected</option>
                 <option value="filtered">Export Filtered</option>
                 <option value="all">Export All</option>
@@ -1232,7 +1232,7 @@ export default function UniversitiesPanel() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03]">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-bold text-white tracking-tight">Home Category Highlight</h3>
               <button type="button" disabled={savingHomeSelection} onClick={() => void saveHomeCategories()} className="ml-auto inline-flex items-center gap-2 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-200 disabled:opacity-60 transition-all">{savingHomeSelection ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save</button>
@@ -1240,17 +1240,17 @@ export default function UniversitiesPanel() {
             <div className="mt-3 flex flex-wrap gap-2">
               {homeCategoryOptions.map((cat) => {
                 const active = selectedHomeCategories.includes(cat.name);
-                return <button key={cat.key} type="button" onClick={() => setSelectedHomeCategories((prev) => prev.includes(cat.name) ? prev.filter((x) => x !== cat.name) : [...prev, cat.name])} className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${active ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg shadow-indigo-500/20' : 'border border-indigo-500/10 bg-slate-950/65 text-slate-400 hover:text-white hover:border-indigo-500/30'}`}>{cat.label} ({cat.count})</button>;
+                return <button key={cat.key} type="button" onClick={() => setSelectedHomeCategories((prev) => prev.includes(cat.name) ? prev.filter((x) => x !== cat.name) : [...prev, cat.name])} className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all ${active ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg shadow-indigo-500/20' : 'border border-slate-700/40 bg-slate-950/50 text-slate-400 hover:text-white hover:border-indigo-500/30'}`}>{cat.label} ({cat.count})</button>;
               })}
             </div>
           </div>
 
           {(
-            <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03]">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 items-end">
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Bulk Action</label>
-                  <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value as BulkAction)} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                  <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value as BulkAction)} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                     <option value="">Select Action</option>
                     <option value="softDelete">Soft Delete</option>
                     <option value="hardDelete">Hard Delete</option>
@@ -1263,7 +1263,7 @@ export default function UniversitiesPanel() {
                 </div>
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Apply Scope</label>
-                  <select value={bulkScope} onChange={(e) => setBulkScope(e.target.value as BulkScope)} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                  <select value={bulkScope} onChange={(e) => setBulkScope(e.target.value as BulkScope)} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                     <option value="selected">Selected Items</option>
                     <option value="filtered">All Filtered Results</option>
                     <option value="all">All Universities</option>
@@ -1272,7 +1272,7 @@ export default function UniversitiesPanel() {
                 {bulkAction === 'setCluster' && (
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Target Cluster</label>
-                    <select value={targetClusterId} onChange={(e) => setTargetClusterId(e.target.value)} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                    <select value={targetClusterId} onChange={(e) => setTargetClusterId(e.target.value)} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                       <option value="">Choose...</option>{clusters.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                     </select>
                   </div>
@@ -1280,7 +1280,7 @@ export default function UniversitiesPanel() {
                 {bulkAction === 'setCategory' && (
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Target Category</label>
-                    <select value={targetCategory} onChange={(e) => setTargetCategory(e.target.value)} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                    <select value={targetCategory} onChange={(e) => setTargetCategory(e.target.value)} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                       <option value="">Choose...</option>{categorySelectOptions.map((category) => <option key={category} value={category}>{category}</option>)}
                     </select>
                   </div>
@@ -1288,7 +1288,7 @@ export default function UniversitiesPanel() {
                 {bulkAction === 'setStatus' && (
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Target Status</label>
-                    <select value={targetStatus} onChange={(e) => setTargetStatus(e.target.value as 'active' | 'inactive')} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                    <select value={targetStatus} onChange={(e) => setTargetStatus(e.target.value as 'active' | 'inactive')} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                     </select>
@@ -1297,7 +1297,7 @@ export default function UniversitiesPanel() {
                 {bulkAction === 'setFeatured' && (
                   <div>
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 block">Featured</label>
-                    <select value={targetFeatured} onChange={(e) => setTargetFeatured(e.target.value as 'featured' | 'not_featured')} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                    <select value={targetFeatured} onChange={(e) => setTargetFeatured(e.target.value as 'featured' | 'not_featured')} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                       <option value="featured">Featured</option>
                       <option value="not_featured">Not Featured</option>
                     </select>
@@ -1312,14 +1312,14 @@ export default function UniversitiesPanel() {
                         onChange={(e) => setBulkShortDescription(e.target.value)}
                         rows={3}
                         placeholder="Short description for cards, search snippets, and SEO summary"
-                        className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y"
+                        className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y"
                       />
                       <textarea
                         value={bulkDescription}
                         onChange={(e) => setBulkDescription(e.target.value)}
                         rows={3}
                         placeholder="Full description for the public university details page"
-                        className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-3 py-2 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y"
+                        className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y"
                       />
                     </div>
                     <p className="mt-2 text-[11px] text-slate-500">
@@ -1328,17 +1328,17 @@ export default function UniversitiesPanel() {
                   </div>
                 )}
                 <button type="button" disabled={(bulkScope === 'selected' && selectedIds.length === 0) || !bulkAction || bulkLoading} onClick={() => void handleBulkAction()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-500/20 hover:opacity-90 disabled:opacity-40 transition-all">
-                    {bulkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    Apply to {bulkScope === 'selected' ? selectedIds.length : bulkScope === 'filtered' ? 'filtered results' : 'all universities'}
+                  {bulkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Apply to {bulkScope === 'selected' ? selectedIds.length : bulkScope === 'filtered' ? 'filtered results' : 'all universities'}
                 </button>
               </div>
             </div>
           )}
 
-          <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm overflow-hidden">
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm overflow-hidden ring-1 ring-white/[0.03] shadow-lg shadow-black/10">
             <div className="hidden lg:block overflow-x-auto">
               <table className="min-w-full text-xs">
-                <thead className="bg-slate-900/40 text-slate-300">
+                <thead className="bg-slate-950/60 text-slate-300/90">
                   <tr>
                     <th className="px-3 py-3 w-10">
                       <button type="button" onClick={toggleSelectAllCurrentPage} className="text-indigo-400 hover:text-indigo-300 transition-colors">
@@ -1356,14 +1356,14 @@ export default function UniversitiesPanel() {
                     <th className="px-3 py-3 text-left sticky right-0 bg-slate-900/90 backdrop-blur-md z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.2)] font-bold tracking-wider uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-indigo-500/5">
+                <tbody className="divide-y divide-slate-700/20">
                   {loading ? (
                     <tr><td colSpan={SORT_COLUMNS.length + 2} className="px-3 py-12 text-center text-slate-500"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" /> Loading data...</td></tr>
                   ) : universities.length === 0 ? (
                     <tr><td colSpan={SORT_COLUMNS.length + 2} className="px-3 py-12 text-center text-slate-500">No universities found</td></tr>
                   ) : (
                     universities.map((u) => (
-                      <tr key={u._id} className="hover:bg-indigo-500/[0.03] transition-colors group">
+                      <tr key={u._id} className="hover:bg-indigo-500/[0.05] transition-colors group">
                         <td className="px-3 py-2">
                           <button type="button" onClick={() => toggleRowSelection(u._id)} className="text-indigo-400/60 group-hover:text-indigo-400 transition-colors">
                             {selectedIds.includes(u._id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
@@ -1422,9 +1422,9 @@ export default function UniversitiesPanel() {
                             >
                               {homeFeaturedOrderMap.has(u._id) ? 'Hide Home' : 'Show Home'}
                             </button>
-                            <button type="button" onClick={() => openEdit(u)} className="rounded-full bg-indigo-500/10 px-2.5 py-1 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition-all">Edit</button>
-                            <button type="button" onClick={() => void adminToggleUniversityStatus(u._id).then(async () => { await invalidateUniversityQueries(); await loadUniversities(); })} className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${u.isActive ? 'bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20' : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'}`}>{u.isActive ? 'Disable' : 'Enable'}</button>
-                            <button type="button" onClick={() => void deleteOne(u._id)} className="rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all">Delete</button>
+                            <button type="button" onClick={() => openEdit(u)} className="rounded-full bg-indigo-500/15 px-2.5 py-1 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition-all">Edit</button>
+                            <button type="button" onClick={() => void adminToggleUniversityStatus(u._id).then(async () => { await invalidateUniversityQueries(); await loadUniversities(); })} className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${u.isActive ? 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20' : 'bg-amber-500/15 text-amber-300 hover:bg-amber-500/20'}`}>{u.isActive ? 'Disable' : 'Enable'}</button>
+                            <button type="button" onClick={() => void deleteOne(u._id)} className="rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all">Delete</button>
                           </div>
                         </td>
                       </tr>
@@ -1434,8 +1434,8 @@ export default function UniversitiesPanel() {
               </table>
             </div>
 
-            <div className="lg:hidden divide-y divide-indigo-500/10">
-              <div className="flex items-center justify-between gap-3 border-b border-indigo-500/10 bg-slate-950/45 px-4 py-3">
+            <div className="lg:hidden divide-y divide-slate-700/20">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-700/20 bg-slate-950/40 px-4 py-3">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Mobile Selection</p>
                   <p className="mt-1 text-sm font-semibold text-white">{selectedIds.length} selected on this view</p>
@@ -1467,11 +1467,11 @@ export default function UniversitiesPanel() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <button type="button" onClick={() => openEdit(u)} className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition-all"><Edit className="w-3.5 h-3.5" /> Edit</button>
-                        <button type="button" onClick={() => void deleteOne(u._id)} className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+                        <button type="button" onClick={() => openEdit(u)} className="inline-flex items-center gap-1 rounded-full bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition-all"><Edit className="w-3.5 h-3.5" /> Edit</button>
+                        <button type="button" onClick={() => void deleteOne(u._id)} className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition-all"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-2 rounded-xl border border-indigo-500/5 bg-slate-950/40 p-3 text-[11px] sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-700/20 bg-slate-950/30 p-3 text-[11px] sm:grid-cols-2">
                       <div className="space-y-1">
                         <p className="text-slate-500">App Start</p><p className="text-emerald-400 font-bold">{dateText(u.applicationStartDate)}</p>
                       </div>
@@ -1490,36 +1490,36 @@ export default function UniversitiesPanel() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={savingHomeFeaturedSelection}
-                          onClick={() => void toggleUniversityHomeFeatured(u)}
-                          className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all disabled:opacity-40 ${homeFeaturedOrderMap.has(u._id) ? 'bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20' : 'bg-sky-500/10 text-sky-300 hover:bg-sky-500/20'}`}
-                        >
-                          {homeFeaturedOrderMap.has(u._id) ? 'Hide Home' : 'Show Home'}
-                        </button>
-                      
+                      <button
+                        type="button"
+                        disabled={savingHomeFeaturedSelection}
+                        onClick={() => void toggleUniversityHomeFeatured(u)}
+                        className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all disabled:opacity-40 ${homeFeaturedOrderMap.has(u._id) ? 'bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20' : 'bg-sky-500/10 text-sky-300 hover:bg-sky-500/20'}`}
+                      >
+                        {homeFeaturedOrderMap.has(u._id) ? 'Hide Home' : 'Show Home'}
+                      </button>
+
                       {homeFeaturedOrderMap.has(u._id) && (
                         <>
-                            <button
-                              type="button"
-                              disabled={savingHomeFeaturedSelection || (homeFeaturedOrderMap.get(u._id) || 0) <= 1}
-                              onClick={() => void moveUniversityHomeFeatured(u._id, 'up')}
-                              className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs font-semibold text-cyan-200 disabled:opacity-40"
-                            >
-                              Move Up
-                            </button>
-                            <button
-                              type="button"
-                              disabled={savingHomeFeaturedSelection || (homeFeaturedOrderMap.get(u._id) || 0) >= featuredHomeUniversities.length}
-                              onClick={() => void moveUniversityHomeFeatured(u._id, 'down')}
-                              className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs font-semibold text-cyan-200 disabled:opacity-40"
-                            >
-                              Move Down
-                            </button>
+                          <button
+                            type="button"
+                            disabled={savingHomeFeaturedSelection || (homeFeaturedOrderMap.get(u._id) || 0) <= 1}
+                            onClick={() => void moveUniversityHomeFeatured(u._id, 'up')}
+                            className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs font-semibold text-cyan-200 disabled:opacity-40"
+                          >
+                            Move Up
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingHomeFeaturedSelection || (homeFeaturedOrderMap.get(u._id) || 0) >= featuredHomeUniversities.length}
+                            onClick={() => void moveUniversityHomeFeatured(u._id, 'down')}
+                            className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs font-semibold text-cyan-200 disabled:opacity-40"
+                          >
+                            Move Down
+                          </button>
                         </>
                       )}
-                        <button type="button" onClick={() => void adminToggleUniversityStatus(u._id).then(async () => { await invalidateUniversityQueries(); await loadUniversities(); })} className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all ${u.isActive ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'}`}>{u.isActive ? 'Disable' : 'Enable'}</button>
+                      <button type="button" onClick={() => void adminToggleUniversityStatus(u._id).then(async () => { await invalidateUniversityQueries(); await loadUniversities(); })} className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all ${u.isActive ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20' : 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20'}`}>{u.isActive ? 'Disable' : 'Enable'}</button>
                     </div>
                   </article>
                 ))
@@ -1530,8 +1530,8 @@ export default function UniversitiesPanel() {
           <div className="flex items-center justify-between px-2 pt-2 text-[11px] font-bold tracking-widest uppercase text-slate-500">
             <span>Page {page} of {Math.max(1, totalPages)}</span>
             <div className="flex gap-2">
-              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-xl border border-indigo-500/10 bg-slate-900/60 px-4 py-2 text-white hover:bg-indigo-500/20 disabled:opacity-30 transition-all shadow-lg">Prev</button>
-              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border border-indigo-500/10 bg-slate-900/60 px-4 py-2 text-white hover:bg-indigo-500/20 disabled:opacity-30 transition-all shadow-lg">Next</button>
+              <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-xl border border-slate-700/40 bg-slate-900/50 px-4 py-2 text-white hover:bg-indigo-500/20 disabled:opacity-30 transition-all shadow-lg">Prev</button>
+              <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border border-slate-700/40 bg-slate-900/50 px-4 py-2 text-white hover:bg-indigo-500/20 disabled:opacity-30 transition-all shadow-lg">Next</button>
             </div>
           </div>
         </section>
@@ -1539,7 +1539,7 @@ export default function UniversitiesPanel() {
 
       {tab === 'categories' && (
         <section className="space-y-4">
-          <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4 flex items-center gap-2">
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03] flex items-center gap-2">
             <h3 className="text-sm font-bold text-white tracking-tight">Category Management</h3>
             <button
               type="button"
@@ -1567,9 +1567,9 @@ export default function UniversitiesPanel() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {visibleCategoryItems.length === 0 ? (
-              <div className="rounded-xl border border-indigo-500/10 bg-slate-900/40 p-12 text-center text-slate-500">No categories found.</div>
+              <div className="rounded-xl border border-slate-700/30 bg-slate-900/40 p-12 text-center text-slate-500">No categories found.</div>
             ) : visibleCategoryItems.map((item) => (
-              <article key={item._id} className="rounded-xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4 space-y-3 hover:border-indigo-500/25 transition-all">
+              <article key={item._id} className="rounded-xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-4 space-y-3 ring-1 ring-white/[0.03] hover:border-indigo-500/25 transition-all">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-white truncate">{item.labelBn || item.name}</p>
@@ -1579,13 +1579,13 @@ export default function UniversitiesPanel() {
                     {item.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 gap-2 rounded-xl border border-indigo-500/5 bg-slate-950/40 p-3 text-[11px] sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-700/20 bg-slate-950/30 p-3 text-[11px] sm:grid-cols-2">
                   <p className="text-slate-500 font-medium">Universities</p><p className="text-indigo-300 font-bold">{item.count || 0}</p>
                   <p className="text-slate-500 font-medium">Home</p><p className="text-slate-300 font-bold">{item.homeHighlight ? `Highlighted (#${item.homeOrder || 0})` : 'Normal'}</p>
                   <p className="text-slate-500 font-medium">Last Sync</p><p className="text-slate-300 font-bold">{item.syncMeta?.lastSyncedAt ? dateText(item.syncMeta.lastSyncedAt) : 'Never'}</p>
                   <p className="text-slate-500 font-medium">Shared Centers</p><p className="text-slate-300 font-bold">{item.sharedConfig?.examCenters?.length || 0}</p>
                 </div>
-                <div className="rounded-xl border border-indigo-500/5 bg-slate-950/30 px-3 py-2 text-[11px] text-slate-400">
+                <div className="rounded-xl border border-slate-700/20 bg-slate-950/30 px-3 py-2 text-[11px] text-slate-400">
                   Archive does not delete universities. Use Enable to restore visibility later.
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -1602,7 +1602,7 @@ export default function UniversitiesPanel() {
 
       {tab === 'clusters' && (
         <section className="space-y-4">
-          <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4 flex items-center gap-2">
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03] flex items-center gap-2">
             <h3 className="text-sm font-bold text-white tracking-tight">Cluster Management</h3>
             <button type="button" onClick={openClusterCreate} disabled={!canManageTaxonomy} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-3 py-2 text-xs font-semibold text-white hover:opacity-90 shadow-lg shadow-indigo-500/20 transition-all disabled:cursor-not-allowed disabled:opacity-40"><Plus className="w-4 h-4" /> New Cluster</button>
           </div>
@@ -1622,8 +1622,8 @@ export default function UniversitiesPanel() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {visibleClusterItems.length === 0 ? <div className="rounded-xl border border-indigo-500/10 bg-slate-900/40 p-12 text-center text-slate-500">No clusters found.</div> : visibleClusterItems.map((c) => (
-              <article key={c._id} className="rounded-xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4 space-y-3 hover:border-indigo-500/25 transition-all">
+            {visibleClusterItems.length === 0 ? <div className="rounded-xl border border-slate-700/30 bg-slate-900/40 p-12 text-center text-slate-500">No clusters found.</div> : visibleClusterItems.map((c) => (
+              <article key={c._id} className="rounded-xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-4 space-y-3 ring-1 ring-white/[0.03] hover:border-indigo-500/25 transition-all">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-white truncate">{c.name}</p>
@@ -1631,13 +1631,13 @@ export default function UniversitiesPanel() {
                   </div>
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider ${c.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>{c.isActive ? 'ACTIVE' : 'INACTIVE'}</span>
                 </div>
-                <div className="grid grid-cols-1 gap-2 rounded-xl border border-indigo-500/5 bg-slate-950/40 p-3 text-[11px] sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-700/20 bg-slate-950/30 p-3 text-[11px] sm:grid-cols-2">
                   <p className="text-slate-500 font-medium">Members</p><p className="text-indigo-300 font-bold">{c.memberCount || c.memberUniversityIds?.length || 0}</p>
                   <p className="text-slate-500 font-medium">Home Feed</p><p className="text-slate-300 font-bold">{c.homeVisible ? `Visible (#${c.homeOrder})` : 'Hidden'}</p>
                   <p className="text-slate-500 font-medium">Warnings</p><p className="text-amber-300 font-bold">{c.resolution?.warnings?.length || 0}</p>
                   <p className="text-slate-500 font-medium">Centers</p><p className="text-slate-300 font-bold">{c.dates?.examCenters?.length || 0}</p>
                 </div>
-                <div className="rounded-xl border border-indigo-500/5 bg-slate-950/30 px-3 py-2 text-[11px] text-slate-400">
+                <div className="rounded-xl border border-slate-700/20 bg-slate-950/30 px-3 py-2 text-[11px] text-slate-400">
                   Disable keeps linked universities untouched. Use Permanent Delete only for empty clusters.
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1662,7 +1662,7 @@ export default function UniversitiesPanel() {
 
       {tab === 'import' && (
         <section className="space-y-4">
-          <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-5 space-y-4 shadow-lg shadow-indigo-500/5">
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 space-y-4 shadow-xl shadow-indigo-900/20 ring-1 ring-white/[0.03]">
             <div>
               <h3 className="text-sm font-bold text-white tracking-tight">CSV/XLSX Mapping Import</h3>
               <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Upload and map external data sources</p>
@@ -1680,8 +1680,8 @@ export default function UniversitiesPanel() {
                 <Activity className="w-4 h-4" />
                 <span>Active Job ID: <code className="bg-slate-950/50 px-2 py-0.5 rounded text-white">{importJobId}</code></span>
                 <button type="button" disabled={refreshingImportStatus} onClick={() => void refreshImport()} className="ml-auto inline-flex items-center gap-1 hover:text-white transition-colors">
-                    {refreshingImportStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                    Refresh Status
+                  {refreshingImportStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  Refresh Status
                 </button>
               </div>
             )}
@@ -1693,17 +1693,17 @@ export default function UniversitiesPanel() {
               <p className="text-xs text-slate-400">
                 Only mapped columns and explicit defaults will be imported. Unmapped file columns will be ignored.
               </p>
-              <div className="overflow-x-auto rounded-xl border border-indigo-500/10 bg-slate-950/40">
+              <div className="overflow-x-auto rounded-xl border border-slate-700/30 bg-slate-950/40">
                 <table className="min-w-[720px] w-full text-xs">
-                  <thead className="bg-slate-900/60 text-slate-400 border-b border-indigo-500/10">
+                  <thead className="bg-slate-950/60 text-slate-400 border-b border-slate-700/30">
                     <tr><th className="px-4 py-3 text-left font-bold uppercase tracking-wider">Target Field</th><th className="px-4 py-3 text-left font-bold uppercase tracking-wider">Source Column (from File)</th></tr>
                   </thead>
-                  <tbody className="divide-y divide-indigo-500/5">
+                  <tbody className="divide-y divide-slate-700/20">
                     {IMPORT_FIELDS.map((field) => (
                       <tr key={field} className="hover:bg-indigo-500/[0.02]">
                         <td className="px-4 py-2.5 text-slate-200 font-medium">{field}</td>
                         <td className="px-4 py-2.5">
-                          <select value={importMapping[field] || ''} onChange={(e) => setImportMapping((prev) => ({ ...prev, [field]: e.target.value }))} className="w-full rounded-lg border border-indigo-500/10 bg-slate-900/65 px-3 py-1.5 text-white focus:border-indigo-500/40 outline-none transition-all">
+                          <select value={importMapping[field] || ''} onChange={(e) => setImportMapping((prev) => ({ ...prev, [field]: e.target.value }))} className="w-full rounded-lg border border-slate-700/40 bg-slate-900/65 px-3 py-1.5 text-white focus:border-indigo-500/40 outline-none transition-all">
                             <option value="">-- unmapped --</option>
                             {(importInit.headers || []).map((h) => <option key={`${field}-${h}`} value={h}>{h}</option>)}
                           </select>
@@ -1714,7 +1714,7 @@ export default function UniversitiesPanel() {
                 </table>
               </div>
 
-              <div className="rounded-xl border border-indigo-500/10 bg-slate-950/45 p-4 space-y-3">
+              <div className="rounded-xl border border-slate-700/30 bg-slate-950/40 p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-bold text-white">Mapped Preview</p>
@@ -1742,7 +1742,7 @@ export default function UniversitiesPanel() {
                     </div>
                     <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                       {mappedImportPreviewRows.map((row, index) => (
-                        <article key={`mapped-preview-${index}`} className="rounded-xl border border-indigo-500/10 bg-slate-900/65 p-4">
+                        <article key={`mapped-preview-${index}`} className="rounded-xl border border-slate-700/30 bg-slate-900/65 p-4">
                           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Sample Row {index + 1}</p>
                           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {mappedImportFields.map((field) => (
@@ -1760,11 +1760,11 @@ export default function UniversitiesPanel() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input value={String(importDefaults.category || '')} onChange={(e) => setImportDefaults((prev) => ({ ...prev, category: e.target.value }))} placeholder="Default category" className="rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                <input value={String(importDefaults.category || '')} onChange={(e) => setImportDefaults((prev) => ({ ...prev, category: e.target.value }))} placeholder="Default category" className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                 <select
                   value={importMode}
                   onChange={(e) => setImportMode(e.target.value as 'create-only' | 'update-existing')}
-                  className="rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all"
+                  className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
                 >
                   <option value="update-existing">Mode: Create or Update Existing</option>
                   <option value="create-only">Mode: Create Only (Skip Duplicates)</option>
@@ -1779,20 +1779,20 @@ export default function UniversitiesPanel() {
           )}
 
           {(importValidation || importCommit) && (
-            <div className="rounded-2xl border border-indigo-500/10 bg-slate-900/60 backdrop-blur-sm p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2">
+            <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03] space-y-3 animate-in fade-in slide-in-from-bottom-2">
               <h4 className="text-sm font-bold text-white tracking-tight">Validation / Commit Result</h4>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                <div className="rounded-xl border border-indigo-500/10 bg-slate-950/50 p-4">
+                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Rows</p>
                   <p className="mt-2 text-2xl font-black text-white">{importCommit?.commitSummary?.inserted || importValidation?.validationSummary?.validRows || 0}</p>
                   <p className="text-xs text-slate-400">{importCommit ? 'Inserted rows' : 'Validated rows'}</p>
                 </div>
-                <div className="rounded-xl border border-indigo-500/10 bg-slate-950/50 p-4">
+                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Updated</p>
                   <p className="mt-2 text-2xl font-black text-cyan-300">{importCommit?.commitSummary?.updated || 0}</p>
                   <p className="text-xs text-slate-400">{importCommit ? 'Existing rows updated' : 'Only available after commit'}</p>
                 </div>
-                <div className="rounded-xl border border-indigo-500/10 bg-slate-950/50 p-4">
+                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Failed</p>
                   <p className="mt-2 text-2xl font-black text-rose-300">{importCommit?.failedRowCount || importValidation?.failedRowCount || 0}</p>
                   <p className="text-xs text-slate-400">Rows needing review</p>
@@ -1819,14 +1819,14 @@ export default function UniversitiesPanel() {
               ) : null}
 
               {importValidation?.duplicates && (
-                <div className="rounded-xl border border-indigo-500/10 bg-slate-950/50 p-4 text-sm text-slate-200 space-y-2">
+                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4 text-sm text-slate-200 space-y-2">
                   <p>Duplicate rows in file: {importValidation.duplicates.inFile.length ? importValidation.duplicates.inFile.join(', ') : 'None'}</p>
                   <p>Duplicates already in database: {importValidation.duplicates.inDatabase.length ? importValidation.duplicates.inDatabase.join(', ') : 'None'}</p>
                 </div>
               )}
 
               {(importCommit?.failedRows?.length || importValidation?.failedRows?.length) ? (
-                <div className="rounded-xl border border-indigo-500/10 bg-slate-950/50 p-4">
+                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
                   <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Failed Rows Preview</p>
                   <div className="space-y-2">
                     {(importCommit?.failedRows || importValidation?.failedRows || []).slice(0, 8).map((row) => (
@@ -1844,8 +1844,8 @@ export default function UniversitiesPanel() {
 
       {modalUniversity && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 md:p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in transition-all">
-          <div className="mx-auto w-full max-w-5xl rounded-3xl border border-indigo-500/20 bg-slate-900 shadow-2xl shadow-indigo-500/10 flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-indigo-500/10 bg-slate-900/50">
+          <div className="mx-auto w-full max-w-5xl rounded-3xl border border-slate-700/30 bg-slate-900 shadow-2xl shadow-black/20 ring-1 ring-white/[0.03] flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-slate-700/30 bg-slate-900/50">
               <div>
                 <h3 className="text-lg font-black text-white tracking-tight uppercase">{modalUniversity === 'create' ? 'Create University' : 'Edit University Profile'}</h3>
                 <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-0.5">Global Admin Data Console</p>
@@ -1855,11 +1855,11 @@ export default function UniversitiesPanel() {
 
             <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-6 custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Official Name</label><input value={form.name || ''} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Short Form</label><input value={form.shortForm || ''} onChange={(e) => setForm((prev) => ({ ...prev, shortForm: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Official Name</label><input value={form.name || ''} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Short Form</label><input value={form.shortForm || ''} onChange={(e) => setForm((prev) => ({ ...prev, shortForm: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Category</label>
-                  <select value={form.category || ''} onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all">
+                  <select value={form.category || ''} onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all">
                     <option value="">Select category</option>
                     {categorySelectOptions.map((name) => <option key={name} value={name}>{name}</option>)}
                   </select>
@@ -1872,15 +1872,15 @@ export default function UniversitiesPanel() {
                 <AdminDateField label="Business Exam Date" value={form.businessExamDate} onChange={(next) => setForm((prev) => ({ ...prev, businessExamDate: next }))} />
                 <AdminDateField label="Arts Exam Date" value={form.artsExamDate} onChange={(next) => setForm((prev) => ({ ...prev, artsExamDate: next }))} />
 
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Contact Phone</label><input value={form.contactNumber || ''} onChange={(e) => setForm((prev) => ({ ...prev, contactNumber: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
-                <div className="space-y-1.5 lg:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Full Address</label><input value={form.address || ''} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Contact Phone</label><input value={form.contactNumber || ''} onChange={(e) => setForm((prev) => ({ ...prev, contactNumber: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
+                <div className="space-y-1.5 lg:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Full Address</label><input value={form.address || ''} onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
 
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Email</label><input value={form.email || ''} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Main Website</label><input value={form.website || ''} onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Admission Portal</label><input value={form.admissionWebsite || ''} onChange={(e) => setForm((prev) => ({ ...prev, admissionWebsite: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Email</label><input value={form.email || ''} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Main Website</label><input value={form.website || ''} onChange={(e) => setForm((prev) => ({ ...prev, website: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Admission Portal</label><input value={form.admissionWebsite || ''} onChange={(e) => setForm((prev) => ({ ...prev, admissionWebsite: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
               </div>
 
-              <div className="space-y-4 rounded-2xl border border-indigo-500/10 bg-slate-950/25 p-4">
+              <div className="space-y-4 rounded-2xl border border-slate-700/30 bg-slate-950/25 p-4">
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-[0.18em] text-cyan-300">University Description Content</h4>
                   <p className="mt-1 text-xs text-slate-500">
@@ -1894,7 +1894,7 @@ export default function UniversitiesPanel() {
                     onChange={(e) => setForm((prev) => ({ ...prev, shortDescription: e.target.value }))}
                     rows={3}
                     placeholder="Write a concise summary for overview cards and metadata"
-                    className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y"
+                    className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1904,12 +1904,12 @@ export default function UniversitiesPanel() {
                     onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                     rows={6}
                     placeholder="Write the full university description that should appear on the public details page"
-                    className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y"
+                    className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y"
                   />
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 space-y-4">
+              <div className="p-4 rounded-2xl bg-indigo-500/5 border border-slate-700/30 space-y-4">
                 <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Shared Synchronization Settings</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <label className="flex items-center gap-3 cursor-pointer group">
@@ -1930,7 +1930,7 @@ export default function UniversitiesPanel() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-indigo-500/10 bg-slate-900/50 flex justify-end gap-3">
+            <div className="p-5 border-t border-slate-700/30 bg-slate-900/50 flex justify-end gap-3">
               <button type="button" onClick={() => setModalUniversity(null)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">Discard</button>
               <button type="button" disabled={savingUniversity} onClick={() => void saveUniversity()} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30 hover:opacity-90 disabled:opacity-40 transition-all">
                 {savingUniversity ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -1943,8 +1943,8 @@ export default function UniversitiesPanel() {
 
       {categoryModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 md:p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in transition-all">
-          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-indigo-500/20 bg-slate-900 shadow-2xl shadow-indigo-500/10 flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-indigo-500/10 bg-slate-900/50">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-700/30 bg-slate-900 shadow-2xl shadow-black/20 ring-1 ring-white/[0.03] flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-slate-700/30 bg-slate-900/50">
               <div>
                 <h3 className="text-lg font-black text-white tracking-tight uppercase">{categoryModal === 'create' ? 'Create Category' : 'Edit Category'}</h3>
                 <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-0.5">Category Master Control</p>
@@ -1958,27 +1958,27 @@ export default function UniversitiesPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Category Name</label>
-                  <input value={categoryForm.name} onChange={(e) => setCategoryForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                  <input value={categoryForm.name} onChange={(e) => setCategoryForm((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Slug</label>
-                  <input value={categoryForm.slug} onChange={(e) => setCategoryForm((prev) => ({ ...prev, slug: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                  <input value={categoryForm.slug} onChange={(e) => setCategoryForm((prev) => ({ ...prev, slug: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Bangla Label</label>
-                  <input value={categoryForm.labelBn} onChange={(e) => setCategoryForm((prev) => ({ ...prev, labelBn: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                  <input value={categoryForm.labelBn} onChange={(e) => setCategoryForm((prev) => ({ ...prev, labelBn: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">English Label</label>
-                  <input value={categoryForm.labelEn} onChange={(e) => setCategoryForm((prev) => ({ ...prev, labelEn: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                  <input value={categoryForm.labelEn} onChange={(e) => setCategoryForm((prev) => ({ ...prev, labelEn: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Home Order</label>
-                  <input type="number" value={String(categoryForm.homeOrder)} onChange={(e) => setCategoryForm((prev) => ({ ...prev, homeOrder: Number(e.target.value || 0) }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" />
+                  <input type="number" value={String(categoryForm.homeOrder)} onChange={(e) => setCategoryForm((prev) => ({ ...prev, homeOrder: Number(e.target.value || 0) }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+              <div className="flex flex-wrap gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-slate-700/30">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className={`w-5 h-5 rounded border border-indigo-500/40 flex items-center justify-center transition-all ${categoryForm.homeHighlight ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-950/50'}`}>
                     {categoryForm.homeHighlight && <CheckSquare className="w-4 h-4 text-white" />}
@@ -2005,13 +2005,13 @@ export default function UniversitiesPanel() {
                   <AdminDateField label="Business Exam" value={categoryForm.sharedConfig.businessExamDate} onChange={(next) => setCategoryForm((prev) => ({ ...prev, sharedConfig: { ...prev.sharedConfig, businessExamDate: next } }))} />
                   <div className="space-y-1.5 md:col-span-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Exam Centers</label>
-                    <textarea value={categoryForm.sharedConfig.examCentersText || ''} onChange={(e) => setCategoryForm((prev) => ({ ...prev, sharedConfig: { ...prev.sharedConfig, examCentersText: e.target.value } }))} rows={3} placeholder="Dhaka - BUET Campus | Chattogram - CUET Campus" className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y" />
+                    <textarea value={categoryForm.sharedConfig.examCentersText || ''} onChange={(e) => setCategoryForm((prev) => ({ ...prev, sharedConfig: { ...prev.sharedConfig, examCentersText: e.target.value } }))} rows={3} placeholder="Dhaka - BUET Campus | Chattogram - CUET Campus" className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-5 border-t border-indigo-500/10 bg-slate-900/50 flex justify-end gap-3">
+            <div className="p-5 border-t border-slate-700/30 bg-slate-900/50 flex justify-end gap-3">
               <button type="button" onClick={() => setCategoryModal(null)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
               {categoryModal !== 'create' && (
                 <button type="button" onClick={() => void syncCategory()} className="px-6 py-2.5 rounded-xl text-sm font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all">Sync Category Universities</button>
@@ -2027,8 +2027,8 @@ export default function UniversitiesPanel() {
 
       {clusterModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 md:p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in transition-all">
-          <div className="mx-auto w-full max-w-6xl rounded-3xl border border-indigo-500/20 bg-slate-900 shadow-2xl shadow-indigo-500/10 flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-indigo-500/10 bg-slate-900/50">
+          <div className="mx-auto w-full max-w-6xl rounded-3xl border border-slate-700/30 bg-slate-900 shadow-2xl shadow-black/20 ring-1 ring-white/[0.03] flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-slate-700/30 bg-slate-900/50">
               <div>
                 <h3 className="text-lg font-black text-white tracking-tight uppercase">{clusterModal === 'create' ? 'Create University Cluster' : 'Edit Cluster Settings'}</h3>
                 <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase mt-0.5">Cluster Logic & Date Synchronization</p>
@@ -2038,8 +2038,8 @@ export default function UniversitiesPanel() {
 
             <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-6 custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cluster Name</label><input value={clusterForm.name} onChange={(e) => setClusterForm((p) => ({ ...p, name: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
-                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">URL Slug</label><input value={clusterForm.slug} onChange={(e) => setClusterForm((p) => ({ ...p, slug: e.target.value }))} className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cluster Name</label><input value={clusterForm.name} onChange={(e) => setClusterForm((p) => ({ ...p, name: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
+                <div className="space-y-1.5"><label className="text-[10px] font-bold text-slate-500 uppercase ml-1">URL Slug</label><input value={clusterForm.slug} onChange={(e) => setClusterForm((p) => ({ ...p, slug: e.target.value }))} className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" /></div>
                 <div className="space-y-1.5 lg:col-span-3">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Description</label>
                   <textarea
@@ -2047,7 +2047,7 @@ export default function UniversitiesPanel() {
                     onChange={(e) => setClusterForm((p) => ({ ...p, description: e.target.value }))}
                     rows={4}
                     placeholder="Write a clear cluster description, rule summary, or public-facing explanation."
-                    className="w-full rounded-2xl border border-indigo-500/10 bg-slate-950/70 px-4 py-3 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y shadow-inner shadow-slate-950/20"
+                    className="w-full rounded-2xl border border-slate-700/40 bg-slate-950/70 px-4 py-3 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y shadow-inner shadow-slate-950/20"
                   />
                 </div>
 
@@ -2062,17 +2062,17 @@ export default function UniversitiesPanel() {
                     value={clusterForm.dates.admissionWebsite || ''}
                     onChange={(e) => setClusterForm((p) => ({ ...p, dates: { ...p.dates, admissionWebsite: e.target.value } }))}
                     placeholder="https://gstadmission.example.edu"
-                    className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all"
+                    className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
                   />
                 </div>
                 <div className="space-y-1.5 lg:col-span-3">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Shared Exam Centers</label>
-                  <textarea value={clusterForm.dates.examCentersText || ''} onChange={(e) => setClusterForm((p) => ({ ...p, dates: { ...p.dates, examCentersText: e.target.value } }))} rows={3} placeholder="Dhaka - BUET Campus | Chattogram - CUET Campus" className="w-full rounded-xl border border-indigo-500/10 bg-slate-950/65 px-4 py-2.5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all resize-y" />
+                  <textarea value={clusterForm.dates.examCentersText || ''} onChange={(e) => setClusterForm((p) => ({ ...p, dates: { ...p.dates, examCentersText: e.target.value } }))} rows={3} placeholder="Dhaka - BUET Campus | Chattogram - CUET Campus" className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all resize-y" />
                 </div>
 
                 <div className="space-y-1.5 lg:col-span-3">
                   <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Category Rules (Assistive)</label>
-                  <div className="rounded-xl border border-indigo-500/10 bg-slate-950/65 p-3">
+                  <div className="rounded-xl border border-slate-700/40 bg-slate-950/50 p-3">
                     <div className="flex flex-wrap gap-2">
                       {categoryMaster.map((cat) => {
                         const active = clusterForm.categoryRuleIds.includes(cat._id);
@@ -2102,7 +2102,7 @@ export default function UniversitiesPanel() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10">
+              <div className="flex flex-wrap gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-slate-700/30">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className={`w-5 h-5 rounded border border-indigo-500/40 flex items-center justify-center transition-all ${clusterForm.isActive ? 'bg-indigo-600 border-indigo-500' : 'bg-slate-950/50'}`}>
                     {clusterForm.isActive && <CheckSquare className="w-4 h-4 text-white" />}
@@ -2119,12 +2119,12 @@ export default function UniversitiesPanel() {
                 </label>
               </div>
 
-              <div className="rounded-2xl border border-indigo-500/10 bg-slate-950/40 p-5 space-y-4">
+              <div className="rounded-2xl border border-slate-700/30 bg-slate-950/40 p-5 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h4 className="text-xs font-black text-white uppercase tracking-widest">Manual Member Selection</h4>
                   <div className="relative w-full sm:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                    <input value={clusterSearch} onChange={(e) => setClusterSearch(e.target.value)} placeholder="Search universities..." className="w-full rounded-lg border border-indigo-500/10 bg-slate-900/80 pl-9 pr-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500/40" />
+                    <input value={clusterSearch} onChange={(e) => setClusterSearch(e.target.value)} placeholder="Search universities..." className="w-full rounded-lg border border-slate-700/40 bg-slate-900/80 pl-9 pr-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500/40" />
                   </div>
                 </div>
                 <div className="max-h-64 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pr-2 custom-scrollbar">
@@ -2142,7 +2142,7 @@ export default function UniversitiesPanel() {
               </div>
             </div>
 
-            <div className="p-5 border-t border-indigo-500/10 bg-slate-900/50 flex flex-wrap justify-end gap-3">
+            <div className="p-5 border-t border-slate-700/30 bg-slate-900/50 flex flex-wrap justify-end gap-3">
               <button type="button" onClick={() => setClusterModal(null)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-white/5 transition-all">Cancel</button>
               {clusterModal !== 'create' && typeof clusterModal === 'object' && (
                 <button type="button" onClick={() => void syncCluster(clusterModal._id, clusterForm.dates)} className="px-6 py-2.5 rounded-xl text-sm font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all">Sync Cluster Universities</button>

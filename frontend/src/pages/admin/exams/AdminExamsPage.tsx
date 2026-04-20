@@ -33,6 +33,7 @@ import {
     Upload,
     Users,
     X,
+    Database,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import {
@@ -89,6 +90,7 @@ import ModernToggle from '../../../components/ui/ModernToggle';
 import { showConfirmDialog } from '../../../lib/appDialog';
 import { downloadFile } from '../../../utils/download';
 import { promptForSensitiveActionProof } from '../../../utils/sensitiveAction';
+import AntiCheatPolicyForm from '../../../components/admin/AntiCheatPolicyForm';
 
 type AdminTab = 'list' | 'create' | 'edit' | 'questions' | 'results' | 'payments';
 type ExamCenterView = 'all' | 'external' | 'internal' | 'imports' | 'results' | 'templates' | 'centers' | 'sync-logs' | 'settings';
@@ -1177,21 +1179,21 @@ export function AdminExamsPage() {
         return (
             <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h2 className="text-xl font-bold text-text dark:text-dark-text">Exam Center</h2>
-                        <p className="text-sm text-text-muted dark:text-dark-text/60">Unified external and internal exam operations with imports, templates, sync, and center management.</p>
+                    <div className="min-w-0">
+                        <h2 className="text-lg md:text-xl font-bold text-text dark:text-dark-text">Exam Center</h2>
+                        <p className="text-xs md:text-sm text-text-muted dark:text-dark-text/60 line-clamp-2">Unified external and internal exam operations with imports, templates, sync, and center management.</p>
                     </div>
                     <div className="flex gap-2">
                         <button type="button" onClick={() => setTab('payments')} className="btn-secondary">
-                            <CreditCard className="mr-1.5 h-4 w-4" />Payments
+                            <CreditCard className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Payments</span>
                         </button>
                         <button type="button" onClick={() => { setFormData({ ...defaultExamFields }); setTab('create'); }} className="btn-primary">
-                            <Plus className="mr-1.5 h-4 w-4" />Create Exam
+                            <Plus className="mr-1.5 h-4 w-4" /><span className="hidden sm:inline">Create Exam</span><span className="sm:hidden">New</span>
                         </button>
                     </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-4">
                     <div className="admin-panel-bg rounded-xl p-4">
                         <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">Total Exams</p>
                         <p className="mt-2 text-2xl font-bold text-text dark:text-dark-text">{exams.length}</p>
@@ -1219,11 +1221,10 @@ export function AdminExamsPage() {
                                 key={item.key}
                                 type="button"
                                 onClick={() => changeCenterView(item.key)}
-                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                                    active
-                                        ? 'border-primary bg-primary/10 text-primary'
-                                        : 'border-card-border bg-white text-text-muted hover:border-primary/30 hover:text-text dark:border-slate-700 dark:bg-slate-900 dark:text-dark-text/70'
-                                }`}
+                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${active
+                                    ? 'border-primary bg-primary/10 text-primary'
+                                    : 'border-card-border bg-white text-text-muted hover:border-primary/30 hover:text-text dark:border-slate-700 dark:bg-slate-900 dark:text-dark-text/70'
+                                    }`}
                             >
                                 <Icon className="h-4 w-4" />
                                 {item.label}
@@ -1882,67 +1883,73 @@ export function AdminExamsPage() {
                     </div>
                 ) : null}
 
+                {/* Anti-Cheat Policy — under Exam Settings */}
+                {centerView === 'settings' ? (
+                    <div className="mt-4">
+                        <AntiCheatPolicyForm mode="global" />
+                    </div>
+                ) : null}
+
                 {(centerView === 'all' || centerView === 'external' || centerView === 'internal' || centerView === 'results') ? (
                     <div className="space-y-2">
-                    {listViewExams.map((exam) => (
-                        <div key={String(exam._id)} className="admin-panel-bg flex flex-wrap items-center gap-3 rounded-xl p-4">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <p className="font-semibold text-text dark:text-dark-text truncate">{String(exam.title)}</p>
-                                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                                        String(exam.deliveryMode || '').trim().toLowerCase() === 'external_link'
+                        {listViewExams.map((exam) => (
+                            <div key={String(exam._id)} className="admin-panel-bg flex flex-col gap-2 md:gap-3 rounded-xl p-3 md:p-4 sm:flex-row sm:flex-wrap sm:items-center">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+                                        <p className="font-semibold text-sm md:text-base text-text dark:text-dark-text truncate">{String(exam.title)}</p>
+                                        <span className={`inline-flex rounded-full px-2 md:px-2.5 py-0.5 text-[10px] md:text-[11px] font-semibold ${String(exam.deliveryMode || '').trim().toLowerCase() === 'external_link'
                                             ? 'bg-sky-500/10 text-sky-600'
                                             : 'bg-emerald-500/10 text-emerald-600'
-                                    }`}>
-                                        {examModeLabel(exam.deliveryMode)}
-                                    </span>
+                                            }`}>
+                                            {examModeLabel(exam.deliveryMode)}
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] md:text-xs text-text-muted dark:text-dark-text/60">
+                                        {String(exam.subject || '')} &middot; {String(exam.status || 'draft')}
+                                        {getExamCenterLabel(exam) ? ` · ${getExamCenterLabel(exam)}` : ''}
+                                    </p>
+                                    {String(exam.externalExamUrl || '').trim() ? (
+                                        <a href={String(exam.externalExamUrl)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline">
+                                            <ExternalLink className="h-3.5 w-3.5" />
+                                            External link
+                                        </a>
+                                    ) : null}
                                 </div>
-                                <p className="text-xs text-text-muted dark:text-dark-text/60">
-                                    {String(exam.subject || '')} &middot; {String(exam.status || 'draft')}
-                                    {getExamCenterLabel(exam) ? ` · ${getExamCenterLabel(exam)}` : ''}
-                                </p>
-                                {String(exam.externalExamUrl || '').trim() ? (
-                                    <a href={String(exam.externalExamUrl)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline">
-                                        <ExternalLink className="h-3.5 w-3.5" />
-                                        External link
-                                    </a>
-                                ) : null}
+                                <div className="flex gap-1.5">
+                                    <button type="button" onClick={() => openEdit(String(exam._id))} className="btn-ghost" title="Edit">
+                                        <Edit3 className="h-4 w-4" />
+                                    </button>
+                                    <button type="button" onClick={() => openQuestions(String(exam._id))} className="btn-ghost" title="Questions">
+                                        <ListOrdered className="h-4 w-4" />
+                                    </button>
+                                    <button type="button" onClick={() => openResults(String(exam._id))} className="btn-ghost" title="Results">
+                                        <GraduationCap className="h-4 w-4" />
+                                    </button>
+                                    <button type="button" onClick={() => setWorkspaceExamId(String(exam._id))} className="btn-ghost" title="Use in workspace">
+                                        <Sparkles className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            const confirmed = await showConfirmDialog({
+                                                title: 'Delete exam',
+                                                message: 'Delete this exam?',
+                                                confirmLabel: 'Delete',
+                                                tone: 'danger',
+                                            });
+                                            if (confirmed) deleteMutation.mutate(String(exam._id));
+                                        }}
+                                        className="btn-ghost text-danger"
+                                        title="Delete"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex gap-1.5">
-                                <button type="button" onClick={() => openEdit(String(exam._id))} className="btn-ghost" title="Edit">
-                                    <Edit3 className="h-4 w-4" />
-                                </button>
-                                <button type="button" onClick={() => openQuestions(String(exam._id))} className="btn-ghost" title="Questions">
-                                    <ListOrdered className="h-4 w-4" />
-                                </button>
-                                <button type="button" onClick={() => openResults(String(exam._id))} className="btn-ghost" title="Results">
-                                    <GraduationCap className="h-4 w-4" />
-                                </button>
-                                <button type="button" onClick={() => setWorkspaceExamId(String(exam._id))} className="btn-ghost" title="Use in workspace">
-                                    <Sparkles className="h-4 w-4" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        const confirmed = await showConfirmDialog({
-                                            title: 'Delete exam',
-                                            message: 'Delete this exam?',
-                                            confirmLabel: 'Delete',
-                                            tone: 'danger',
-                                        });
-                                        if (confirmed) deleteMutation.mutate(String(exam._id));
-                                    }}
-                                    className="btn-ghost text-danger"
-                                    title="Delete"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                    {!examsQuery.isLoading && listViewExams.length === 0 ? (
-                        <p className="text-center text-sm text-text-muted dark:text-dark-text/60 py-8">No exams found.</p>
-                    ) : null}
+                        ))}
+                        {!examsQuery.isLoading && listViewExams.length === 0 ? (
+                            <p className="text-center text-sm text-text-muted dark:text-dark-text/60 py-8">No exams found.</p>
+                        ) : null}
                     </div>
                 ) : null}
             </div>
@@ -2171,6 +2178,15 @@ export function AdminExamsPage() {
                         <ChevronLeft className="mr-1 h-4 w-4" />Back
                     </button>
                     <div className="flex gap-2">
+                        <a
+                            href="/__cw_admin__/question-bank/sets"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn-secondary inline-flex items-center gap-1.5"
+                            title="Open Question Bank to create sets, then import them here"
+                        >
+                            <Database className="h-4 w-4" />Question Bank
+                        </a>
                         <button type="button" disabled={busy} onClick={async () => {
                             setBusy(true);
                             try {

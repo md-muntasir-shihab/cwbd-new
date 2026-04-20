@@ -215,7 +215,7 @@ export async function fcGetTransaction(req: AuthRequest, res: Response): Promise
         const id = oid(req.params.id);
         if (!id) { res.status(400).json({ message: 'Invalid ID' }); return; }
 
-        const txn = await FinanceTransaction.findOne({ _id: id, isDeleted: false })
+        const txn = await FinanceTransaction.findById(id)
             .populate('studentId', 'full_name username email')
             .populate('vendorId', 'name')
             .populate('createdByAdminId', 'full_name username')
@@ -496,6 +496,26 @@ export async function fcGetInvoices(req: AuthRequest, res: Response): Promise<vo
         res.json({ ok: true, items, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err) {
         console.error('fcGetInvoices error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function fcGetInvoice(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const id = oid(req.params.id);
+        if (!id) { res.status(400).json({ message: 'Invalid ID' }); return; }
+
+        const inv = await FinanceInvoice.findById(id)
+            .populate('studentId', 'full_name username email')
+            .populate('createdByAdminId', 'full_name username')
+            .populate('planId', 'name code priceBDT')
+            .populate('examId', 'title')
+            .lean();
+        if (!inv) { res.status(404).json({ message: 'Not found' }); return; }
+
+        res.json({ ok: true, data: inv });
+    } catch (err) {
+        console.error('fcGetInvoice error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 }

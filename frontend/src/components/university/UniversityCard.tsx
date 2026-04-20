@@ -323,15 +323,18 @@ const UniversityCard = memo(function UniversityCard({
         return (
             <motion.article
                 variants={variants}
-                whileHover={animationLevel === 'off' ? undefined : { y: -5, transition: { duration: 0.2 } }}
-                className={`group relative flex flex-col overflow-hidden rounded-[24px] border border-white/20 bg-white/70 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-2xl dark:border-white/10 dark:bg-slate-900/60 ${className}`}
+                whileHover={animationLevel === 'off' ? undefined : { y: -6, scale: 1.008, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] } }}
+                className={`group relative flex flex-col overflow-hidden rounded-[28px] border border-white/15 bg-white/80 shadow-[0_8px_40px_rgba(0,0,0,0.06)] backdrop-blur-2xl transition-all duration-500 hover:shadow-[0_24px_60px_rgba(99,102,241,0.1)] dark:border-white/8 dark:bg-slate-900/70 dark:shadow-[0_8px_40px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_24px_60px_rgba(99,102,241,0.12)] dark:hover:border-indigo-500/15 ${className}`}
                 data-university-card-id={id}
                 data-university-category={category}
                 data-university-cluster={clusterGroup}
                 data-university-card-variant="classic"
             >
+                {/* Gradient accent line */}
+                <div className="h-[3px] w-full bg-gradient-to-r from-indigo-500 via-cyan-400 to-indigo-500 opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+
                 <div
-                    className={`pointer-events-none absolute right-4 top-4 z-[1] flex h-6 w-6 items-center justify-center rounded-full shadow-sm ring-1 backdrop-blur-sm ${classicStatusIndicatorTone}`}
+                    className={`pointer-events-none absolute right-5 top-6 z-[1] flex h-7 w-7 items-center justify-center rounded-full shadow-sm ring-1 backdrop-blur-sm ${classicStatusIndicatorTone}`}
                     title={classicStatusLabel}
                     data-testid="university-card-status-indicator"
                     data-university-status={appMeta.urgencyState}
@@ -345,7 +348,7 @@ const UniversityCard = memo(function UniversityCard({
                 </div>
                 <div className="space-y-4 p-5">
                     <div className="flex items-start gap-4">
-                        <div className="relative flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                        <div className="relative flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200/60 bg-white p-2.5 shadow-md transition-transform duration-300 group-hover:scale-105 dark:border-slate-800 dark:bg-slate-950">
                             <UniversityLogo
                                 name={name}
                                 shortForm={shortForm}
@@ -408,55 +411,58 @@ const UniversityCard = memo(function UniversityCard({
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/90 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Location</p>
+                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/90 px-4 py-3.5 transition-shadow hover:shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Location</p>
                             {mergedConfig.showAddress && rawAddress ? (
                                 <button
                                     type="button"
                                     onClick={copyAddress}
-                                    className="mt-2 flex w-full items-start gap-2 text-left text-[13px] text-slate-600 transition hover:text-primary dark:text-slate-300 dark:hover:text-cyan-300"
+                                    className="mt-2.5 flex w-full items-start gap-2.5 text-left text-[13px] leading-relaxed text-slate-600 transition hover:text-primary dark:text-slate-300 dark:hover:text-cyan-300"
                                     title="Copy address"
                                 >
-                                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                                     <span className="line-clamp-2 break-words">{address}</span>
                                 </button>
                             ) : (
-                                <div className="mt-2 flex items-start gap-2 text-[13px] text-slate-600 dark:text-slate-300">
-                                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <div className="mt-2.5 flex items-start gap-2.5 text-[13px] text-slate-500 dark:text-slate-400">
+                                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 opacity-50" />
                                     <span className="line-clamp-2">N/A</span>
                                 </div>
                             )}
                         </div>
 
-                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/90 px-3.5 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Contact</p>
-                            <div className="mt-2 space-y-1.5 text-[12px] text-slate-600 dark:text-slate-300">
+                        <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/90 px-4 py-3.5 transition-shadow hover:shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Contact</p>
+                            <div className="mt-2.5 space-y-2 text-[13px] text-slate-600 dark:text-slate-300">
                                 {phoneLink ? (
                                     <a
                                         href={phoneLink}
-                                        className="flex min-h-[1rem] items-center gap-1.5 transition hover:text-primary dark:hover:text-cyan-300"
+                                        className="flex min-h-[1.25rem] items-center gap-2.5 transition hover:text-primary dark:hover:text-cyan-300"
                                         onClick={() => sendEvent('university_phone_click', { universityId: id, slug, phone: contactNumber })}
                                     >
-                                        <Phone className="h-3 w-3 shrink-0" />
+                                        <Phone className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
                                         <span className="truncate">{contactNumber}</span>
                                     </a>
                                 ) : (
-                                    <div className="flex min-h-[1rem] items-center gap-1.5">
-                                        <Phone className="h-3 w-3 shrink-0" />
+                                    <div className="flex min-h-[1.25rem] items-center gap-2.5 text-slate-500 dark:text-slate-400">
+                                        <Phone className="h-4 w-4 shrink-0 opacity-50" />
                                         <span className="truncate">N/A</span>
                                     </div>
                                 )}
                                 {mergedConfig.showEmail && email ? (
                                     <a
                                         href={emailLink}
-                                        className="flex min-h-[1rem] items-center gap-1.5 text-slate-500 transition hover:text-primary dark:text-slate-400 dark:hover:text-cyan-300"
+                                        className="flex min-h-[1.25rem] items-center gap-2.5 text-slate-500 transition hover:text-primary dark:text-slate-400 dark:hover:text-cyan-300"
                                         onClick={() => sendEvent('university_email_click', { universityId: id, slug, email })}
                                     >
-                                        <Mail className="h-3 w-3 shrink-0" />
-                                        <span className="break-all">{email}</span>
+                                        <Mail className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
+                                        <span className="break-all line-clamp-1">{email}</span>
                                     </a>
                                 ) : (
-                                    <div className="text-slate-500 dark:text-slate-400">Email N/A</div>
+                                    <div className="flex min-h-[1.25rem] items-center gap-2.5 text-slate-500 dark:text-slate-400">
+                                        <Mail className="h-4 w-4 shrink-0 opacity-50" />
+                                        <span>N/A</span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -483,13 +489,13 @@ const UniversityCard = memo(function UniversityCard({
                 </div>
                 <div className="p-5">
                     <div className="mb-3 flex items-center gap-2">
-                        <div className="h-1 w-4 rounded-full bg-primary" />
+                        <div className="h-1 w-4 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500" />
                         <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">Available Seats</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
-                        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 p-2 text-center dark:border-slate-800 dark:bg-slate-950/30">
+                        <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100/80 bg-slate-50/50 p-2 text-center transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50/30 dark:border-slate-800 dark:bg-slate-950/30 dark:hover:border-indigo-500/20">
                             <span className="mb-0.5 text-[10px] text-slate-400 dark:text-slate-500">Total</span>
-                            <span className="text-sm font-black text-primary">{seats.total}</span>
+                            <span className="text-sm font-black bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">{seats.total}</span>
                         </div>
                         <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-100 bg-slate-50/50 p-2 text-center dark:border-slate-800 dark:bg-slate-950/30">
                             <span className="mb-0.5 text-[10px] text-slate-400 dark:text-slate-500">Sci</span>

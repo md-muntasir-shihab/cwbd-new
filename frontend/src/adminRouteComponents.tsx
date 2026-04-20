@@ -52,9 +52,12 @@ export const AdminStudentSettingsEmbeddedPage = lazy(() => import('./pages/admin
 export const AdminContactPage = lazy(() => import('./pages/admin-core/AdminContactPage'));
 export const AdminSubscriptionsV2Page = lazy(() => import('./pages/admin-core/AdminSubscriptionsV2Page'));
 export const CampaignConsolePage = lazy(() => import('./pages/admin/campaigns/CampaignConsolePage'));
+export const CampaignSettingsPage = lazy(() => import('./pages/admin/CampaignSettingsPage'));
 export const SubscriptionContactCenterPage = lazy(() => import('./pages/admin/campaigns/SubscriptionContactCenterPage'));
 export const AdminHelpCenterPage = lazy(() => import('./pages/admin/help-center/AdminHelpCenterPage'));
 export const TeamAccessConsolePage = lazy(() => import('./pages/admin/team/TeamAccessConsolePage'));
 export const MemberDetailPage = lazy(() => import('./pages/admin/team/MemberDetailPage'));
 export const RoleDetailPage = lazy(() => import('./pages/admin/team/RoleDetailPage'));
 export const ActionApprovalsPage = lazy(() => import('./pages/admin/approvals/ActionApprovalsPage'));
+export const ExamFormPage = lazy(() => import('./pages/admin/exams/ExamFormPage'));
+export const ExamPreviewPage = lazy(() => import('./pages/admin/exams/ExamPreviewPage'));

@@ -289,6 +289,20 @@ export const updateSettings = async (req: Request, res: Response) => {
             payload.staticPages = normalizeWebsiteStaticPages(current?.staticPages as any);
         }
 
+        const parsedSocialPreview = parseIfStringifiedObject(payload.socialPreview);
+        if (parsedSocialPreview && typeof parsedSocialPreview === 'object') {
+            payload.socialPreview = { ...(current?.socialPreview || {}), ...(parsedSocialPreview as Record<string, unknown>) };
+        } else if (payload.socialPreview !== undefined) {
+            payload.socialPreview = current?.socialPreview || {};
+        }
+
+        const parsedPageHeroSettings = parseIfStringifiedObject(payload.pageHeroSettings);
+        if (parsedPageHeroSettings && typeof parsedPageHeroSettings === 'object') {
+            payload.pageHeroSettings = { ...((current as any)?.pageHeroSettings || {}), ...(parsedPageHeroSettings as Record<string, unknown>) };
+        } else if (payload.pageHeroSettings !== undefined) {
+            delete payload.pageHeroSettings;
+        }
+
         // Use findOneAndUpdate to ensure we update the single settings document
         const settings = await WebsiteSettings.findOneAndUpdate(
             {},

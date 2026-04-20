@@ -81,6 +81,9 @@ export interface IExam extends Document {
     publish_results_after_minutes?: number; // 0 for instant
     resultPublishMode?: 'immediate' | 'manual' | 'scheduled';
 
+    /* ── Show answers after exam ── */
+    showAnswersAfterExam: boolean;
+
     /* ── Solutions ── */
     solutionReleaseRule?: 'after_exam_end' | 'after_result_publish' | 'manual';
     solutionsEnabled?: boolean;
@@ -231,6 +234,8 @@ const ExamSchema = new Schema<IExam>({
     resultPublishDate: { type: Date, required: true },
     isPublished: { type: Boolean, default: false },
     publish_results_after_minutes: { type: Number, default: 0 },
+
+    showAnswersAfterExam: { type: Boolean, default: false },
 
     solutionReleaseRule: { type: String, enum: ['after_exam_end', 'after_result_publish', 'manual'], default: 'after_result_publish' },
     solutionsEnabled: { type: Boolean, default: false },

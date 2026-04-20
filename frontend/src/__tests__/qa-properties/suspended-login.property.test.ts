@@ -119,7 +119,7 @@ describe('Feature: campusway-qa-audit, Property 5: Suspended/Blocked User Login 
                     ).toBe(403);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

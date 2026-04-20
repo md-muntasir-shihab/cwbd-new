@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
-import { useFcInvoices, useFcCreateInvoice, useFcUpdateInvoice, useFcMarkInvoicePaid } from '../../../hooks/useFinanceCenterQueries';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useFcInvoices, useFcCreateInvoice, useFcUpdateInvoice, useFcMarkInvoicePaid, useFcInvoiceDetail } from '../../../hooks/useFinanceCenterQueries';
 import type { FcInvoice, InvoicePurpose, InvoiceStatus } from '../../../types/finance';
-import { Plus, Search, ChevronLeft, ChevronRight, CheckCircle, Pencil, Eye, X, AlertTriangle, FileText, Clock, DollarSign } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, CheckCircle, Pencil, Eye, X, AlertTriangle, FileText, Clock, DollarSign, Loader2 } from 'lucide-react';
+import { displayName } from '../../../utils/displayName';
 
 type Params = Record<string, string | number | boolean | undefined>;
 
@@ -24,7 +25,7 @@ export default function FinanceInvoicesPage() {
     const [statusFilter, setStatusFilter] = useState('');
     const [showCreate, setShowCreate] = useState(false);
     const [editInv, setEditInv] = useState<FcInvoice | null>(null);
-    const [detailInv, setDetailInv] = useState<FcInvoice | null>(null);
+    const [detailId, setDetailId] = useState<string | null>(null);
 
     const params: Params = { page, limit: 20, search: search || undefined, status: statusFilter || undefined };
     const { data, isLoading } = useFcInvoices(params);
@@ -126,7 +127,7 @@ export default function FinanceInvoicesPage() {
                                             </td>
                                             <td className="px-3 py-2 text-right">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <button onClick={() => setDetailInv(inv)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" title="View">
+                                                    <button onClick={() => setDetailId(inv._id)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" title="View" aria-label="View details">
                                                         <Eye size={13} className="text-slate-500" />
                                                     </button>
                                                     <button onClick={() => setEditInv(inv)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" title="Edit">
@@ -166,7 +167,7 @@ export default function FinanceInvoicesPage() {
                                         <span className="text-[10px] text-slate-500">Paid: ৳{fmt(inv.paidAmountBDT)}</span>
                                     </div>
                                     <div className="mt-2 flex justify-end gap-1">
-                                        <button onClick={() => setDetailInv(inv)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><Eye size={13} className="text-slate-500" /></button>
+                                        <button onClick={() => setDetailId(inv._id)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700" aria-label="View details"><Eye size={13} className="text-slate-500" /></button>
                                         <button onClick={() => setEditInv(inv)} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><Pencil size={13} className="text-blue-600" /></button>
                                         {inv.status !== 'paid' && inv.status !== 'cancelled' && (
                                             <button onClick={() => markPaidMut.mutate({ id: inv._id })} className="rounded p-1 hover:bg-green-50 dark:hover:bg-green-900/20"><CheckCircle size={13} className="text-green-600" /></button>
@@ -190,7 +191,7 @@ export default function FinanceInvoicesPage() {
             )}
 
             {/* Detail drawer */}
-            {detailInv && <InvoiceDetailDrawer inv={detailInv} onClose={() => setDetailInv(null)} />}
+            {detailId && <InvoiceDetailDrawer id={detailId} onClose={() => setDetailId(null)} />}
 
             {(showCreate || editInv) && (
                 <InvoiceModal
@@ -270,27 +271,75 @@ function MiniKpi({ icon, label, value, accent }: { icon: React.ReactNode; label:
     );
 }
 
-function InvoiceDetailDrawer({ inv, onClose }: { inv: FcInvoice; onClose: () => void }) {
+function InvoiceDetailDrawer({ id, onClose }: { id: string; onClose: () => void }) {
+    const { data, isLoading, isError, error } = useFcInvoiceDetail(id);
+    const closeRef = useRef<HTMLButtonElement>(null);
+
+    // Focus close button on mount
+    useEffect(() => {
+        closeRef.current?.focus();
+    }, []);
+
+    // Escape key handler
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [onClose]);
+
+    const inv = (data as { data?: FcInvoice })?.data ?? data as FcInvoice | undefined;
+    const is404 = isError && (error as { response?: { status?: number } })?.response?.status === 404;
+
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
-            <div className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-900" onClick={e => e.stopPropagation()}>
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Invoice Details"
+                className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-xl dark:bg-slate-900 sm:max-w-md"
+                onClick={e => e.stopPropagation()}
+            >
                 <div className="mb-4 flex items-center justify-between">
                     <h3 className="text-base font-semibold text-slate-800 dark:text-white">Invoice Details</h3>
-                    <button onClick={onClose} className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><X size={18} /></button>
+                    <button ref={closeRef} onClick={onClose} aria-label="Close" className="rounded p-1 hover:bg-slate-100 dark:hover:bg-slate-700"><X size={18} /></button>
                 </div>
-                <dl className="space-y-3 text-sm">
-                    <DRow label="Invoice No" value={inv.invoiceNo} />
-                    <DRow label="Purpose" value={inv.purpose} />
-                    <DRow label="Amount" value={`৳${fmt(inv.amountBDT)}`} />
-                    <DRow label="Paid" value={`৳${fmt(inv.paidAmountBDT)}`} />
-                    <DRow label="Outstanding" value={`৳${fmt(inv.amountBDT - inv.paidAmountBDT)}`} />
-                    <DRow label="Status" value={inv.status} />
-                    {inv.dueDateUTC && <DRow label="Due Date" value={new Date(inv.dueDateUTC).toLocaleDateString()} />}
-                    {inv.studentId && <DRow label="Student ID" value={inv.studentId} />}
-                    {inv.planId && <DRow label="Plan ID" value={inv.planId} />}
-                    {inv.examId && <DRow label="Exam ID" value={inv.examId} />}
-                    {inv.notes && <DRow label="Notes" value={inv.notes} />}
-                </dl>
+
+                {isLoading && (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 size={24} className="animate-spin text-indigo-500" />
+                        <span className="ml-2 text-sm text-slate-500">Loading...</span>
+                    </div>
+                )}
+
+                {isError && (
+                    <div className="py-12 text-center text-sm text-slate-500">
+                        {is404 ? 'Record not found.' : 'Failed to load details. Please try again.'}
+                    </div>
+                )}
+
+                {inv && (
+                    <dl className="space-y-3 text-sm">
+                        <DRow label="Invoice No" value={inv.invoiceNo} />
+                        <DRow label="Purpose" value={inv.purpose} />
+                        <DRow label="Amount (BDT)" value={`৳${fmt(inv.amountBDT)}`} />
+                        <DRow label="Paid (BDT)" value={`৳${fmt(inv.paidAmountBDT)}`} />
+                        <DRow label="Status" value={inv.status} />
+                        <DRow label="Due Date" value={inv.dueDateUTC ? new Date(inv.dueDateUTC).toLocaleDateString() : '—'} />
+                        <DRow label="Issued At" value={inv.issuedAtUTC ? new Date(inv.issuedAtUTC).toLocaleDateString() : '—'} />
+                        {inv.paidAtUTC && <DRow label="Paid At" value={new Date(inv.paidAtUTC).toLocaleDateString()} />}
+                        {inv.notes && <DRow label="Notes" value={inv.notes} />}
+                        <DRow label="Student" value={displayName(inv.studentId)} />
+                        <DRow label="Created By" value={displayName(inv.createdByAdminId)} />
+                        <DRow label="Plan" value={displayName(inv.planId)} />
+                        <DRow label="Exam" value={displayName(inv.examId)} />
+                        {inv.linkedTxnIds && inv.linkedTxnIds.length > 0 && (
+                            <DRow label="Linked Transactions" value={inv.linkedTxnIds.join(', ')} />
+                        )}
+                        <DRow label="Deleted" value={inv.isDeleted ? 'Yes' : 'No'} />
+                    </dl>
+                )}
             </div>
         </div>
     );

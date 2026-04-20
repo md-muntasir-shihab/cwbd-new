@@ -16,6 +16,7 @@ const K = {
     refunds: (p: Params) => ['fc', 'refunds', p] as const,
     auditLogs: (p: Params) => ['fc', 'audit-logs', p] as const,
     auditLog: (id: string) => ['fc', 'audit-log', id] as const,
+    invoice: (id: string) => ['fc', 'invoice', id] as const,
 };
 
 // ── Dashboard ───────────────────────────────────────────
@@ -123,6 +124,14 @@ export function useFcMarkInvoicePaid() {
         mutationFn: ({ id, paidAmount }: { id: string; paidAmount?: number }) =>
             fcApi.markInvoicePaid(id, paidAmount),
         onSuccess: () => { qc.invalidateQueries({ queryKey: ['fc'] }); },
+    });
+}
+
+export function useFcInvoiceDetail(id: string) {
+    return useQuery({
+        queryKey: K.invoice(id),
+        queryFn: () => fcApi.getInvoice(id),
+        enabled: !!id,
     });
 }
 

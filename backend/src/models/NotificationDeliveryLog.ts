@@ -74,5 +74,6 @@ NotificationDeliveryLogSchema.index({ studentId: 1, sentAtUTC: -1 });
 NotificationDeliveryLogSchema.index({ jobId: 1 });
 NotificationDeliveryLogSchema.index({ status: 1 });
 NotificationDeliveryLogSchema.index({ originModule: 1, originEntityId: 1, createdAt: -1 });
+NotificationDeliveryLogSchema.index({ studentId: 1, createdAt: 1 }); // frequency cap lookups
 
 export default mongoose.model<INotificationDeliveryLog>('NotificationDeliveryLog', NotificationDeliveryLogSchema);

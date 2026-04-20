@@ -825,7 +825,7 @@ async function dispatchNotificationJob(
     let emailSentCount = 0;
 
     for (const recipient of recipients) {
-            const targets = buildDeliveryTargets(recipient, channels, recipientMode);
+        const targets = buildDeliveryTargets(recipient, channels, recipientMode);
         for (const target of targets) {
             if (!opts.testSend && settings.duplicatePreventionWindowMinutes > 0) {
                 const duplicate = await isDuplicate({
@@ -1160,6 +1160,33 @@ export async function triggerAutoSend(
         quietHoursMode: trigger.quietHoursMode === 'bypass' ? 'bypass' : 'respect',
         adminId,
         triggerKey,
+    });
+}
+
+/* ================================================================
+   Campaign Delivery Integration (Hub Integration C9)
+   Accepts campaign send requests from campaignEngineService and routes
+   them through the existing notification delivery pipeline.
+   ================================================================ */
+
+export async function processCampaignDelivery(opts: {
+    campaignId: string;
+    campaignName: string;
+    channel: 'sms' | 'email';
+    content: { body: string; subject?: string };
+    recipientUserIds: string[];
+    adminId: string;
+}): Promise<{ jobId: string; sent: number; failed: number; skipped: number }> {
+    return executeCampaign({
+        campaignName: opts.campaignName,
+        channels: [opts.channel],
+        templateKey: '',
+        customBody: opts.content.body,
+        customSubject: opts.content.subject,
+        audienceType: 'manual',
+        manualStudentIds: opts.recipientUserIds,
+        recipientMode: 'student',
+        adminId: opts.adminId,
     });
 }
 

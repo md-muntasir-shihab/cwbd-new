@@ -25,6 +25,10 @@ const DEFAULT_SECTIONS: HomeSectionRecord[] = [
     { id: 'resources', title: 'Resources Preview', isActive: true, order: 10 },
     { id: 'content_blocks', title: 'Global CTA / Content Block', isActive: true, order: 11 },
     { id: 'stats', title: 'Quick Stats', isActive: true, order: 12 },
+    { id: 'home_hero', title: 'Home Hero CMS Block', isActive: true, order: 13 },
+    { id: 'home_features', title: 'Home Features CMS Block', isActive: true, order: 14 },
+    { id: 'home_testimonials', title: 'Home Testimonials CMS Block', isActive: true, order: 15 },
+    { id: 'home_cta', title: 'Home CTA CMS Block', isActive: true, order: 16 },
 ];
 
 const SECTION_ID_ALIAS_MAP: Record<string, string> = {
@@ -65,6 +69,18 @@ const SECTION_ID_ALIAS_MAP: Record<string, string> = {
     globalctacontentblock: 'content_blocks',
     stats: 'stats',
     quickstats: 'stats',
+    home_hero: 'home_hero',
+    homehero: 'home_hero',
+    homeherocmsblock: 'home_hero',
+    home_features: 'home_features',
+    homefeatures: 'home_features',
+    homefeaturescmsblock: 'home_features',
+    home_testimonials: 'home_testimonials',
+    hometestimonials: 'home_testimonials',
+    hometestimonialscmsblock: 'home_testimonials',
+    home_cta: 'home_cta',
+    homecta: 'home_cta',
+    homectacmsblock: 'home_cta',
 };
 
 function normalizeSectionId(value: unknown): string {

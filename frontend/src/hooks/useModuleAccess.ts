@@ -1,14 +1,22 @@
 import { useCallback } from 'react';
 import { useAuth } from './useAuth';
 
+/**
+ * Module aliases map frontend module names to their backend equivalents.
+ * IMPORTANT: Aliases must ONLY map to alternative names for the SAME module,
+ * never to different modules. Cross-module aliases cause permission leakage
+ * where access to one module incorrectly grants access to another.
+ *
+ * Synced with backend PERMISSION_MODULES in permissionsMatrix.ts.
+ */
 const MODULE_ALIASES: Record<string, string[]> = {
-  home_control: ['banner_manager', 'site_settings'],
-  students_groups: ['students', 'student_groups'],
-  subscription_plans: ['subscriptions', 'payments'],
-  finance_center: ['finance', 'payments'],
-  support_center: ['support', 'help_center'],
-  reports_analytics: ['notifications', 'finance'],
-  security_logs: ['security_center', 'system_logs'],
+  home_control: ['banner_manager'],
+  students_groups: ['student_groups'],
+  subscription_plans: ['subscriptions'],
+  finance_center: ['finance'],
+  support_center: ['support'],
+  reports_analytics: ['reports'],
+  security_logs: ['security_center'],
 };
 
 function resolveModuleKeys(module: string): string[] {

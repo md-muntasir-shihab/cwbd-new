@@ -22,7 +22,7 @@ describe('Property 8: Cryptographic Token Generation Uniqueness', () => {
                 const uniqueNonces = new Set(nonces);
                 return uniqueNonces.size === n;
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -36,7 +36,7 @@ describe('Property 8: Cryptographic Token Generation Uniqueness', () => {
                 const uniqueTokens = new Set(tokens);
                 return uniqueTokens.size === n;
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

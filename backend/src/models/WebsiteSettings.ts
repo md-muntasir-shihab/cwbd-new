@@ -418,6 +418,15 @@ export interface IWebsiteSettings extends Document {
     motto: string;
     metaTitle: string;
     metaDescription: string;
+    /** Open Graph / Social Preview settings */
+    socialPreview: {
+        ogTitle: string;
+        ogDescription: string;
+        ogImageUrl: string;
+        ogType: 'website' | 'article';
+        twitterCard: 'summary' | 'summary_large_image';
+        twitterSite: string;
+    };
     contactEmail: string;
     contactPhone: string;
     socialLinks: {
@@ -454,6 +463,21 @@ export interface IWebsiteSettings extends Document {
     subscriptionDefaultBannerUrl: string;
     subscriptionLoggedOutCtaMode: 'login' | 'contact';
     staticPages: WebsiteStaticPagesConfig;
+    pageHeroSettings: Record<string, {
+        enabled: boolean;
+        title: string;
+        subtitle: string;
+        pillText: string;
+        vantaEffect: string;
+        vantaColor: string;
+        vantaBackgroundColor: string;
+        gradientFrom: string;
+        gradientTo: string;
+        showSearch: boolean;
+        searchPlaceholder: string;
+        primaryCTA: { label: string; url: string };
+        secondaryCTA: { label: string; url: string };
+    }>;
 }
 
 const WebsiteSettingsSchema = new Schema<IWebsiteSettings>({
@@ -463,6 +487,14 @@ const WebsiteSettingsSchema = new Schema<IWebsiteSettings>({
     motto: { type: String, default: 'Your Admission Gateway' },
     metaTitle: { type: String, default: 'CampusWay - Admission Gateway' },
     metaDescription: { type: String, default: 'Prepare for university admissions with CampusWay.' },
+    socialPreview: {
+        ogTitle: { type: String, default: '' },
+        ogDescription: { type: String, default: '' },
+        ogImageUrl: { type: String, default: '' },
+        ogType: { type: String, enum: ['website', 'article'], default: 'website' },
+        twitterCard: { type: String, enum: ['summary', 'summary_large_image'], default: 'summary_large_image' },
+        twitterSite: { type: String, default: '' },
+    },
     contactEmail: { type: String, default: '' },
     contactPhone: { type: String, default: '' },
     socialLinks: {
@@ -508,6 +540,7 @@ const WebsiteSettingsSchema = new Schema<IWebsiteSettings>({
     subscriptionDefaultBannerUrl: { type: String, default: '' },
     subscriptionLoggedOutCtaMode: { type: String, enum: ['login', 'contact'], default: 'contact' },
     staticPages: { type: Schema.Types.Mixed, default: createWebsiteStaticPagesDefaults },
+    pageHeroSettings: { type: Schema.Types.Mixed, default: () => ({}) },
 }, { timestamps: true });
 
 export default mongoose.model<IWebsiteSettings>('WebsiteSettings', WebsiteSettingsSchema);

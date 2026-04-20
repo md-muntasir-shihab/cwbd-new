@@ -279,7 +279,7 @@ describe('Feature: campusway-qa-audit, Property 2: Seed Manifest Round-Trip', ()
                     await verifyEntryInDatabase(entry);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

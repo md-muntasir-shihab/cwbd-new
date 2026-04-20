@@ -3,7 +3,7 @@ import AdminGuardShell from '../AdminGuardShell';
 import { adminUi } from '../../../lib/appRoutes';
 import {
     UserCog, UserPlus, Import, ClipboardList,
-    MessageSquare, TrendingDown, Bell, Settings, CheckSquare,
+    MessageSquare, TrendingDown, Settings, CheckSquare,
 } from 'lucide-react';
 
 const TABS = [
@@ -14,7 +14,6 @@ const TABS = [
     { to: adminUi('student-management/crm-timeline'), label: 'CRM Timeline', icon: MessageSquare },
     { to: adminUi('student-management/weak-topics'), label: 'Weak Topics', icon: TrendingDown },
     { to: adminUi('student-management/profile-requests'), label: 'Profile Requests', icon: CheckSquare },
-    { to: adminUi('student-management/notifications'), label: 'Notifications', icon: Bell },
     { to: adminUi('student-management/settings'), label: 'Settings', icon: Settings },
 ] as const;
 
@@ -27,25 +26,25 @@ const activeCls =
 export default function StudentManagementLayout() {
     return (
         <AdminGuardShell title="Student Management" description="Manage students, groups, audiences, CRM, and related operations.">
-        <div className="space-y-4">
-            {/* Horizontal tab strip */}
-            <nav className="hide-scrollbar flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1.5 dark:border-slate-700 dark:bg-slate-900">
-                {TABS.map(({ to, label, icon: Icon }) => (
-                    <NavLink
-                        key={to}
-                        to={to}
-                        end={label === 'All Students'}
-                        className={({ isActive }) => `${baseCls} ${isActive ? activeCls : ''}`}
-                    >
-                        <Icon size={14} />
-                        {label}
-                    </NavLink>
-                ))}
-            </nav>
+            <div className="space-y-4">
+                {/* Horizontal tab strip */}
+                <nav className="hide-scrollbar flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1.5 dark:border-slate-700 dark:bg-slate-900">
+                    {TABS.map(({ to, label, icon: Icon }) => (
+                        <NavLink
+                            key={to}
+                            to={to}
+                            end={label === 'All Students'}
+                            className={({ isActive }) => `${baseCls} ${isActive ? activeCls : ''}`}
+                        >
+                            <Icon size={14} />
+                            {label}
+                        </NavLink>
+                    ))}
+                </nav>
 
-            {/* Child route renders here */}
-            <Outlet />
-        </div>
+                {/* Child route renders here */}
+                <Outlet />
+            </div>
         </AdminGuardShell>
     );
 }

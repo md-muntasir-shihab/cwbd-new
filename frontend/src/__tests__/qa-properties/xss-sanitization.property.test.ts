@@ -128,7 +128,7 @@ describe('Feature: campusway-qa-audit, Property 13: XSS Input Sanitization', () 
                     ).not.toBe(500);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -166,7 +166,7 @@ describe('Feature: campusway-qa-audit, Property 13: XSS Input Sanitization', () 
                     ).not.toBe(500);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

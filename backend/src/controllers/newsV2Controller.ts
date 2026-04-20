@@ -1790,7 +1790,7 @@ async function ingestFromSources(sourceIds: string[], trigger: 'manual' | 'sched
                                 newsData.content = sanitizeRichHtml(textToSafeHtml(minimal));
                                 newsData.fullContent = newsData.content;
                             }
-                        newsData.sourceType = 'ai_assisted';
+                            newsData.sourceType = 'ai_assisted';
                             newsData.aiSelected = true;
                             newsData.aiUsed = true;
                             newsData.aiModel = aiDraft.model || '';
@@ -1822,18 +1822,18 @@ async function ingestFromSources(sourceIds: string[], trigger: 'manual' | 'sched
                             if (String(newsData.content || '').replace(/<[^>]*>/g, '').trim().length < 60) {
                                 newsData.aiNotes = 'insufficient content';
                             }
-                        newsData.aiMeta = {
-                            provider: aiDraft.provider || '',
-                            model: aiDraft.model || '',
-                            promptVersion: 'v1',
-                            confidence: aiDraft.confidence || 0.7,
-                            citations: aiDraft.citations || [canonicalLink],
-                            noHallucinationPassed:
-                                (settings.aiSettings?.strictNoHallucination ?? settings.aiSettings?.strictMode ?? settings.ai.noHallucinationMode)
-                                    ? (aiDraft.citations || []).length > 0
-                                    : true,
-                            warning: '',
-                        };
+                            newsData.aiMeta = {
+                                provider: aiDraft.provider || '',
+                                model: aiDraft.model || '',
+                                promptVersion: 'v1',
+                                confidence: aiDraft.confidence || 0.7,
+                                citations: aiDraft.citations || [canonicalLink],
+                                noHallucinationPassed:
+                                    (settings.aiSettings?.strictNoHallucination ?? settings.aiSettings?.strictMode ?? settings.ai.noHallucinationMode)
+                                        ? (aiDraft.citations || []).length > 0
+                                        : true,
+                                warning: '',
+                            };
                         } else {
                             newsData.aiSelected = false;
                             newsData.aiUsed = false;
@@ -1845,14 +1845,14 @@ async function ingestFromSources(sourceIds: string[], trigger: 'manual' | 'sched
                                 ...(newsData.aiEnrichment as Record<string, unknown> || {}),
                                 warning: String(aiDraft.warning || 'insufficient content'),
                             };
-                        newsData.aiMeta = {
-                            provider: '',
-                            model: '',
-                            promptVersion: 'v1',
-                            confidence: 0,
-                            citations: [canonicalLink],
-                            noHallucinationPassed: false,
-                            warning: aiDraft.warning,
+                            newsData.aiMeta = {
+                                provider: '',
+                                model: '',
+                                promptVersion: 'v1',
+                                confidence: 0,
+                                citations: [canonicalLink],
+                                noHallucinationPassed: false,
+                                warning: aiDraft.warning,
                             };
                         }
                     }
@@ -2696,7 +2696,22 @@ export async function adminNewsV2UpdateItem(req: AuthRequest, res: Response): Pr
         }
         const settings = await getOrCreateNewsSettings();
         const normalized = applyDefaultBannerToNewsPayload(normalizeNewsPayload(req.body || {}), settings);
-        const updated = await News.findByIdAndUpdate(req.params.id, { ...normalized, auditVersion: Number(before.auditVersion || 1) + 1 }, { new: true, runValidators: true });
+
+        // Track edits for RSS-imported items while preserving source attribution
+        const isRSSItem = before.sourceType === 'rss';
+        const editTrackingFields = isRSSItem ? {
+            isEdited: true,
+            editedAt: new Date(),
+            // Preserve source attribution fields - do not allow overwriting
+            sourceType: 'rss',
+            sourceUrl: before.sourceUrl,
+            sourceName: before.sourceName,
+            sourceId: before.sourceId,
+            originalArticleUrl: before.originalArticleUrl,
+            rssGuid: before.rssGuid,
+        } : {};
+
+        const updated = await News.findByIdAndUpdate(req.params.id, { ...normalized, ...editTrackingFields, auditVersion: Number(before.auditVersion || 1) + 1 }, { new: true, runValidators: true });
         const fallbackBanner = resolveDefaultNewsBanner(settings);
         const updatedPayload = updated
             ? buildNewsOutput(updated.toObject() as unknown as Record<string, unknown>, fallbackBanner)
@@ -3047,6 +3062,63 @@ async function workflowUpdate(
 
 export async function adminNewsV2SubmitReview(req: AuthRequest, res: Response): Promise<void> {
     await workflowUpdate(req, res, 'pending_review', { isPublished: false }, 'news.submit_review');
+}
+
+/**
+ * Convert an RSS-imported news item to an editable state.
+ * This action changes the workflow state to 'draft' while preserving source attribution.
+ * The item can then be fully edited by admins.
+ */
+export async function adminNewsV2ConvertToEditable(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const before = await News.findById(req.params.id).lean();
+        if (!before) {
+            res.status(404).json({ message: 'News item not found' });
+            return;
+        }
+
+        // Only RSS items need conversion - manual items are already editable
+        if (before.sourceType !== 'rss') {
+            res.status(400).json({ message: 'Only RSS-imported items can be converted to editable' });
+            return;
+        }
+
+        const patch = {
+            status: 'draft' as const,
+            isPublished: false,
+            isEdited: true,
+            editedAt: new Date(),
+            // Preserve source attribution
+            sourceType: 'rss' as const,
+            sourceUrl: before.sourceUrl,
+            sourceName: before.sourceName,
+            sourceId: before.sourceId,
+            originalArticleUrl: before.originalArticleUrl,
+            rssGuid: before.rssGuid,
+            auditVersion: Number(before.auditVersion || 1) + 1,
+        };
+
+        const updated = await News.findByIdAndUpdate(req.params.id, { $set: patch }, { new: true }).lean();
+        const settings = await getOrCreateNewsSettings();
+        const fallbackBanner = resolveDefaultNewsBanner(settings);
+        const updatedPayload = updated ? buildNewsOutput(updated as unknown as Record<string, unknown>, fallbackBanner) : null;
+        const entityId = String(req.params.id || '');
+
+        await writeNewsAuditEvent(req, {
+            action: 'news.convert_to_editable',
+            entityType: 'workflow',
+            entityId,
+            before: { status: before.status, sourceType: before.sourceType },
+            after: { status: updated?.status || 'draft', isEdited: true },
+            meta: { preservedSourceAttribution: true },
+        });
+
+        broadcastHomeStreamEvent({ type: 'news-updated', meta: { action: 'convert_to_editable', newsId: entityId } });
+        res.json({ item: updatedPayload, message: 'RSS item converted to editable draft. Source attribution preserved.' });
+    } catch (error: any) {
+        console.error('adminNewsV2ConvertToEditable error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 }
 
 export async function adminNewsV2Approve(req: AuthRequest, res: Response): Promise<void> {
@@ -4559,6 +4631,36 @@ export async function getPublicNewsV2BySlug(req: Request, res: Response): Promis
         });
     } catch (error) {
         console.error('getPublicNewsV2BySlug error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function getPublicNewsV2OGMeta(req: Request, res: Response): Promise<void> {
+    try {
+        const slugOrId = String(req.params.slug || '').trim();
+        const slugFilter: Array<Record<string, unknown>> = [{ slug: slugOrId }];
+        if (mongoose.isValidObjectId(slugOrId)) {
+            slugFilter.push({ _id: new mongoose.Types.ObjectId(slugOrId) });
+        }
+        const item = await News.findOne({
+            $and: [buildPublicPublishedFilter(), { $or: slugFilter }],
+        }).select('title slug shortSummary shortDescription coverImageUrl featuredImage coverImage ogTitle ogDescription ogImage').lean();
+        if (!item) { res.status(404).json({ message: 'News not found' }); return; }
+
+        const ogTitle = (item as any).ogTitle || (item as any).title || '';
+        const ogDescription = (item as any).ogDescription || (item as any).shortSummary || (item as any).shortDescription || '';
+        const ogImage = (item as any).ogImage || (item as any).coverImageUrl || (item as any).featuredImage || (item as any).coverImage || '';
+        const ogUrl = `${req.protocol}://${req.get('host')}/news/${(item as any).slug}`;
+
+        res.json({
+            ogTitle,
+            ogDescription,
+            ogImage,
+            ogUrl,
+            ogType: 'article',
+        });
+    } catch (error) {
+        console.error('getPublicNewsV2OGMeta error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 }

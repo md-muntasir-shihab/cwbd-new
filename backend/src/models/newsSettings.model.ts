@@ -13,6 +13,7 @@ const newsSettingsSchema = new Schema(
       enum: ["rss_content", "readability_scrape", "both"],
       default: "both"
     },
+    aiExtractionFallback: { type: Boolean, default: false },
     appearance: {
       layoutMode: { type: String, default: "rss_reader" },
       density: { type: String, default: "comfortable" },

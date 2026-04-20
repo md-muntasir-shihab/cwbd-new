@@ -53,8 +53,9 @@ export default {
                 },
             },
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', 'Segoe UI', 'sans-serif'],
+                sans: ['"Plus Jakarta Sans"', '"Noto Sans Bengali"', '"Hind Siliguri"', 'Segoe UI', 'sans-serif'],
                 heading: ['Sora', '"Plus Jakarta Sans"', 'Segoe UI', 'sans-serif'],
+                bangla: ['"Noto Sans Bengali"', '"Hind Siliguri"', 'sans-serif'],
             },
             boxShadow: {
                 card: '0 8px 30px -16px var(--shadowColor, rgba(13, 95, 219, 0.26))',

@@ -28,9 +28,9 @@ const POLICY_DEFAULTS: AdminAntiCheatPolicy = {
 };
 
 const VIOLATION_ACTION_OPTIONS: Array<{ value: AdminAntiCheatPolicy['violationAction']; label: string; description: string }> = [
-    { value: 'warn', label: 'সতর্কতা (Warn)', description: 'শুধুমাত্র সতর্কতা বার্তা দেখাবে' },
-    { value: 'lock', label: 'সেশন লক (Lock)', description: 'পরীক্ষা সেশন লক করবে' },
-    { value: 'submit', label: 'জোরপূর্বক সাবমিট (Submit)', description: 'পরীক্ষা স্বয়ংক্রিয়ভাবে সাবমিট করবে' },
+    { value: 'warn', label: 'Warn', description: 'Show a warning message only' },
+    { value: 'lock', label: 'Lock Session', description: 'Lock the exam session' },
+    { value: 'submit', label: 'Force Submit', description: 'Auto-submit the exam' },
 ];
 
 // ─── Reusable field components (matching SecuritySettingsPanel style) ─────────
@@ -64,7 +64,7 @@ function ToggleField({ label, description, checked, onChange, overridden }: Togg
             <div className="min-w-0 flex-1 relative z-10">
                 <div className="flex items-center gap-2">
                     <p className="text-sm font-semibold text-slate-200 transition-colors group-hover:text-white">{label}</p>
-                    {overridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">ওভাররাইড</span>}
+                    {overridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">Override</span>}
                 </div>
                 <p className="mt-1.5 text-xs text-slate-400 leading-relaxed transition-colors group-hover:text-slate-300">{description}</p>
             </div>
@@ -89,10 +89,10 @@ function NumberField({ label, description, value, min, max, onChange, overridden
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-200 transition-colors group-hover:text-white">{label}</p>
-                        {overridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">ওভাররাইড</span>}
+                        {overridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">Override</span>}
                     </div>
                     <p className="mt-1.5 text-xs text-slate-400 leading-relaxed transition-colors group-hover:text-slate-300">{description}</p>
-                    <p className="mt-1 text-[10px] text-slate-500">রেঞ্জ: {min} – {max}</p>
+                    <p className="mt-1 text-[10px] text-slate-500">Range: {min} – {max}</p>
                 </div>
                 <div className="relative shrink-0">
                     <input
@@ -119,7 +119,7 @@ function SelectField({ label, description, value, options, onChange, overridden 
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-slate-200 transition-colors group-hover:text-white">{label}</p>
-                        {overridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">ওভাররাইড</span>}
+                        {overridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">Override</span>}
                     </div>
                     <p className="mt-1.5 text-xs text-slate-400 leading-relaxed transition-colors group-hover:text-slate-300">{description}</p>
                 </div>
@@ -146,18 +146,18 @@ type OverrideEditorProps = {
 };
 
 const OVERRIDE_FIELDS: Array<{ key: keyof AdminAntiCheatPolicy; label: string; type: 'number' | 'boolean' | 'select'; min?: number; max?: number }> = [
-    { key: 'tabSwitchLimit', label: 'ট্যাব সুইচ লিমিট', type: 'number', min: 1, max: 100 },
-    { key: 'copyPasteViolationLimit', label: 'কপি/পেস্ট লঙ্ঘন লিমিট', type: 'number', min: 1, max: 50 },
-    { key: 'warningCooldownSeconds', label: 'সতর্কতা কুলডাউন (সেকেন্ড)', type: 'number', min: 0, max: 300 },
-    { key: 'maxFullscreenExitLimit', label: 'ফুলস্ক্রিন এক্সিট লিমিট', type: 'number', min: 1, max: 50 },
-    { key: 'violationAction', label: 'লঙ্ঘন অ্যাকশন', type: 'select' },
-    { key: 'requireFullscreen', label: 'ফুলস্ক্রিন বাধ্যতামূলক', type: 'boolean' },
-    { key: 'enableClipboardBlock', label: 'ক্লিপবোর্ড ব্লক', type: 'boolean' },
-    { key: 'enableContextMenuBlock', label: 'কনটেক্সট মেনু ব্লক', type: 'boolean' },
-    { key: 'enableBlurTracking', label: 'ব্লার ট্র্যাকিং', type: 'boolean' },
-    { key: 'allowMobileRelaxedMode', label: 'মোবাইল রিল্যাক্সড মোড', type: 'boolean' },
-    { key: 'proctoringSignalsEnabled', label: 'প্রক্টরিং সিগন্যাল', type: 'boolean' },
-    { key: 'strictExamTabLock', label: 'স্ট্রিক্ট ট্যাব লক', type: 'boolean' },
+    { key: 'tabSwitchLimit', label: 'Tab Switch Limit', type: 'number', min: 1, max: 100 },
+    { key: 'copyPasteViolationLimit', label: 'Copy/Paste Violation Limit', type: 'number', min: 1, max: 50 },
+    { key: 'warningCooldownSeconds', label: 'Warning Cooldown (seconds)', type: 'number', min: 0, max: 300 },
+    { key: 'maxFullscreenExitLimit', label: 'Fullscreen Exit Limit', type: 'number', min: 1, max: 50 },
+    { key: 'violationAction', label: 'Violation Action', type: 'select' },
+    { key: 'requireFullscreen', label: 'Require Fullscreen', type: 'boolean' },
+    { key: 'enableClipboardBlock', label: 'Clipboard Block', type: 'boolean' },
+    { key: 'enableContextMenuBlock', label: 'Context Menu Block', type: 'boolean' },
+    { key: 'enableBlurTracking', label: 'Blur Tracking', type: 'boolean' },
+    { key: 'allowMobileRelaxedMode', label: 'Mobile Relaxed Mode', type: 'boolean' },
+    { key: 'proctoringSignalsEnabled', label: 'Proctoring Signals', type: 'boolean' },
+    { key: 'strictExamTabLock', label: 'Strict Tab Lock', type: 'boolean' },
 ];
 
 function PerExamOverrideEditor({ globalPolicy, overrides, onChange }: OverrideEditorProps) {
@@ -187,10 +187,10 @@ function PerExamOverrideEditor({ globalPolicy, overrides, onChange }: OverrideEd
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-semibold text-slate-200">{field.label}</p>
-                                    {isOverridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">ওভাররাইড</span>}
+                                    {isOverridden && <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-300">Override</span>}
                                 </div>
                                 <p className="mt-1 text-[10px] text-slate-500">
-                                    গ্লোবাল ডিফল্ট: {String(globalPolicy[field.key])}
+                                    Global default: {String(globalPolicy[field.key])}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
@@ -200,7 +200,7 @@ function PerExamOverrideEditor({ globalPolicy, overrides, onChange }: OverrideEd
                                     onClick={() => toggleOverride(field.key, !isOverridden)}
                                     className={`rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-all ${isOverridden ? 'border-amber-400/40 bg-amber-500/20 text-amber-300' : 'border-white/10 bg-slate-800/50 text-slate-500 hover:text-white'}`}
                                 >
-                                    {isOverridden ? 'রিসেট' : 'ওভাররাইড'}
+                                    {isOverridden ? 'Reset' : 'Override'}
                                 </button>
                                 {/* Value editor */}
                                 {isOverridden && field.type === 'number' && (
@@ -282,12 +282,12 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
             return res.data;
         },
         onSuccess: () => {
-            toast.success('অ্যান্টি-চিট পলিসি সফলভাবে আপডেট হয়েছে');
+            toast.success('Anti-cheat policy updated successfully');
             queryClient.invalidateQueries({ queryKey: queryKeys.antiCheatPolicy });
             setIsDirty(false);
         },
         onError: (err: unknown) => {
-            const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'পলিসি আপডেট ব্যর্থ হয়েছে';
+            const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update policy';
             toast.error(message);
         },
     });
@@ -308,15 +308,15 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
             return (
                 <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
-                    <span className="ml-3 text-sm text-slate-400">গ্লোবাল পলিসি লোড হচ্ছে…</span>
+                    <span className="ml-3 text-sm text-slate-400">Loading global policy…</span>
                 </div>
             );
         }
 
         return (
             <SectionCard
-                title="পার-এক্সাম অ্যান্টি-চিট ওভাররাইড"
-                description="গ্লোবাল ডিফল্ট থেকে এই পরীক্ষার জন্য কোন ফিল্ড ওভাররাইড করতে চান তা নির্বাচন করুন"
+                title="Per-Exam Anti-Cheat Overrides"
+                description="Select which fields to override from the global defaults for this exam"
                 icon={<ShieldAlert className="h-5 w-5 text-amber-400" />}
             >
                 <PerExamOverrideEditor
@@ -333,7 +333,7 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
         return (
             <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
-                <span className="ml-3 text-slate-400">অ্যান্টি-চিট পলিসি লোড হচ্ছে…</span>
+                <span className="ml-3 text-slate-400">Loading anti-cheat policy…</span>
             </div>
         );
     }
@@ -342,7 +342,7 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
         return (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-6 py-8 text-center">
                 <ShieldAlert className="mx-auto h-8 w-8 text-red-400" />
-                <p className="mt-3 text-sm text-red-300">অ্যান্টি-চিট পলিসি লোড করতে ব্যর্থ হয়েছে</p>
+                <p className="mt-3 text-sm text-red-300">Failed to load anti-cheat policy</p>
             </div>
         );
     }
@@ -354,8 +354,8 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
                 <div className="flex items-center gap-3">
                     <Shield className="h-6 w-6 text-cyan-400" />
                     <div>
-                        <h2 className="text-xl font-bold text-white">অ্যান্টি-চিট পলিসি</h2>
-                        <p className="text-sm text-slate-400">গ্লোবাল পরীক্ষা অ্যান্টি-চিট কনফিগারেশন</p>
+                        <h2 className="text-xl font-bold text-white">Anti-Cheat Policy</h2>
+                        <p className="text-sm text-slate-400">Global exam anti-cheat configuration</p>
                     </div>
                 </div>
                 <button
@@ -363,35 +363,35 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
                     onClick={handleSave}
                     disabled={!isDirty || saveMutation.isPending}
                     className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-300 ${isDirty
-                            ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)]'
-                            : 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
+                        ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)]'
+                        : 'bg-slate-800/50 text-slate-500 cursor-not-allowed'
                         }`}
                 >
                     {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    সংরক্ষণ করুন
+                    Save
                 </button>
             </div>
 
             {/* Violation Limits */}
             <SectionCard
-                title="লঙ্ঘন সীমা"
-                description="পরীক্ষা চলাকালীন সর্বোচ্চ অনুমোদিত লঙ্ঘন সংখ্যা"
+                title="Violation Limits"
+                description="Maximum allowed violations during an exam"
                 icon={<ShieldAlert className="h-5 w-5 text-red-400" />}
             >
-                <NumberField label="ট্যাব সুইচ লিমিট" description="সর্বোচ্চ কতবার ট্যাব সুইচ করতে পারবে" value={draft.tabSwitchLimit} min={1} max={100} onChange={(v) => update('tabSwitchLimit', v)} />
-                <NumberField label="কপি/পেস্ট লঙ্ঘন লিমিট" description="সর্বোচ্চ কতবার কপি/পেস্ট চেষ্টা করতে পারবে" value={draft.copyPasteViolationLimit} min={1} max={50} onChange={(v) => update('copyPasteViolationLimit', v)} />
-                <NumberField label="ফুলস্ক্রিন এক্সিট লিমিট" description="সর্বোচ্চ কতবার ফুলস্ক্রিন থেকে বের হতে পারবে" value={draft.maxFullscreenExitLimit} min={1} max={50} onChange={(v) => update('maxFullscreenExitLimit', v)} />
-                <NumberField label="সতর্কতা কুলডাউন (সেকেন্ড)" description="একই ধরনের সতর্কতা পুনরায় দেখানোর আগে অপেক্ষার সময়" value={draft.warningCooldownSeconds} min={0} max={300} onChange={(v) => update('warningCooldownSeconds', v)} />
+                <NumberField label="Tab Switch Limit" description="Maximum number of tab switches allowed" value={draft.tabSwitchLimit} min={1} max={100} onChange={(v) => update('tabSwitchLimit', v)} />
+                <NumberField label="Copy/Paste Violation Limit" description="Maximum copy/paste attempts allowed" value={draft.copyPasteViolationLimit} min={1} max={50} onChange={(v) => update('copyPasteViolationLimit', v)} />
+                <NumberField label="Fullscreen Exit Limit" description="Maximum fullscreen exits allowed" value={draft.maxFullscreenExitLimit} min={1} max={50} onChange={(v) => update('maxFullscreenExitLimit', v)} />
+                <NumberField label="Warning Cooldown (seconds)" description="Wait time before showing the same warning again" value={draft.warningCooldownSeconds} min={0} max={300} onChange={(v) => update('warningCooldownSeconds', v)} />
             </SectionCard>
 
             {/* Violation Action */}
             <SectionCard
-                title="লঙ্ঘন প্রতিক্রিয়া"
-                description="লিমিট অতিক্রম করলে কী পদক্ষেপ নেওয়া হবে"
+                title="Violation Response"
+                description="Action taken when violation limits are exceeded"
             >
                 <SelectField
-                    label="লঙ্ঘন অ্যাকশন"
-                    description="লিমিট পৌঁছালে সিস্টেম কী করবে"
+                    label="Violation Action"
+                    description="What the system does when limits are reached"
                     value={draft.violationAction}
                     options={VIOLATION_ACTION_OPTIONS}
                     onChange={(v) => update('violationAction', v as AdminAntiCheatPolicy['violationAction'])}
@@ -400,17 +400,17 @@ export default function AntiCheatPolicyForm({ mode = 'global', examOverrides, on
 
             {/* Boolean Toggles */}
             <SectionCard
-                title="সিকিউরিটি ফিচার"
-                description="পরীক্ষা চলাকালীন সক্রিয় সিকিউরিটি ফিচারসমূহ"
+                title="Security Features"
+                description="Active security features during exams"
                 icon={<Shield className="h-5 w-5 text-cyan-400" />}
             >
-                <ToggleField label="ফুলস্ক্রিন বাধ্যতামূলক" description="পরীক্ষা শুরুর সময় ফুলস্ক্রিন মোড বাধ্যতামূলক করুন" checked={draft.requireFullscreen} onChange={(v) => update('requireFullscreen', v)} />
-                <ToggleField label="ক্লিপবোর্ড ব্লক" description="কপি, কাট ও পেস্ট অপারেশন ব্লক করুন" checked={draft.enableClipboardBlock} onChange={(v) => update('enableClipboardBlock', v)} />
-                <ToggleField label="কনটেক্সট মেনু ব্লক" description="রাইট-ক্লিক কনটেক্সট মেনু ব্লক করুন" checked={draft.enableContextMenuBlock} onChange={(v) => update('enableContextMenuBlock', v)} />
-                <ToggleField label="ব্লার ট্র্যাকিং" description="ব্রাউজার উইন্ডো ব্লার (ফোকাস হারানো) ট্র্যাক করুন" checked={draft.enableBlurTracking} onChange={(v) => update('enableBlurTracking', v)} />
-                <ToggleField label="মোবাইল রিল্যাক্সড মোড" description="মোবাইল ডিভাইসে শিথিল অ্যান্টি-চিট নিয়ম প্রয়োগ করুন" checked={draft.allowMobileRelaxedMode} onChange={(v) => update('allowMobileRelaxedMode', v)} />
-                <ToggleField label="প্রক্টরিং সিগন্যাল" description="প্রক্টরিং সিগন্যাল সংগ্রহ সক্রিয় করুন" checked={draft.proctoringSignalsEnabled} onChange={(v) => update('proctoringSignalsEnabled', v)} />
-                <ToggleField label="স্ট্রিক্ট ট্যাব লক" description="পরীক্ষা চলাকালীন কঠোর ট্যাব লক প্রয়োগ করুন" checked={draft.strictExamTabLock} onChange={(v) => update('strictExamTabLock', v)} />
+                <ToggleField label="Require Fullscreen" description="Require fullscreen mode when starting an exam" checked={draft.requireFullscreen} onChange={(v) => update('requireFullscreen', v)} />
+                <ToggleField label="Clipboard Block" description="Block copy, cut, and paste operations" checked={draft.enableClipboardBlock} onChange={(v) => update('enableClipboardBlock', v)} />
+                <ToggleField label="Context Menu Block" description="Block right-click context menu" checked={draft.enableContextMenuBlock} onChange={(v) => update('enableContextMenuBlock', v)} />
+                <ToggleField label="Blur Tracking" description="Track browser window blur (focus loss)" checked={draft.enableBlurTracking} onChange={(v) => update('enableBlurTracking', v)} />
+                <ToggleField label="Mobile Relaxed Mode" description="Apply relaxed anti-cheat rules on mobile devices" checked={draft.allowMobileRelaxedMode} onChange={(v) => update('allowMobileRelaxedMode', v)} />
+                <ToggleField label="Proctoring Signals" description="Enable proctoring signal collection" checked={draft.proctoringSignalsEnabled} onChange={(v) => update('proctoringSignalsEnabled', v)} />
+                <ToggleField label="Strict Tab Lock" description="Enforce strict tab lock during exams" checked={draft.strictExamTabLock} onChange={(v) => update('strictExamTabLock', v)} />
             </SectionCard>
         </div>
     );

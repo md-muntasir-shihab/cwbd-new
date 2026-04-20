@@ -8,6 +8,8 @@ import QuestionMedia from '../models/QuestionMedia';
 import QuestionImportJob from '../models/QuestionImportJob';
 import AuditLog from '../models/AuditLog';
 import Exam from '../models/Exam';
+import { ExamQuestionModel } from '../models/examQuestion.model';
+import QuestionBankSettings from '../models/QuestionBankSettings';
 import { getSignedUploadForBanner } from '../services/uploadProvider';
 import {
     computeQualityScore,
@@ -15,6 +17,7 @@ import {
     normalizeQuestionPayload,
     sanitizeRichHtml,
     validateImageUrl,
+    validateQuestionPayload,
 } from '../utils/questionBank';
 import { escapeRegex } from '../utils/escapeRegex';
 
@@ -411,6 +414,14 @@ export async function createQuestion(req: AuthRequest, res: Response): Promise<v
         }
 
         const payload = toSafeObject(req.body);
+
+        // Validate question payload against business rules (Requirements 1.9, 1.10, 3.2)
+        const validation = validateQuestionPayload(payload);
+        if (!validation.valid) {
+            res.status(400).json({ success: false, message: 'Validation failed', errors: validation.errors });
+            return;
+        }
+
         const defaultStatus = String(payload.default_status || process.env.QBANK_DEFAULT_STATUS || 'draft').trim().toLowerCase();
         const fallbackStatus = defaultStatus === 'pending_review' ? 'pending_review' : 'draft';
         const { normalized, errors } = normalizeQuestionPayload(payload, fallbackStatus);
@@ -504,6 +515,14 @@ export async function updateQuestion(req: AuthRequest, res: Response): Promise<v
         }
 
         const payload = { ...toSafeObject(req.body), question: req.body?.question ?? existing.question };
+
+        // Validate question payload against business rules (Requirements 1.9, 1.10, 3.2)
+        const validation = validateQuestionPayload(payload as Record<string, unknown>);
+        if (!validation.valid) {
+            res.status(400).json({ success: false, message: 'Validation failed', errors: validation.errors });
+            return;
+        }
+
         const { normalized, errors } = normalizeQuestionPayload(payload as Record<string, unknown>, existing.status || 'draft');
         if (errors.length > 0) {
             res.status(400).json({ message: errors[0], errors });
@@ -585,24 +604,52 @@ export async function deleteQuestion(req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        const hardDelete = boolFromQuery(req.query.hardDelete) === true;
-        if (hardDelete) {
-            await Question.findByIdAndDelete(req.params.id);
-            await createAudit(req, 'qbank_question_deleted', req.params.id, { hardDelete: true });
-            res.json({ message: 'Question deleted successfully' });
+        // Check if archive-instead-of-delete setting is enabled
+        const settings = await QuestionBankSettings.findOne();
+
+        if (settings?.archiveInsteadOfDelete) {
+            // Soft delete: archive the question instead of removing it
+            existing.status = 'archived';
+            existing.active = false;
+            existing.archived_at = new Date();
+            existing.archived_by = req.user?._id && mongoose.Types.ObjectId.isValid(req.user._id)
+                ? new mongoose.Types.ObjectId(req.user._id)
+                : null;
+            await existing.save();
+
+            await createAudit(req, 'qbank_question_archived', req.params.id, { softDelete: true, archiveInsteadOfDelete: true });
+            res.json({ message: 'Question archived successfully', question: existing });
             return;
         }
 
-        existing.status = 'archived';
-        existing.active = false;
-        existing.archived_at = new Date();
-        existing.archived_by = req.user?._id && mongoose.Types.ObjectId.isValid(req.user._id)
-            ? new mongoose.Types.ObjectId(req.user._id)
-            : null;
-        await existing.save();
+        // Hard delete with cascade
+        const questionId = existing._id.toString();
 
-        await createAudit(req, 'qbank_question_archived', req.params.id, { softDelete: true });
-        res.json({ message: 'Question archived successfully', question: existing });
+        // IMPORTANT: Get affected exam IDs BEFORE deleting ExamQuestions
+        const affectedExamIds = await ExamQuestionModel.distinct('examId', {
+            fromBankQuestionId: questionId,
+        });
+
+        // Remove all ExamQuestion records referencing this bank question
+        await ExamQuestionModel.deleteMany({ fromBankQuestionId: questionId });
+
+        // Recalculate totalQuestions and totalMarks for each affected exam
+        for (const examId of affectedExamIds) {
+            const remaining = await ExamQuestionModel.find({ examId });
+            await Exam.findByIdAndUpdate(examId, {
+                totalQuestions: remaining.length,
+                totalMarks: remaining.reduce((sum: number, q: any) => sum + (q.marks || 0), 0),
+            });
+        }
+
+        // Delete the bank question itself
+        await existing.deleteOne();
+
+        await createAudit(req, 'qbank_question_deleted', req.params.id, {
+            hardDelete: true,
+            cascadeExamIds: affectedExamIds,
+        });
+        res.json({ message: 'Question deleted successfully' });
     } catch (err) {
         console.error('deleteQuestion error:', err);
         res.status(500).json({ message: 'Server error' });

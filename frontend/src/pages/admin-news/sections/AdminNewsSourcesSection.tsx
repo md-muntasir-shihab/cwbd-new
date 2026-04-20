@@ -13,6 +13,7 @@ import {
     adminNewsV2UpdateSource,
 } from '../../../services/api';
 import { buildMediaUrl } from '../../../utils/mediaUrl';
+import { extractUploadUrl, extractUploadError } from '../../../components/common/CompressedImageInput';
 
 const EMPTY_SOURCE: Partial<ApiNewsV2Source> = {
     name: '',
@@ -92,12 +93,12 @@ export default function AdminNewsSourcesSection() {
         setUploadingIcon(true);
         try {
             const result = await adminNewsV2UploadMedia(file, { altText: 'source-icon' });
-            const mediaUrl = result.data?.item?.url || '';
-            if (!mediaUrl) throw new Error('Upload failed');
+            const mediaUrl = extractUploadUrl(result.data);
+            if (!mediaUrl) throw new Error('Upload returned empty URL');
             setForm((prev) => ({ ...prev, iconUrl: mediaUrl, iconType: 'upload' }));
             toast.success('Icon uploaded');
-        } catch (error: any) {
-            toast.error(error?.response?.data?.message || 'Icon upload failed');
+        } catch (error: unknown) {
+            toast.error(extractUploadError(error, 'Icon upload failed'));
         } finally {
             setUploadingIcon(false);
         }

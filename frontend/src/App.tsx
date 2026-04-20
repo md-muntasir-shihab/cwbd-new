@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from '
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './hooks/useTheme';
 import { AuthProvider } from './hooks/useAuth';
+import { I18nProvider } from './i18n';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomeModern';
@@ -12,6 +13,7 @@ import OtpVerificationPage from './pages/OtpVerification';
 import AdminAccessDeniedPage from './pages/AdminAccessDenied';
 import NotFoundPage from './pages/NotFound';
 import ForceLogoutModal from './components/auth/ForceLogoutModal';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import {
     ADMIN_ACCESS_DENIED,
     ADMIN_DASHBOARD,
@@ -64,6 +66,9 @@ import {
     AdminUniversitySettingsPage,
     ActionApprovalsPage,
     CampaignConsolePage,
+    CampaignSettingsPage,
+    ExamFormPage,
+    ExamPreviewPage,
     FinanceAuditLogPage,
     FinanceBudgetsPage,
     FinanceDashboardPage,
@@ -298,7 +303,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     }, [path, settings]);
 
     if (isFullScreen) return <><SEO /><RouteScrollReset /><ForceLogoutModal />{children}</>;
-    
+
     return (
         <div className="min-h-screen flex flex-col bg-transparent transition-colors duration-300">
             <SEO />
@@ -351,210 +356,216 @@ export default function App() {
         <QueryClientProvider client={queryClient}>
             <ThemeProvider>
                 <AuthProvider>
-                    <BrowserRouter>
-                        <AppLayout>
-                            <Suspense fallback={<RouteLoadingFallback />}>
-                                <Routes>
-                                <Route path="/" element={<HomePage />} />
-                                <Route path="/universities" element={<UniversitiesPage />} />
-                                <Route path="/universities/category/:categorySlug" element={<UniversityCategoryBrowsePage />} />
-                                <Route path="/universities/cluster/:clusterSlug" element={<UniversityClusterBrowsePage />} />
-                                <Route path="/university/:slug" element={<UniversityDetailsPage />} />
-                                <Route path="/universities/:slug" element={<UniversityDetailsPage />} />
-                                <Route path="/services" element={<Navigate to="/subscription-plans" replace />} />
-                                <Route path="/services/:slug" element={<Navigate to="/subscription-plans" replace />} />
-                                <Route path="/news" element={<NewsPage />} />
-                                <Route path="/news/:slug" element={<SingleNewsPage />} />
-                                <Route path="/exam-portal" element={<Navigate to="/exams" replace />} />
-                                <Route path="/exams/landing" element={<Navigate to="/exams" replace />} />
-                                <Route path="/exams" element={<ExamsListPage />} />
-                                <Route path="/exams/:examId/start" element={<LegacyStudentExamStartRedirect />} />
-                                <Route path="/exam/:examId" element={<ExamRunnerPage />} />
-                                <Route path="/exam/:examId/result" element={<ExamResultPage />} />
-                                <Route path="/exam/:examId/solutions" element={<ExamSolutionsPage />} />
-                                <Route path="/exam/take/:examId" element={<LegacyExamTakeRedirect />} />
-                                <Route path="/exam/result/:examId" element={<LegacyExamResultRedirect />} />
-                                <Route path="/certificate/verify/:certificateId" element={<CertificateVerifyPage />} />
-                                <Route path="/resources" element={<ResourcesPage />} />
-                                <Route path="/resources/:slug" element={<ResourceDetail />} />
-                                <Route path="/contact" element={<ContactPage />} />
-                                <Route path="/help" element={<Navigate to="/help-center" replace />} />
-                                <Route path="/help-center" element={<HelpCenterPage />} />
-                                <Route path="/help-center/:slug" element={<HelpArticlePage />} />
-                                <Route path="/pricing" element={<Navigate to="/subscription-plans" replace />} />
-                                <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />
-                                <Route path="/subscription-plans/checkout/:slug" element={<SubscriptionPlanCheckoutPage />} />
-                                <Route path="/subscription-plans/:planId" element={<SubscriptionPlanDetailPage />} />
-                                <Route path="/subscription" element={<Navigate to="/subscription-plans" replace />} />
-                                <Route path="/subscriptions" element={<Navigate to="/subscription-plans" replace />} />
-                                <Route path={STUDENT_LOGIN} element={<LoginPage />} />
-                                <Route path={CHAIRMAN_LOGIN} element={<ChairmanLoginPage />} />
-                                <Route path={CHAIRMAN_DASHBOARD} element={<ChairmanDashboardPage />} />
-                                <Route path="/otp-verify" element={<OtpVerificationPage />} />
-                                <Route path="/profile-center" element={<ProfilePage />} />
-                                <Route path="/about" element={<AboutPage />} />
-                                <Route path="/terms" element={<TermsPage />} />
-                                <Route path="/privacy" element={<PrivacyPage />} />
-                                <Route path="/campusway-secure-admin" element={<Navigate to={ADMIN_DASHBOARD} replace />} />
-                                <Route path="/campusway-secure-admin/*" element={<LegacyAdminRedirect />} />
-                                <Route path="/admin-dashboard" element={<Navigate to={ADMIN_DASHBOARD} replace />} />
+                    <I18nProvider>
+                        <BrowserRouter>
+                            <AppLayout>
+                                <Suspense fallback={<RouteLoadingFallback />}>
+                                    <Routes>
+                                        <Route path="/" element={<HomePage />} />
+                                        <Route path="/universities" element={<UniversitiesPage />} />
+                                        <Route path="/universities/category/:categorySlug" element={<UniversityCategoryBrowsePage />} />
+                                        <Route path="/universities/cluster/:clusterSlug" element={<UniversityClusterBrowsePage />} />
+                                        <Route path="/university/:slug" element={<UniversityDetailsPage />} />
+                                        <Route path="/universities/:slug" element={<UniversityDetailsPage />} />
+                                        <Route path="/services" element={<Navigate to="/subscription-plans" replace />} />
+                                        <Route path="/services/:slug" element={<Navigate to="/subscription-plans" replace />} />
+                                        <Route path="/news" element={<NewsPage />} />
+                                        <Route path="/news/:slug" element={<SingleNewsPage />} />
+                                        <Route path="/exam-portal" element={<Navigate to="/exams" replace />} />
+                                        <Route path="/exams/landing" element={<Navigate to="/exams" replace />} />
+                                        <Route path="/exams" element={<ProtectedRoute returnTo={true}><ExamsListPage /></ProtectedRoute>} />
+                                        <Route path="/exams/:examId/start" element={<LegacyStudentExamStartRedirect />} />
+                                        <Route path="/exam/:examId" element={<ProtectedRoute returnTo={true}><ExamRunnerPage /></ProtectedRoute>} />
+                                        <Route path="/exam/:examId/result" element={<ProtectedRoute returnTo={true}><ExamResultPage /></ProtectedRoute>} />
+                                        <Route path="/exam/:examId/solutions" element={<ProtectedRoute returnTo={true}><ExamSolutionsPage /></ProtectedRoute>} />
+                                        <Route path="/exam/take/:examId" element={<LegacyExamTakeRedirect />} />
+                                        <Route path="/exam/result/:examId" element={<LegacyExamResultRedirect />} />
+                                        <Route path="/certificate/verify/:certificateId" element={<CertificateVerifyPage />} />
+                                        <Route path="/resources" element={<ResourcesPage />} />
+                                        <Route path="/resources/:slug" element={<ResourceDetail />} />
+                                        <Route path="/contact" element={<ContactPage />} />
+                                        <Route path="/help" element={<Navigate to="/help-center" replace />} />
+                                        <Route path="/help-center" element={<HelpCenterPage />} />
+                                        <Route path="/help-center/:slug" element={<HelpArticlePage />} />
+                                        <Route path="/pricing" element={<Navigate to="/subscription-plans" replace />} />
+                                        <Route path="/subscription-plans" element={<SubscriptionPlansPage />} />
+                                        <Route path="/subscription-plans/checkout/:slug" element={<SubscriptionPlanCheckoutPage />} />
+                                        <Route path="/subscription-plans/:planId" element={<SubscriptionPlanDetailPage />} />
+                                        <Route path="/subscription" element={<Navigate to="/subscription-plans" replace />} />
+                                        <Route path="/subscriptions" element={<Navigate to="/subscription-plans" replace />} />
+                                        <Route path={STUDENT_LOGIN} element={<LoginPage />} />
+                                        <Route path={CHAIRMAN_LOGIN} element={<ChairmanLoginPage />} />
+                                        <Route path={CHAIRMAN_DASHBOARD} element={<ChairmanDashboardPage />} />
+                                        <Route path="/otp-verify" element={<OtpVerificationPage />} />
+                                        <Route path="/profile-center" element={<ProtectedRoute returnTo={true}><ProfilePage /></ProtectedRoute>} />
+                                        <Route path="/about" element={<AboutPage />} />
+                                        <Route path="/terms" element={<TermsPage />} />
+                                        <Route path="/privacy" element={<PrivacyPage />} />
+                                        <Route path="/campusway-secure-admin" element={<Navigate to={ADMIN_DASHBOARD} replace />} />
+                                        <Route path="/campusway-secure-admin/*" element={<LegacyAdminRedirect />} />
+                                        <Route path="/admin-dashboard" element={<Navigate to={ADMIN_DASHBOARD} replace />} />
 
-                                <Route path={ADMIN_LOGIN} element={<AdminSecretLoginPage />} />
-                                <Route path={ADMIN_ACCESS_DENIED} element={<AdminAccessDeniedPage />} />
-                                <Route path={ADMIN_DASHBOARD} element={<AdminDashboardPage />} />
-                                <Route path={ADMIN_PATHS.universities} element={<AdminUniversitiesPage />} />
-                                <Route path={adminUi('universities/import')} element={<AdminUniversitiesPage />} />
-                                <Route path={adminUi('universities/export')} element={<AdminUniversitiesPage />} />
-                                <Route path={adminUi('universities/:id/edit')} element={<AdminUniversitiesPage />} />
-                                <Route path={ADMIN_PATHS.news} element={<Navigate to={adminUi('news/pending')} replace />} />
-                                <Route path={adminUi('news/*')} element={<AdminNewsConsole />} />
-                                <Route path={ADMIN_PATHS.exams} element={<AdminExamsPage />} />
-                                <Route path={ADMIN_PATHS.questionBank} element={<AdminQuestionBankPage />} />
-                                <Route path={adminUi('question-bank/*')} element={<AdminQuestionBankPage />} />
-                                <Route path={ADMIN_PATHS.students} element={<Navigate to={adminUi('student-management/list')} replace />} />
-                                <Route path={ADMIN_PATHS.studentGroups} element={<Navigate to={adminUi('student-management/groups')} replace />} />
-                                <Route path={adminUi('subscription-plans')} element={<Navigate to={adminUi('subscriptions/plans')} replace />} />
-                                <Route path={adminUi('subscription-plans/new')} element={<Navigate to={adminUi('subscriptions/plans/new')} replace />} />
-                                <Route path={adminUi('subscription-plans/:id')} element={<AdminSubscriptionPlansPage />} />
-                                <Route path={adminUi('subscription-plans/:id/edit')} element={<AdminSubscriptionPlansPage />} />
-                                <Route path={adminUi('subscriptions/plans')} element={<AdminSubscriptionPlansPage />} />
-                                <Route path={adminUi('subscriptions/plans/new')} element={<AdminSubscriptionPlansPage />} />
-                                <Route path={adminUi('subscriptions/plans/:id')} element={<AdminSubscriptionPlansPage />} />
-                                <Route path={adminUi('subscriptions/plans/:id/edit')} element={<AdminSubscriptionPlansPage />} />
-                                <Route path={ADMIN_PATHS.subscriptionsV2} element={<AdminSubscriptionsV2Page />} />
-                                <Route path={ADMIN_PATHS.resources} element={<AdminResourcesPage />} />
-                                <Route path={ADMIN_PATHS.supportCenter} element={<AdminSupportCenterPage />} />
-                                <Route path={ADMIN_PATHS.helpCenterAdmin} element={<AdminHelpCenterPage />} />
-                                <Route path={ADMIN_PATHS.contact} element={<AdminContactPage />} />
-                                <Route path={ADMIN_PATHS.payments} element={<Navigate to={adminUi('finance/transactions')} replace />} />
-                                <Route path={adminUi('finance')} element={<Navigate to={adminUi('finance/dashboard')} replace />} />
-                                <Route path={adminUi('finance/*')} element={<FinanceLayout />}>
-                                    <Route path="dashboard" element={<FinanceDashboardPage />} />
-                                    <Route path="transactions" element={<FinanceTransactionsPage />} />
-                                    <Route path="invoices" element={<FinanceInvoicesPage />} />
-                                    <Route path="expenses" element={<FinanceExpensesPage />} />
-                                    <Route path="budgets" element={<FinanceBudgetsPage />} />
-                                    <Route path="recurring" element={<FinanceRecurringPage />} />
-                                    <Route path="vendors" element={<FinanceVendorsPage />} />
-                                    <Route path="refunds" element={<FinanceRefundsPage />} />
-                                    <Route path="export" element={<FinanceExportPage />} />
-                                    <Route path="import" element={<FinanceImportPage />} />
-                                    <Route path="audit-log" element={<FinanceAuditLogPage />} />
-                                    <Route path="settings" element={<FinanceSettingsPage />} />
-                                </Route>
-                                <Route path={adminUi('reports')} element={<AdminReportsPage />} />
-                                <Route path={adminUi('settings')} element={<AdminSettingsCenterPage />} />
-                                <Route path={adminUi('settings/home-control')} element={<AdminHomeSettingsPage />} />
-                                <Route path={adminUi('settings/university-settings')} element={<AdminUniversitySettingsPage />} />
-                                <Route path={adminUi('settings/site-settings')} element={<AdminSettingsSitePage />} />
-                                <Route path={adminUi('settings/banner-manager')} element={<AdminSettingsBannersPage />} />
-                                <Route path={adminUi('campaign-banners')} element={<AdminCampaignBannersPage />} />
-                                <Route path={adminUi('settings/security-center')} element={<AdminSettingsSecurityPage />} />
-                                <Route path={adminUi('settings/system-logs')} element={<AdminSettingsLogsPage />} />
-                                <Route path={adminUi('settings/reports')} element={<AdminSettingsReportsPage />} />
-                                <Route path={adminUi('settings/notifications')} element={<AdminSettingsNotificationsPage />} />
-                                <Route path={adminUi('settings/analytics')} element={<AdminSettingsAnalyticsPage />} />
-                                <Route path={adminUi('settings/news')} element={<AdminSettingsNewsPage />} />
-                                <Route path={adminUi('settings/resource-settings')} element={<AdminSettingsResourcesPage />} />
-                                <Route path={adminUi('settings/admin-profile')} element={<AdminSettingsProfilePage />} />
-                                <Route path={adminUi('settings/home')} element={<Navigate to={adminUi('settings/home-control')} replace />} />
-                                <Route path={adminUi('settings/site')} element={<Navigate to={adminUi('settings/site-settings')} replace />} />
-                                <Route path={adminUi('settings/banners')} element={<Navigate to={adminUi('settings/banner-manager')} replace />} />
-                                <Route path={adminUi('settings/security')} element={<Navigate to={adminUi('settings/security-center')} replace />} />
-                                <Route path={adminUi('settings/logs')} element={<Navigate to={adminUi('settings/system-logs')} replace />} />
-                                <Route path={adminUi('settings/profile')} element={<Navigate to={adminUi('settings/admin-profile')} replace />} />
-                                {/* Student Management OS Console */}
-                                <Route path={adminUi('student-management')} element={<Navigate to={adminUi('student-management/list')} replace />} />
-                                <Route path={adminUi('student-management/*')} element={<StudentManagementLayout />}>
-                                    <Route path="list" element={<AdminStudentsMgmtPage />} />
-                                    <Route path="create" element={<AdminStudentCreatePage />} />
-                                    <Route path="import-export" element={<AdminStudentImportExportPage />} />
-                                    <Route path="groups" element={<AdminStudentGroupsV2Page />} />
-                                    <Route path="groups/:id" element={<AdminStudentGroupDetailPage />} />
-                                    <Route path="audiences" element={<Navigate to={`${ADMIN_PATHS.subscriptionContactCenter}?tab=members`} replace />} />
-                                    <Route path="crm-timeline" element={<AdminStudentCrmTimelinePage />} />
-                                    <Route path="weak-topics" element={<AdminStudentWeakTopicsPage />} />
-                                    <Route path="profile-requests" element={<AdminProfileRequestsPage />} />
-                                    <Route path="notifications" element={<AdminNotificationCenterEmbeddedPage />} />
-                                    <Route path="settings" element={<AdminStudentSettingsEmbeddedPage />} />
-                                    <Route path="students/:id" element={<AdminStudentMgmtDetailPage />} />
-                                </Route>
-                                {/* New Student Management System v2 */}
-                                <Route path={adminUi('students-v2')} element={<Navigate to={adminUi('student-management/list')} replace />} />
-                                <Route path={adminUi('students-v2/:id')} element={<Navigate to={adminUi('student-management/list')} replace />} />
-                                <Route path={adminUi('student-groups-v2')} element={<Navigate to={adminUi('student-management/groups')} replace />} />
-                                <Route path={adminUi('notification-center')} element={<Navigate to={`${ADMIN_PATHS.campaignsDashboard}?view=notifications`} replace />} />
-                                {/* Campaign Platform */}
-                                <Route path={ADMIN_PATHS.notificationTestSend} element={<Navigate to={ADMIN_PATHS.campaignsNew} replace />} />
-                                <Route path={ADMIN_PATHS.notificationTriggers} element={<Navigate to={`${ADMIN_PATHS.campaignsDashboard}?view=triggers`} replace />} />
-                                <Route path={ADMIN_PATHS.campaignsDashboard} element={<CampaignConsolePage />} />
-                                <Route path={ADMIN_PATHS.campaignsList} element={<CampaignConsolePage />} />
-                                <Route path={ADMIN_PATHS.campaignsNew} element={<CampaignConsolePage />} />
-                                <Route path={ADMIN_PATHS.subscriptionContactCenter} element={<SubscriptionContactCenterPage />} />
-                                <Route path={ADMIN_PATHS.campaignsContactCenter} element={<Navigate to={ADMIN_PATHS.subscriptionContactCenter} replace />} />
-                                <Route path={ADMIN_PATHS.campaignsTemplates} element={<CampaignConsolePage />} />
-                                <Route path={ADMIN_PATHS.campaignsSettings} element={<CampaignConsolePage />} />
-                                <Route path={ADMIN_PATHS.campaignsLogs} element={<CampaignConsolePage />} />
-                                {/* Data Hub */}
-                                <Route path={ADMIN_PATHS.dataHub} element={<Navigate to={`${ADMIN_PATHS.subscriptionContactCenter}?tab=export`} replace />} />
-                                <Route path={ADMIN_PATHS.dataHubHistory} element={<Navigate to={`${ADMIN_PATHS.subscriptionContactCenter}?tab=logs`} replace />} />
-                                {/* Team & Access Control */}
-                                <Route path={ADMIN_PATHS.teamMembers} element={<TeamAccessConsolePage />} />
-                                <Route path={adminUi('team/members/:id')} element={<MemberDetailPage />} />
-                                <Route path={ADMIN_PATHS.teamRoles} element={<TeamAccessConsolePage />} />
-                                <Route path={adminUi('team/roles/:id')} element={<RoleDetailPage />} />
-                                <Route path={ADMIN_PATHS.teamPermissions} element={<TeamAccessConsolePage />} />
-                                <Route path={ADMIN_PATHS.teamApprovalRules} element={<TeamAccessConsolePage />} />
-                                <Route path={ADMIN_PATHS.teamActivity} element={<TeamAccessConsolePage />} />
-                                <Route path={ADMIN_PATHS.teamSecurity} element={<TeamAccessConsolePage />} />
-                                <Route path={ADMIN_PATHS.teamInvites} element={<TeamAccessConsolePage />} />
-                                <Route path={ADMIN_PATHS.approvals} element={<ActionApprovalsPage />} />
-                                <Route path={adminUi('settings/student-settings')} element={<AdminStudentSettingsPage />} />
-                                {Object.entries(LEGACY_ADMIN_PATH_REDIRECTS).map(([legacyPath, targetPath]) => (
-                                    <Route key={legacyPath} path={legacyPath} element={<Navigate to={targetPath} replace />} />
-                                ))}
-                                <Route path="/__cw_admin__" element={<Navigate to={ADMIN_DASHBOARD} replace />} />
+                                        <Route path={ADMIN_LOGIN} element={<AdminSecretLoginPage />} />
+                                        <Route path={ADMIN_ACCESS_DENIED} element={<AdminAccessDeniedPage />} />
+                                        <Route path={ADMIN_DASHBOARD} element={<AdminDashboardPage />} />
+                                        <Route path={ADMIN_PATHS.universities} element={<AdminUniversitiesPage />} />
+                                        <Route path={adminUi('universities/import')} element={<AdminUniversitiesPage />} />
+                                        <Route path={adminUi('universities/export')} element={<AdminUniversitiesPage />} />
+                                        <Route path={adminUi('universities/:id/edit')} element={<AdminUniversitiesPage />} />
+                                        <Route path={ADMIN_PATHS.news} element={<Navigate to={adminUi('news/pending')} replace />} />
+                                        <Route path={adminUi('news/*')} element={<AdminNewsConsole />} />
+                                        <Route path={ADMIN_PATHS.exams} element={<AdminExamsPage />} />
+                                        <Route path={ADMIN_PATHS.examNew} element={<ExamFormPage />} />
+                                        <Route path={adminUi('exams/:examId/edit')} element={<ExamFormPage />} />
+                                        <Route path={adminUi('exams/:examId/preview')} element={<ExamPreviewPage />} />
+                                        <Route path={ADMIN_PATHS.questionBank} element={<AdminQuestionBankPage />} />
+                                        <Route path={adminUi('question-bank/*')} element={<AdminQuestionBankPage />} />
+                                        <Route path={ADMIN_PATHS.students} element={<Navigate to={adminUi('student-management/list')} replace />} />
+                                        <Route path={ADMIN_PATHS.studentGroups} element={<Navigate to={adminUi('student-management/groups')} replace />} />
+                                        <Route path={adminUi('subscription-plans')} element={<Navigate to={adminUi('subscriptions/plans')} replace />} />
+                                        <Route path={adminUi('subscription-plans/new')} element={<Navigate to={adminUi('subscriptions/plans/new')} replace />} />
+                                        <Route path={adminUi('subscription-plans/:id')} element={<AdminSubscriptionPlansPage />} />
+                                        <Route path={adminUi('subscription-plans/:id/edit')} element={<AdminSubscriptionPlansPage />} />
+                                        <Route path={adminUi('subscriptions/plans')} element={<AdminSubscriptionPlansPage />} />
+                                        <Route path={adminUi('subscriptions/plans/new')} element={<AdminSubscriptionPlansPage />} />
+                                        <Route path={adminUi('subscriptions/plans/:id')} element={<AdminSubscriptionPlansPage />} />
+                                        <Route path={adminUi('subscriptions/plans/:id/edit')} element={<AdminSubscriptionPlansPage />} />
+                                        <Route path={ADMIN_PATHS.subscriptionsV2} element={<AdminSubscriptionsV2Page />} />
+                                        <Route path={ADMIN_PATHS.resources} element={<AdminResourcesPage />} />
+                                        <Route path={ADMIN_PATHS.supportCenter} element={<AdminSupportCenterPage />} />
+                                        <Route path={ADMIN_PATHS.helpCenterAdmin} element={<AdminHelpCenterPage />} />
+                                        <Route path={ADMIN_PATHS.contact} element={<AdminContactPage />} />
+                                        <Route path={ADMIN_PATHS.payments} element={<Navigate to={adminUi('finance/transactions')} replace />} />
+                                        <Route path={adminUi('finance')} element={<Navigate to={adminUi('finance/dashboard')} replace />} />
+                                        <Route path={adminUi('finance/*')} element={<FinanceLayout />}>
+                                            <Route path="dashboard" element={<FinanceDashboardPage />} />
+                                            <Route path="transactions" element={<FinanceTransactionsPage />} />
+                                            <Route path="invoices" element={<FinanceInvoicesPage />} />
+                                            <Route path="expenses" element={<FinanceExpensesPage />} />
+                                            <Route path="budgets" element={<FinanceBudgetsPage />} />
+                                            <Route path="recurring" element={<FinanceRecurringPage />} />
+                                            <Route path="vendors" element={<FinanceVendorsPage />} />
+                                            <Route path="refunds" element={<FinanceRefundsPage />} />
+                                            <Route path="export" element={<FinanceExportPage />} />
+                                            <Route path="import" element={<FinanceImportPage />} />
+                                            <Route path="audit-log" element={<FinanceAuditLogPage />} />
+                                            <Route path="settings" element={<FinanceSettingsPage />} />
+                                        </Route>
+                                        <Route path={adminUi('reports')} element={<AdminReportsPage />} />
+                                        <Route path={adminUi('settings')} element={<AdminSettingsCenterPage />} />
+                                        <Route path={adminUi('settings/home-control')} element={<AdminHomeSettingsPage />} />
+                                        <Route path={adminUi('settings/university-settings')} element={<AdminUniversitySettingsPage />} />
+                                        <Route path={adminUi('settings/site-settings')} element={<AdminSettingsSitePage />} />
+                                        <Route path={adminUi('settings/banner-manager')} element={<AdminSettingsBannersPage />} />
+                                        <Route path={adminUi('campaign-banners')} element={<AdminCampaignBannersPage />} />
+                                        <Route path={adminUi('settings/security-center')} element={<AdminSettingsSecurityPage />} />
+                                        <Route path={adminUi('settings/system-logs')} element={<AdminSettingsLogsPage />} />
+                                        <Route path={adminUi('settings/reports')} element={<AdminSettingsReportsPage />} />
+                                        <Route path={adminUi('settings/notifications')} element={<AdminSettingsNotificationsPage />} />
+                                        <Route path={adminUi('settings/analytics')} element={<AdminSettingsAnalyticsPage />} />
+                                        <Route path={adminUi('settings/news')} element={<AdminSettingsNewsPage />} />
+                                        <Route path={adminUi('settings/resource-settings')} element={<AdminSettingsResourcesPage />} />
+                                        <Route path={adminUi('settings/admin-profile')} element={<AdminSettingsProfilePage />} />
+                                        <Route path={adminUi('settings/home')} element={<Navigate to={adminUi('settings/home-control')} replace />} />
+                                        <Route path={adminUi('settings/site')} element={<Navigate to={adminUi('settings/site-settings')} replace />} />
+                                        <Route path={adminUi('settings/banners')} element={<Navigate to={adminUi('settings/banner-manager')} replace />} />
+                                        <Route path={adminUi('settings/security')} element={<Navigate to={adminUi('settings/security-center')} replace />} />
+                                        <Route path={adminUi('settings/logs')} element={<Navigate to={adminUi('settings/system-logs')} replace />} />
+                                        <Route path={adminUi('settings/profile')} element={<Navigate to={adminUi('settings/admin-profile')} replace />} />
+                                        {/* Student Management OS Console */}
+                                        <Route path={adminUi('student-management')} element={<Navigate to={adminUi('student-management/list')} replace />} />
+                                        <Route path={adminUi('student-management/*')} element={<StudentManagementLayout />}>
+                                            <Route path="list" element={<AdminStudentsMgmtPage />} />
+                                            <Route path="create" element={<AdminStudentCreatePage />} />
+                                            <Route path="import-export" element={<AdminStudentImportExportPage />} />
+                                            <Route path="groups" element={<AdminStudentGroupsV2Page />} />
+                                            <Route path="groups/:id" element={<AdminStudentGroupDetailPage />} />
+                                            <Route path="audiences" element={<Navigate to={`${ADMIN_PATHS.subscriptionContactCenter}?tab=members`} replace />} />
+                                            <Route path="crm-timeline" element={<AdminStudentCrmTimelinePage />} />
+                                            <Route path="weak-topics" element={<AdminStudentWeakTopicsPage />} />
+                                            <Route path="profile-requests" element={<AdminProfileRequestsPage />} />
+                                            <Route path="notifications" element={<AdminNotificationCenterEmbeddedPage />} />
+                                            <Route path="settings" element={<AdminStudentSettingsEmbeddedPage />} />
+                                            <Route path="students/:id" element={<AdminStudentMgmtDetailPage />} />
+                                        </Route>
+                                        {/* New Student Management System v2 */}
+                                        <Route path={adminUi('students-v2')} element={<Navigate to={adminUi('student-management/list')} replace />} />
+                                        <Route path={adminUi('students-v2/:id')} element={<Navigate to={adminUi('student-management/list')} replace />} />
+                                        <Route path={adminUi('student-groups-v2')} element={<Navigate to={adminUi('student-management/groups')} replace />} />
+                                        <Route path={adminUi('notification-center')} element={<Navigate to={`${ADMIN_PATHS.campaignsDashboard}?view=notifications`} replace />} />
+                                        {/* Campaign Platform */}
+                                        <Route path={ADMIN_PATHS.notificationTestSend} element={<Navigate to={ADMIN_PATHS.campaignsNew} replace />} />
+                                        <Route path={ADMIN_PATHS.notificationTriggers} element={<Navigate to={`${ADMIN_PATHS.campaignsDashboard}?view=triggers`} replace />} />
+                                        <Route path={ADMIN_PATHS.campaignsDashboard} element={<CampaignConsolePage />} />
+                                        <Route path={ADMIN_PATHS.campaignsList} element={<CampaignConsolePage />} />
+                                        <Route path={ADMIN_PATHS.campaignsNew} element={<CampaignConsolePage />} />
+                                        <Route path={ADMIN_PATHS.subscriptionContactCenter} element={<SubscriptionContactCenterPage />} />
+                                        <Route path={ADMIN_PATHS.campaignsContactCenter} element={<Navigate to={ADMIN_PATHS.subscriptionContactCenter} replace />} />
+                                        <Route path={ADMIN_PATHS.campaignsTemplates} element={<CampaignConsolePage />} />
+                                        <Route path={ADMIN_PATHS.campaignsSettings} element={<CampaignConsolePage />} />
+                                        <Route path={ADMIN_PATHS.campaignsAdvancedSettings} element={<CampaignSettingsPage />} />
+                                        <Route path={ADMIN_PATHS.campaignsLogs} element={<CampaignConsolePage />} />
+                                        {/* Data Hub */}
+                                        <Route path={ADMIN_PATHS.dataHub} element={<Navigate to={`${ADMIN_PATHS.subscriptionContactCenter}?tab=export`} replace />} />
+                                        <Route path={ADMIN_PATHS.dataHubHistory} element={<Navigate to={`${ADMIN_PATHS.subscriptionContactCenter}?tab=logs`} replace />} />
+                                        {/* Team & Access Control */}
+                                        <Route path={ADMIN_PATHS.teamMembers} element={<TeamAccessConsolePage />} />
+                                        <Route path={adminUi('team/members/:id')} element={<MemberDetailPage />} />
+                                        <Route path={ADMIN_PATHS.teamRoles} element={<TeamAccessConsolePage />} />
+                                        <Route path={adminUi('team/roles/:id')} element={<RoleDetailPage />} />
+                                        <Route path={ADMIN_PATHS.teamPermissions} element={<TeamAccessConsolePage />} />
+                                        <Route path={ADMIN_PATHS.teamApprovalRules} element={<TeamAccessConsolePage />} />
+                                        <Route path={ADMIN_PATHS.teamActivity} element={<TeamAccessConsolePage />} />
+                                        <Route path={ADMIN_PATHS.teamSecurity} element={<TeamAccessConsolePage />} />
+                                        <Route path={ADMIN_PATHS.teamInvites} element={<TeamAccessConsolePage />} />
+                                        <Route path={ADMIN_PATHS.approvals} element={<ActionApprovalsPage />} />
+                                        <Route path={adminUi('settings/student-settings')} element={<AdminStudentSettingsPage />} />
+                                        {Object.entries(LEGACY_ADMIN_PATH_REDIRECTS).map(([legacyPath, targetPath]) => (
+                                            <Route key={legacyPath} path={legacyPath} element={<Navigate to={targetPath} replace />} />
+                                        ))}
+                                        <Route path="/__cw_admin__" element={<Navigate to={ADMIN_DASHBOARD} replace />} />
 
-                                <Route path="/admin/login" element={<Navigate to={ADMIN_LOGIN} replace />} />
-                                <Route path="/admin/*" element={<LegacyAdminRedirect />} />
+                                        <Route path="/admin/login" element={<Navigate to={ADMIN_LOGIN} replace />} />
+                                        <Route path="/admin/*" element={<LegacyAdminRedirect />} />
 
-                                {/* Student Portal Routes */}
-                                <Route path="/student/login" element={<Navigate to={STUDENT_LOGIN} replace />} />
-                                <Route path="/student-login" element={<Navigate to={STUDENT_LOGIN} replace />} />
-                                <Route path="/student/register" element={<StudentRegister />} />
-                                <Route path="/student/forgot-password" element={<StudentForgotPassword />} />
-                                <Route path="/student/reset-password" element={<StudentResetPassword />} />
-                                <Route path="/student" element={<Navigate to="/dashboard" replace />} />
-                                <Route path="/student/exams" element={<Navigate to="/exams" replace />} />
-                                <Route path="/student/results" element={<Navigate to="/results" replace />} />
-                                <Route path="/student/results/:examId" element={<LegacyStudentResultRedirect />} />
-                                <Route path="/student/payments" element={<Navigate to="/payments" replace />} />
-                                <Route path="/student/notifications" element={<Navigate to="/notifications" replace />} />
-                                <Route path="/student/support" element={<Navigate to="/support" replace />} />
-                                <Route element={<StudentLayout />}>
-                                    <Route path="/dashboard" element={<StudentDashboard />} />
-                                    <Route path="/profile" element={<StudentProfile />} />
-                                    <Route path="/profile/security" element={<StudentSecurity />} />
-                                    <Route path="/student/exams-hub" element={<StudentExamsHub />} />
-                                    <Route path="/exams/:examId" element={<StudentExamDetail />} />
-                                    <Route path="/results" element={<StudentResults />} />
-                                    <Route path="/results/:examId" element={<StudentResultDetail />} />
-                                    <Route path="/payments" element={<StudentPayments />} />
-                                    <Route path="/notifications" element={<StudentNotifications />} />
-                                    <Route path="/student/resources" element={<StudentResources />} />
-                                    <Route path="/support" element={<StudentSupport />} />
-                                    <Route path="/support/:ticketId" element={<StudentSupportThread />} />
-                                    <Route path="/student/dashboard" element={<StudentDashboard />} />
-                                    <Route path="/student/profile" element={<StudentProfile />} />
-                                    <Route path="/student/security" element={<StudentSecurity />} />
-                                    <Route path="/student/applications" element={<StudentApplications />} />
-                                </Route>
+                                        {/* Student Portal Routes */}
+                                        <Route path="/student/login" element={<Navigate to={STUDENT_LOGIN} replace />} />
+                                        <Route path="/student-login" element={<Navigate to={STUDENT_LOGIN} replace />} />
+                                        <Route path="/student/register" element={<StudentRegister />} />
+                                        <Route path="/student/forgot-password" element={<StudentForgotPassword />} />
+                                        <Route path="/student/reset-password" element={<StudentResetPassword />} />
+                                        <Route path="/student" element={<Navigate to="/dashboard" replace />} />
+                                        <Route path="/student/exams" element={<Navigate to="/exams" replace />} />
+                                        <Route path="/student/results" element={<Navigate to="/results" replace />} />
+                                        <Route path="/student/results/:examId" element={<LegacyStudentResultRedirect />} />
+                                        <Route path="/student/payments" element={<Navigate to="/payments" replace />} />
+                                        <Route path="/student/notifications" element={<Navigate to="/notifications" replace />} />
+                                        <Route path="/student/support" element={<Navigate to="/support" replace />} />
+                                        <Route element={<ProtectedRoute returnTo={true}><StudentLayout /></ProtectedRoute>}>
+                                            <Route path="/dashboard" element={<StudentDashboard />} />
+                                            <Route path="/profile" element={<StudentProfile />} />
+                                            <Route path="/profile/security" element={<StudentSecurity />} />
+                                            <Route path="/student/exams-hub" element={<StudentExamsHub />} />
+                                            <Route path="/exams/:examId" element={<StudentExamDetail />} />
+                                            <Route path="/results" element={<StudentResults />} />
+                                            <Route path="/results/:examId" element={<StudentResultDetail />} />
+                                            <Route path="/payments" element={<StudentPayments />} />
+                                            <Route path="/notifications" element={<StudentNotifications />} />
+                                            <Route path="/student/resources" element={<StudentResources />} />
+                                            <Route path="/support" element={<StudentSupport />} />
+                                            <Route path="/support/:ticketId" element={<StudentSupportThread />} />
+                                            <Route path="/student/dashboard" element={<StudentDashboard />} />
+                                            <Route path="/student/profile" element={<StudentProfile />} />
+                                            <Route path="/student/security" element={<StudentSecurity />} />
+                                            <Route path="/student/applications" element={<StudentApplications />} />
+                                        </Route>
 
-                                <Route path="*" element={<NotFoundPage />} />
-                                </Routes>
-                            </Suspense>
-                        </AppLayout>
-                    </BrowserRouter>
+                                        <Route path="*" element={<NotFoundPage />} />
+                                    </Routes>
+                                </Suspense>
+                            </AppLayout>
+                        </BrowserRouter>
+                    </I18nProvider>
                 </AuthProvider>
             </ThemeProvider>
         </QueryClientProvider>

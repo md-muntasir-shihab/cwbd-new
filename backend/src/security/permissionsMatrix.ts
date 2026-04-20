@@ -111,6 +111,7 @@ const roleMatrixBase: RolePermissionMatrix = {
         const map = emptyModuleMap();
         allowMany(map, ['news', 'resources', 'question_bank'], ['view', 'create', 'edit', 'export']);
         allow(map, 'home_control', ['view', 'edit']);
+        allow(map, 'banner_manager', ['view', 'edit']);
         allow(map, 'universities', ['view']);
         allow(map, 'exams', ['view']);
         allow(map, 'notifications', ['view', 'create', 'edit']);
@@ -124,6 +125,7 @@ const roleMatrixBase: RolePermissionMatrix = {
     support_agent: (() => {
         const map = emptyModuleMap();
         allow(map, 'support_center', ['view', 'create', 'edit', 'approve', 'export']);
+        allow(map, 'notifications', ['view']);
         allow(map, 'reports_analytics', ['view']);
         return map;
     })(),
@@ -131,6 +133,7 @@ const roleMatrixBase: RolePermissionMatrix = {
         const map = emptyModuleMap();
         allow(map, 'payments', ['view', 'create', 'edit', 'approve', 'export', 'bulk']);
         allow(map, 'finance_center', ['view', 'create', 'edit', 'approve', 'export', 'bulk']);
+        allow(map, 'subscription_plans', ['view']);
         allow(map, 'reports_analytics', ['view', 'export']);
         return map;
     })(),

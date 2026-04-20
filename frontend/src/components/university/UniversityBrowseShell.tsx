@@ -323,10 +323,15 @@ export default function UniversityBrowseShell({
         || (universitiesQuery.isFetching && universitiesQuery.isPlaceholderData);
 
     return (
-        <div className="section-container py-6 sm:py-8 overflow-x-hidden">
-            <div className="mb-4">
-                <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-text dark:text-dark-text">{title}</h1>
-                <p className="mt-1 text-xs sm:text-sm text-text-muted dark:text-dark-text/70">{subtitle}</p>
+        <div className="section-container py-6 sm:py-8 lg:py-10 overflow-x-hidden">
+            <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+                <div>
+                    <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-text dark:text-dark-text">{title}</h1>
+                    <p className="mt-1 text-xs sm:text-sm text-text-muted dark:text-dark-text/60">{subtitle}</p>
+                </div>
+                <p className="text-xs font-medium text-text-muted dark:text-dark-text/50 tabular-nums">
+                    {mappedItems.length} {mappedItems.length === 1 ? 'university' : 'universities'}
+                </p>
             </div>
 
             <UniversityFilterBar

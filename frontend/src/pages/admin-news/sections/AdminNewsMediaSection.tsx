@@ -3,7 +3,7 @@ import imageCompression from 'browser-image-compression';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import NewsHelpButton from '../../../components/admin/NewsHelpButton';
-import CompressedImageInput from '../../../components/common/CompressedImageInput';
+import CompressedImageInput, { extractUploadError } from '../../../components/common/CompressedImageInput';
 import {
     ApiNewsV2Media,
     adminNewsV2DeleteMedia,
@@ -54,7 +54,7 @@ export default function AdminNewsMediaSection() {
             setIsDefaultBanner(false);
             queryClient.invalidateQueries({ queryKey: ['newsv2.media'] });
         },
-        onError: (err: any) => toast.error(err?.response?.data?.message || err?.message || 'Upload failed'),
+        onError: (err: unknown) => toast.error(extractUploadError(err)),
     });
 
     const urlMutation = useMutation({

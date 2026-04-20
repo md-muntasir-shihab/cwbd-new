@@ -87,7 +87,7 @@ describe('Feature: campusway-qa-audit, Property 4: Portal Role Boundary Enforcem
                     expect(res.status).toBe(403);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

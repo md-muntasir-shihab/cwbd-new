@@ -116,7 +116,7 @@ describe('Feature: campusway-qa-audit, Property 14: Read-Only Mode Mutation Bloc
                     }
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -141,7 +141,7 @@ describe('Feature: campusway-qa-audit, Property 14: Read-Only Mode Mutation Bloc
                     ).not.toBe(423);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

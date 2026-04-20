@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminGuardShell from '../components/admin/AdminGuardShell';
+import AdminTabNav from '../components/admin/AdminTabNav';
+import { ADMIN_PATHS } from '../routes/adminPaths';
+import { CreditCard, Users } from 'lucide-react';
 import PlanCard from '../components/subscription/PlanCard';
 import PlanDetailsDrawer from '../components/subscription/PlanDetailsDrawer';
 import { useAdminSubscriptionPlan, useAdminSubscriptionPlans, useCreateSubscriptionPlanMutation, useDeleteSubscriptionPlanMutation, useDuplicateSubscriptionPlanMutation, useReorderSubscriptionPlansMutation, useSubscriptionSettings, useToggleSubscriptionPlanFeaturedMutation, useToggleSubscriptionPlanMutation, useUpdateSubscriptionPlanMutation, useUpdateSubscriptionSettingsMutation } from '../hooks/useSubscriptionPlans';
 import { showConfirmDialog } from '../lib/appDialog';
-import { ADMIN_PATHS } from '../routes/adminPaths';
 import { adminExportSubscriptionPlans, adminExportSubscriptions, type AdminSubscriptionPlan, type SubscriptionPlansPublicSettings } from '../services/api';
 import { downloadFile } from '../utils/download';
 
@@ -745,6 +747,11 @@ export default function AdminSubscriptionPlansPage() {
 
     return (
         <AdminGuardShell title={pageTitle} description={pageDescription} allowedRoles={['superadmin', 'admin', 'moderator']}>
+            <AdminTabNav tabs={[
+                { key: 'plans', label: 'Subscription Plans', path: ADMIN_PATHS.subscriptionPlans, icon: CreditCard },
+                { key: 'subs', label: 'Subscriptions', path: ADMIN_PATHS.subscriptionsV2, icon: CreditCard },
+                { key: 'contact', label: 'Contact Center', path: ADMIN_PATHS.subscriptionContactCenter, icon: Users },
+            ]} />
             <div className="space-y-6">
                 <div className="rounded-[2rem] border border-slate-200/80 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-6 text-white shadow-[0_24px_70px_rgba(6,10,24,0.24)]">
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -814,7 +821,7 @@ export default function AdminSubscriptionPlansPage() {
                                                             <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${plan.isActive ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>{plan.isActive ? 'Active' : 'Inactive'}</span>
                                                         </div>
                                                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{plan.tagline || plan.shortDescription || 'Plan tagline not added yet.'}</p>
-                                                        
+
                                                         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:flex lg:flex-wrap lg:gap-5 text-sm text-slate-600 dark:text-slate-300">
                                                             <div className="flex flex-col rounded-xl bg-slate-50 p-2 dark:bg-slate-900/50 sm:bg-transparent sm:p-0"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Price</span><span className="font-medium text-slate-900 dark:text-white">{formatPrice(plan)}</span></div>
                                                             <div className="flex flex-col rounded-xl bg-slate-50 p-2 dark:bg-slate-900/50 sm:bg-transparent sm:p-0"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Cycle</span><span className="font-medium text-slate-900 dark:text-white">{plan.billingCycle || 'monthly'}</span></div>
@@ -831,10 +838,12 @@ export default function AdminSubscriptionPlansPage() {
                                                     <Link to={`${basePath}/${plan._id}`} className="btn-outline h-8 px-3 text-xs"><Eye className="h-3.5 w-3.5" />Preview</Link>
                                                     <Link to={`${basePath}/${plan._id}/edit`} className="btn-outline h-8 px-3 text-xs"><Pencil className="h-3.5 w-3.5" />Edit</Link>
                                                     <button type="button" onClick={() => duplicatePlan(plan)} className="btn-outline h-8 px-3 text-xs"><Copy className="h-3.5 w-3.5" />Duplicate</button>
-                                                    <button type="button" onClick={() => toggleActive(plan)} className="btn-outline h-8 px-3 text-xs">{plan.isActive ? 'Deactivate' : 'Activate'}</button>
-                                                    <button type="button" onClick={() => toggleFeatured(plan)} className="btn-outline h-8 px-3 text-xs">{plan.isFeatured ? 'Unfeature' : 'Feature'}</button>
+                                                    <button type="button" onClick={() => toggleActive(plan)} className={`h-8 rounded-xl border px-3 text-xs font-medium transition ${plan.isActive ? 'border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/20 dark:text-amber-300' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-300'}`}>{plan.isActive ? 'Deactivate' : 'Activate'}</button>
+                                                    <button type="button" onClick={() => toggleFeatured(plan)} className={`h-8 rounded-xl border px-3 text-xs font-medium transition ${plan.isFeatured ? 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400' : 'border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-500/20 dark:text-amber-300'}`}>
+                                                        <Sparkles className="mr-1 inline h-3 w-3" />{plan.isFeatured ? 'Unfeature' : 'Feature'}
+                                                    </button>
                                                     <div className="flex-1" />
-                                                    <button type="button" onClick={() => archivePlan(plan)} className="btn-outline h-8 px-3 text-xs text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:text-rose-400 dark:hover:bg-rose-950/30"><Trash2 className="h-3.5 w-3.5" />Archive</button>
+                                                    <button type="button" onClick={() => archivePlan(plan)} className="h-8 rounded-xl border border-rose-200/60 px-3 text-xs font-medium text-rose-600 transition hover:border-rose-300 hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-950/30"><Trash2 className="mr-1 inline h-3 w-3" />Archive</button>
                                                 </div>
                                             </div>
                                         </div>

@@ -177,3 +177,35 @@ export interface AnalyticsSummary {
         totalAttempts: number;
     }[];
 }
+
+/* ── Bulk Copy Response ── */
+
+export interface BulkCopyResponse {
+    copied: number;
+    newQuestions: BankQuestion[];
+}
+
+/* ── Question Selector Types ── */
+
+export interface SelectedQuestion {
+    bankQuestionId: string;
+    question_en?: string;
+    question_bn?: string;
+    subject: string;
+    difficulty: Difficulty;
+    options: BankQuestionOption[];
+    correctKey: string;
+    marks: number;
+    orderIndex: number;
+}
+
+export interface QuestionSelectorState {
+    availableQuestions: BankQuestion[];
+    filters: BankQuestionFilters;
+    pagination: { page: number; total: number; limit: number };
+    facets: BankQuestionFacets;
+    isLoading: boolean;
+    selectedQuestions: SelectedQuestion[];
+    totalMarks: number;
+    totalQuestions: number;
+}

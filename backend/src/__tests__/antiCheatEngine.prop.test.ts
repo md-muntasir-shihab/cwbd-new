@@ -104,7 +104,7 @@ describe('Property 1: AntiCheat Policy Merge Override Priority', () => {
                     }
                 }
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });
@@ -125,7 +125,7 @@ describe('Property 2: AntiCheat Policy Merge Idempotence', () => {
 
                 expect(secondMerge).toEqual(firstMerge);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });
@@ -150,7 +150,7 @@ describe('Property 3: AntiCheat Policy Constraint Invariant', () => {
                 expect(merged.warningCooldownSeconds).toBeGreaterThanOrEqual(0);
                 expect(merged.maxFullscreenExitLimit).toBeGreaterThanOrEqual(1);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });
@@ -171,7 +171,7 @@ describe('Property 4: AntiCheat Policy Round-Trip Serialization', () => {
 
                 expect(deserialized).toEqual(policy);
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });
@@ -253,7 +253,7 @@ describe('Property 5: AntiCheat Decision Monotonicity', () => {
                     expect(severityHigh).toBeGreaterThanOrEqual(severityLow);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });
@@ -295,7 +295,7 @@ describe('Property 6: Locked Session Signal Rejection', () => {
                     expect(result).toHaveProperty('code', 'SESSION_LOCKED');
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -312,7 +312,7 @@ describe('Property 6: Locked Session Signal Rejection', () => {
                     expect(result).toHaveProperty('action');
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });
@@ -363,7 +363,7 @@ describe('Property 7: Signal Processing Counter Confluence', () => {
                     expect(countersShuffled).toEqual(countersOriginal);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

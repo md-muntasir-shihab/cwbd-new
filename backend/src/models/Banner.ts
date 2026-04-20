@@ -9,6 +9,16 @@ export interface IPopupConfig {
     maxViewsPerDay: number;
     /** Min hours between shows for the same browser. 0 = no cooldown. */
     cooldownHours: number;
+    /** CTA button label shown below the popup image. Empty = no button. */
+    ctaText?: string;
+    /** Whether to show popup only on the home page (default: true). */
+    homePageOnly: boolean;
+    /** Show to: 'all' | 'guests' | 'logged_in' */
+    targetAudience: 'all' | 'guests' | 'logged_in';
+    /** Show popup on mobile devices */
+    showOnMobile: boolean;
+    /** Show popup on desktop */
+    showOnDesktop: boolean;
 }
 
 export interface IBanner extends Document {
@@ -38,6 +48,11 @@ const PopupConfigSchema = new Schema<IPopupConfig>({
     closeButtonDelaySeconds: { type: Number, default: 0 },
     maxViewsPerDay: { type: Number, default: 1 },
     cooldownHours: { type: Number, default: 24 },
+    ctaText: { type: String, default: '' },
+    homePageOnly: { type: Boolean, default: true },
+    targetAudience: { type: String, enum: ['all', 'guests', 'logged_in'], default: 'all' },
+    showOnMobile: { type: Boolean, default: true },
+    showOnDesktop: { type: Boolean, default: true },
 }, { _id: false });
 
 const BannerSchema = new Schema<IBanner>({

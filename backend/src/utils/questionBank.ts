@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import type { IBankQuestionOption } from '../models/QuestionBankQuestion';
 
 const BANGLA_STOPWORDS = new Set([
     'এবং',
@@ -694,4 +695,62 @@ export async function validateImageUrl(
     } catch {
         return { ok: false, reason: 'image_url_unreachable' };
     }
+}
+
+
+export interface ValidationResult {
+    valid: boolean;
+    errors: string[];
+}
+
+export function validateQuestionPayload(payload: Record<string, unknown>): ValidationResult {
+    const errors: string[] = [];
+
+    // 1. Question text validation
+    const enLen = (payload.question_en as string || '').trim().length;
+    const bnLen = (payload.question_bn as string || '').trim().length;
+    if (enLen < 10 && bnLen < 10) {
+        errors.push('At least one of question_en or question_bn must be >= 10 characters');
+    }
+
+    // 2. Options validation
+    const options = payload.options as IBankQuestionOption[] | undefined;
+    if (!options || options.length < 4) {
+        errors.push('At least 4 options are required');
+    } else {
+        // Check each option has non-empty text
+        options.forEach((opt, i) => {
+            if (!(opt.text_en?.trim()) && !(opt.text_bn?.trim())) {
+                errors.push(`Option ${i + 1}: text_en or text_bn is required`);
+            }
+        });
+
+        // Check duplicate text within same language
+        const enTexts = options.map(o => o.text_en?.trim().toLowerCase()).filter(Boolean);
+        const bnTexts = options.map(o => o.text_bn?.trim().toLowerCase()).filter(Boolean);
+        if (new Set(enTexts).size !== enTexts.length) {
+            errors.push('Duplicate option text detected in English');
+        }
+        if (new Set(bnTexts).size !== bnTexts.length) {
+            errors.push('Duplicate option text detected in Bengali');
+        }
+    }
+
+    // 3. correctKey validation
+    const optionKeys = (options || []).map(o => o.key);
+    if (!optionKeys.includes(payload.correctKey as string)) {
+        errors.push('correctKey must match one of the option keys');
+    }
+
+    // 4. difficulty validation
+    if (!['easy', 'medium', 'hard'].includes(payload.difficulty as string)) {
+        errors.push('difficulty must be easy, medium, or hard');
+    }
+
+    // 5. subject validation
+    if (!(payload.subject as string)?.trim()) {
+        errors.push('subject is required');
+    }
+
+    return { valid: errors.length === 0, errors };
 }

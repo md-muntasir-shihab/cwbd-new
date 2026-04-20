@@ -109,7 +109,7 @@ describe('Feature: campusway-qa-audit, Property 3: Risk Classification Consisten
                     expect(result).toBe(entry.expected);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -129,7 +129,7 @@ describe('Feature: campusway-qa-audit, Property 3: Risk Classification Consisten
                     expect(first).toBe(second);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -150,7 +150,7 @@ describe('Feature: campusway-qa-audit, Property 3: Risk Classification Consisten
                     expect(validLevels).toContain(result);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

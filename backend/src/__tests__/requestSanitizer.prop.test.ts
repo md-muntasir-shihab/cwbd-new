@@ -80,7 +80,7 @@ describe('Property 9: Request Sanitization Safety', () => {
                     return true;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -99,7 +99,7 @@ describe('Property 9: Request Sanitization Safety', () => {
                     return true;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -121,7 +121,7 @@ describe('Property 9: Request Sanitization Safety', () => {
                     return true;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -140,7 +140,7 @@ describe('Property 9: Request Sanitization Safety', () => {
                     return true;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

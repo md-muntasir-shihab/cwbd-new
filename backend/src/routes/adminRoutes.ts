@@ -16,6 +16,7 @@ import {
     adminUpdateExam,
     adminDeleteExam,
     adminPublishExam,
+    adminAssignExamGroups,
     adminForceSubmit,
     adminPublishResult,
     adminGetQuestions,
@@ -39,8 +40,11 @@ import {
     adminExportExamEvents,
     adminStartExamPreview,
     adminCloneExam,
+    adminGetExamPreview,
     adminRegenerateExamShareLink,
     adminSignExamBannerUpload,
+    adminAutoGenerateExam,
+    adminBulkAttachQuestions,
     adminDownloadExamResultsImportTemplate,
     adminImportExamResults,
     adminImportExternalExamResults,
@@ -147,6 +151,7 @@ import {
     adminNewsV2UpdateItem,
     adminNewsV2DeleteItem,
     adminNewsV2SubmitReview,
+    adminNewsV2ConvertToEditable,
     adminNewsV2Approve,
     adminNewsV2Reject,
     adminNewsV2PublishNow,
@@ -397,7 +402,7 @@ import {
     fcGetDashboard,
     fcGetTransactions, fcGetTransaction, fcCreateTransaction, fcUpdateTransaction, fcDeleteTransaction,
     fcBulkApproveTransactions, fcBulkMarkPaid,
-    fcGetInvoices, fcCreateInvoice, fcUpdateInvoice, fcMarkInvoicePaid,
+    fcGetInvoices, fcGetInvoice, fcCreateInvoice, fcUpdateInvoice, fcMarkInvoicePaid,
     fcGetBudgets, fcCreateBudget, fcUpdateBudget, fcDeleteBudget,
     fcGetRecurringRules, fcCreateRecurringRule, fcUpdateRecurringRule, fcDeleteRecurringRule, fcRunRecurringRuleNow,
     fcGetChartOfAccounts, fcCreateAccount,
@@ -457,6 +462,7 @@ import {
     adminUserStream,
     adminGetStudents, adminCreateStudent, adminUpdateStudent,
     adminUpdateStudentSubscription, adminUpdateStudentGroups, adminGetStudentExams,
+    adminGetStudentExtendedProfile,
     adminGetStudentGroups, adminCreateStudentGroup, adminUpdateStudentGroup, adminDeleteStudentGroup,
     adminExportStudentGroups, adminImportStudentGroups, adminBulkStudentAction,
     adminGetProfileUpdateRequests, adminApproveProfileUpdateRequest, adminRejectProfileUpdateRequest,
@@ -840,10 +846,12 @@ router.get('/live/stream', requirePermission('exams', 'view'), adminLiveStream);
 router.post('/live/attempts/:attemptId/action', requirePermission('exams', 'edit'), adminLiveAttemptAction);
 router.get('/exams/:id', requirePermission('exams', 'view'), adminGetExamById);
 router.post('/exams', requirePermission('exams', 'create'), adminCreateExam);
+router.post('/exams/auto-generate', requirePermission('exams', 'create'), adminAutoGenerateExam);
 router.post('/exams/sign-banner-upload', requirePermission('exams', 'create'), adminSignExamBannerUpload);
 router.post('/exams/:id/clone', requirePermission('exams', 'create'), adminCloneExam);
 router.post('/exams/:id/share-link/regenerate', requirePermission('exams', 'edit'), adminRegenerateExamShareLink);
 router.put('/exams/:id', requirePermission('exams', 'edit'), adminUpdateExam);
+router.post('/exams/:id/assign-groups', requirePermission('exams', 'edit'), adminAssignExamGroups);
 router.delete('/exams/:id', requirePermission('exams', 'delete'), requireDestructiveStepUp('exams', 'exam_delete'), adminDeleteExam);
 router.patch('/exams/:id/publish', requirePermission('exams', 'publish'), adminPublishExam);
 router.patch('/exams/:id/publish-result', requirePermission('exams', 'publish'), requireTwoPersonForExamResultPublish, adminPublishResult);
@@ -863,6 +871,7 @@ router.get('/exams/:id/profile-sync/logs', requirePermission('exams', 'view'), a
 router.get('/exams/:id/reports/export', requirePermission('exams', 'export'), requireSensitiveAction({ actionKey: 'students.export', moduleName: 'reports', actionName: 'exam_report_export', enforceExportRolePolicy: true }), adminExportExamReport);
 router.get('/exams/:id/events/export', requirePermission('exams', 'export'), requireSensitiveExport('reports', 'exam_events_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'exam_events_export', targetType: 'exam', targetParam: 'id' }), adminExportExamEvents);
 router.post('/exams/:id/preview/start', requirePermission('exams', 'create'), adminStartExamPreview);
+router.get('/exams/:id/preview', requirePermission('exams', 'view'), adminGetExamPreview);
 router.patch('/exams/:examId/reset-attempt/:userId', requirePermission('exams', 'edit'), adminResetExamAttempt);
 router.get('/exam-import-templates', requirePermission('exams', 'view'), adminGetExamImportTemplates);
 router.post('/exam-import-templates', requirePermission('exams', 'create'), adminCreateExamImportTemplate);
@@ -883,6 +892,7 @@ router.put('/exam-center-settings', requirePermission('exams', 'edit'), adminUpd
 router.get('/exams/:examId/questions', requirePermission('question_bank', 'view'), adminGetQuestions);
 router.post('/exams/:examId/questions', requirePermission('question_bank', 'create'), adminCreateQuestion);
 router.put('/exams/:examId/questions/reorder', requirePermission('question_bank', 'edit'), adminReorderQuestions);
+router.post('/exams/:examId/questions/bulk-attach', requirePermission('question_bank', 'create'), adminBulkAttachQuestions);
 router.put('/exams/:examId/questions/:questionId', requirePermission('question_bank', 'edit'), adminUpdateQuestion);
 router.delete('/exams/:examId/questions/:questionId', requirePermission('question_bank', 'delete'), requireDestructiveStepUp('exams', 'exam_question_delete'), adminDeleteQuestion);
 router.post('/exams/:examId/questions/import-excel', requirePermission('question_bank', 'create'), adminImportQuestionsFromExcel);
@@ -1014,6 +1024,7 @@ router.post('/news/:id/move-to-draft', requirePermission('news', 'edit'), adminN
 router.post('/news/:id/archive', requirePermission('news', 'edit'), adminNewsV2Archive);
 router.post('/news/:id/restore', requirePermission('news', 'edit'), adminNewsV2RestoreItem);
 router.post('/news/:id/convert-to-notice', requirePermission('support_center', 'create'), adminNewsV2ConvertToNotice);
+router.post('/news/:id/convert-to-editable', requirePermission('news', 'edit'), adminNewsV2ConvertToEditable);
 router.post('/news/:id/publish-anyway', requirePermission('news', 'publish'), adminNewsV2PublishAnyway);
 router.post('/news/:id/merge', requirePermission('news', 'edit'), adminNewsV2MergeDuplicate);
 router.post('/news/:id/submit-review', requirePermission('news', 'edit'), adminNewsV2SubmitReview);
@@ -1146,6 +1157,7 @@ router.get('/audit-logs', requirePermission('security_logs', 'view'), (req: Requ
 router.get('/students', requirePermission('students_groups', 'view'), adminGetStudents);
 router.post('/students', requirePermission('students_groups', 'create'), adminCreateStudent);
 router.put('/students/:id', requirePermission('students_groups', 'edit'), adminUpdateStudent);
+router.get('/students/:id/extended-profile', requirePermission('students_groups', 'view'), adminGetStudentExtendedProfile);
 router.post('/students/bulk-action', requirePermission('students_groups', 'bulk'), requireTwoPersonForStudentBulkDelete, adminBulkStudentAction);
 router.post('/students/bulk-import', requirePermission('students_groups', 'create'), upload.single('file'), adminBulkImportStudents);
 router.put('/students/:id/subscription', requirePermission('students_groups', 'edit'), subscriptionActionRateLimiter, adminLegacyAssignStudentSubscription);
@@ -1319,6 +1331,7 @@ router.post('/fc/transactions/bulk-mark-paid', requirePermission('finance_center
 
 // Invoices
 router.get('/fc/invoices', requirePermission('finance_center', 'view'), fcGetInvoices);
+router.get('/fc/invoices/:id', requirePermission('finance_center', 'view'), fcGetInvoice);
 router.post('/fc/invoices', requirePermission('finance_center', 'create'), validate(createInvoiceSchema), fcCreateInvoice);
 router.put('/fc/invoices/:id', requirePermission('finance_center', 'edit'), validate(updateInvoiceSchema), fcUpdateInvoice);
 router.post('/fc/invoices/:id/mark-paid', requirePermission('finance_center', 'edit'), validate(markInvoicePaidSchema), fcMarkInvoicePaid);
@@ -1386,11 +1399,13 @@ router.post('/question-bank/v2/bulk/archive', requirePermission('question_bank',
 router.post('/question-bank/v2/bulk/activate', requirePermission('question_bank', 'bulk'), qbv2.bulkActivate);
 router.post('/question-bank/v2/bulk/tags', requirePermission('question_bank', 'bulk'), qbv2.bulkUpdateTags);
 router.post('/question-bank/v2/bulk/delete', requirePermission('question_bank', 'delete'), qbv2.bulkDelete);
+router.post('/question-bank/v2/bulk/copy', requirePermission('question_bank', 'create'), qbv2.bulkCopy);
 // Import / Export
 router.get('/question-bank/v2/import/template', requirePermission('question_bank', 'view'), qbv2.downloadImportTemplate);
 router.post('/question-bank/v2/import/preview', requirePermission('question_bank', 'create'), upload.single('file'), qbv2.importPreview);
 router.post('/question-bank/v2/import/commit', requirePermission('question_bank', 'create'), upload.single('file'), qbv2.importCommit);
 router.get('/question-bank/v2/export', requirePermission('question_bank', 'export'), requireSensitiveExport('question_bank', 'bank_v2_export'), trackSensitiveExport({ moduleName: 'question_bank', actionName: 'bank_v2_export' }), qbv2.exportQuestions);
+router.get('/question-bank/v2/export/pdf', requirePermission('question_bank', 'export'), qbv2.exportPdf);
 // Sets
 router.get('/question-bank/v2/sets', requirePermission('question_bank', 'view'), qbv2.listSets);
 router.get('/question-bank/v2/sets/:id', requirePermission('question_bank', 'view'), qbv2.getSet);

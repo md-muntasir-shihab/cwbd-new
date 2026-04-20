@@ -5,7 +5,63 @@ import UserSubscription, { IUserSubscription, UserSubscriptionStatus } from '../
 import ManualPayment, { IManualPayment, PaymentStatus } from '../models/ManualPayment';
 import FinanceInvoice from '../models/FinanceInvoice';
 import StudentDueLedger from '../models/StudentDueLedger';
-import { createIncomeFromPayment, nextInvoiceNo } from './financeCenterService';
+import FinanceTransaction from '../models/FinanceTransaction';
+import { createIncomeFromPayment, nextInvoiceNo, nextTxnCode } from './financeCenterService';
+import { triggerAutoSend } from './notificationOrchestrationService';
+
+// ── Hub Integration: Finance + Campaign helpers ─────────────────────
+
+async function emitFinanceTransaction(opts: {
+    userId: string;
+    planId: string;
+    planName: string;
+    amount: number;
+    eventType: 'subscription_created' | 'subscription_activated' | 'subscription_renewed' | 'subscription_cancelled' | 'subscription_extended';
+    actorId?: string | null;
+}): Promise<void> {
+    try {
+        const direction = opts.eventType === 'subscription_cancelled' ? 'expense' : 'income';
+        const txnCode = await nextTxnCode();
+        await FinanceTransaction.create({
+            txnCode,
+            direction,
+            amount: opts.amount,
+            currency: 'BDT',
+            dateUTC: new Date(),
+            accountCode: direction === 'income' ? '4100' : '5100',
+            categoryLabel: direction === 'income' ? 'Subscription Revenue' : 'Subscription Cancellation',
+            description: `${opts.eventType.replace(/_/g, ' ')} — ${opts.planName}`,
+            status: direction === 'income' ? 'paid' : 'recorded',
+            method: 'system',
+            sourceType: 'subscription_payment',
+            sourceId: opts.planId,
+            studentId: new mongoose.Types.ObjectId(opts.userId),
+            planId: new mongoose.Types.ObjectId(opts.planId),
+            paidAtUTC: new Date(),
+            createdByAdminId: opts.actorId ? new mongoose.Types.ObjectId(opts.actorId) : new mongoose.Types.ObjectId(opts.userId),
+        });
+    } catch (err) {
+        console.error(`[SubscriptionLifecycle] Finance transaction emit failed for ${opts.eventType}:`, err);
+    }
+}
+
+async function emitCampaignTrigger(opts: {
+    userId: string;
+    planName: string;
+    eventType: string;
+    actorId?: string | null;
+}): Promise<void> {
+    try {
+        await triggerAutoSend(
+            opts.eventType,
+            [opts.userId],
+            { planName: opts.planName, eventType: opts.eventType },
+            opts.actorId || opts.userId,
+        );
+    } catch (err) {
+        console.error(`[SubscriptionLifecycle] Campaign trigger failed for ${opts.eventType}:`, err);
+    }
+}
 
 type LeanPlan = Record<string, unknown> & {
     _id: mongoose.Types.ObjectId;
@@ -507,6 +563,25 @@ export async function assignSubscriptionLifecycle(input: SubscriptionAssignmentI
 
     await recomputeStudentDueLedger(String(userObjectId), input.actorId, safeString(input.notes || `Subscription sync for ${safeString(plan.name)}`));
 
+    // ── Hub Integration: emit finance transaction + campaign trigger ──
+    const planAmountForFinance = planIsFree ? 0 : planAmount;
+    if (planAmountForFinance > 0) {
+        await emitFinanceTransaction({
+            userId: String(userObjectId),
+            planId: String(plan._id),
+            planName: safeString(plan.name, 'subscription plan'),
+            amount: planAmountForFinance,
+            eventType: 'subscription_created',
+            actorId: input.actorId,
+        });
+    }
+    await emitCampaignTrigger({
+        userId: String(userObjectId),
+        planName: safeString(plan.name, 'subscription plan'),
+        eventType: 'subscription_created',
+        actorId: input.actorId,
+    });
+
     return {
         user: { _id: userObjectId },
         plan,
@@ -577,6 +652,25 @@ export async function activateSubscriptionFromPayment(
 
     await recomputeStudentDueLedger(String(studentId), actorId, `Subscription activated from payment ${String(paymentId)}`);
 
+    // ── Hub Integration: emit finance transaction + campaign trigger ──
+    const activationAmount = typeof paymentLike.amount === 'number' ? paymentLike.amount : 0;
+    if (activationAmount > 0) {
+        await emitFinanceTransaction({
+            userId: String(studentId),
+            planId: String(planId),
+            planName: safeString((plan as Record<string, unknown>).name, 'subscription plan'),
+            amount: activationAmount,
+            eventType: 'subscription_activated',
+            actorId,
+        });
+    }
+    await emitCampaignTrigger({
+        userId: String(studentId),
+        planName: safeString((plan as Record<string, unknown>).name, 'subscription plan'),
+        eventType: 'subscription_activated',
+        actorId,
+    });
+
     return { subscription, plan, cache };
 }
 
@@ -601,6 +695,22 @@ export async function extendSubscriptionForUser(userId: string, days: number, ac
         status: subscription.status,
         startAtUTC: subscription.startAtUTC,
         expiresAtUTC: subscription.expiresAtUTC,
+    });
+
+    // ── Hub Integration: emit finance transaction + campaign trigger ──
+    await emitFinanceTransaction({
+        userId,
+        planId: String(subscription.planId),
+        planName: safeString((plan as Record<string, unknown> | null)?.name, 'subscription plan'),
+        amount: 0,
+        eventType: 'subscription_extended',
+        actorId,
+    });
+    await emitCampaignTrigger({
+        userId,
+        planName: safeString((plan as Record<string, unknown> | null)?.name, 'subscription plan'),
+        eventType: 'subscription_renewed',
+        actorId,
     });
 
     return { subscription, plan, cache };
@@ -633,6 +743,23 @@ export async function expireSubscriptionForUser(userId: string, actorId?: string
     });
 
     await recomputeStudentDueLedger(userId, actorId, 'Subscription expired');
+
+    // ── Hub Integration: emit finance transaction + campaign trigger ──
+    await emitFinanceTransaction({
+        userId,
+        planId: String(subscription.planId),
+        planName: safeString((plan as Record<string, unknown> | null)?.name, 'subscription plan'),
+        amount: 0,
+        eventType: 'subscription_cancelled',
+        actorId,
+    });
+    await emitCampaignTrigger({
+        userId,
+        planName: safeString((plan as Record<string, unknown> | null)?.name, 'subscription plan'),
+        eventType: 'subscription_cancelled',
+        actorId,
+    });
+
     return { subscription, plan, cache };
 }
 

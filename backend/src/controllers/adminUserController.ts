@@ -1445,8 +1445,8 @@ export async function adminBulkImportStudents(req: AuthRequest, res: Response): 
                 continue;
             }
 
-                const plainPassword = providedPassword || newRandomPassword(24);
-                const hashedPassword = await bcrypt.hash(plainPassword, 12);
+            const plainPassword = providedPassword || newRandomPassword(24);
+            const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
             try {
                 // Determine subscription
@@ -2590,6 +2590,82 @@ export async function adminGetStudentExams(req: AuthRequest, res: Response): Pro
         res.json({ items, lastUpdatedAt: new Date().toISOString() });
     } catch (error) {
         console.error('adminGetStudentExams error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function adminGetStudentExtendedProfile(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const studentId = req.params.id;
+        const user = await User.findById(studentId).select('role full_name username email phone').lean();
+        if (!user || (user as any).role !== 'student') {
+            res.status(404).json({ message: 'Student not found' });
+            return;
+        }
+
+        // Exam history with scores
+        const examResults = await ExamResult.find({ student: studentId })
+            .populate('exam', 'title subject totalMarks')
+            .sort({ submittedAt: -1 })
+            .limit(50)
+            .lean();
+
+        const examHistory = examResults.map((r: any) => ({
+            examId: String(r.exam?._id || r.exam),
+            examTitle: String(r.exam?.title || ''),
+            subject: String(r.exam?.subject || ''),
+            obtainedMarks: Number(r.obtainedMarks || 0),
+            totalMarks: Number(r.totalMarks || 0),
+            percentage: Number(r.percentage || 0),
+            submittedAt: r.submittedAt,
+        }));
+
+        // Performance analytics
+        const scores = examHistory.map((e) => e.percentage);
+        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+        const trend = scores.length >= 2 ? (scores[0] - scores[scores.length - 1]) : 0;
+
+        // Subject-wise performance for weak topics
+        const subjectMap: Record<string, { total: number; count: number }> = {};
+        for (const e of examHistory) {
+            if (!subjectMap[e.subject]) subjectMap[e.subject] = { total: 0, count: 0 };
+            subjectMap[e.subject].total += e.percentage;
+            subjectMap[e.subject].count += 1;
+        }
+        const weakTopics = Object.entries(subjectMap)
+            .map(([subject, data]) => ({ subject, avgPercentage: data.total / data.count }))
+            .filter((s) => s.avgPercentage < 50)
+            .sort((a, b) => a.avgPercentage - b.avgPercentage);
+
+        // Login activity (device info + IP history)
+        const loginActivities = await LoginActivity.find({ user_id: studentId })
+            .sort({ createdAt: -1 })
+            .limit(20)
+            .lean();
+
+        const deviceInfo = loginActivities.map((la: any) => ({
+            ip: la.ip_address || '',
+            userAgent: la.user_agent || '',
+            timestamp: la.createdAt,
+            success: la.success,
+        }));
+
+        const ipHistory = [...new Set(loginActivities.map((la: any) => la.ip_address).filter(Boolean))];
+
+        res.json({
+            student: user,
+            examHistory,
+            performanceAnalytics: {
+                totalExams: examHistory.length,
+                averageScore: Math.round(avgScore * 100) / 100,
+                trend: Math.round(trend * 100) / 100,
+                weakTopics,
+            },
+            deviceInfo,
+            ipHistory,
+        });
+    } catch (error) {
+        console.error('adminGetStudentExtendedProfile error:', error);
         res.status(500).json({ message: 'Server error' });
     }
 }

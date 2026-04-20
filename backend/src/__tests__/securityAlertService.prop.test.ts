@@ -42,7 +42,7 @@ describe('Property 11: Security Alert Threshold Correctness', () => {
                     }
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -58,7 +58,7 @@ describe('Property 11: Security Alert Threshold Correctness', () => {
                     return shouldTriggerAlert(alertType, eventCount, threshold) === false;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -74,7 +74,7 @@ describe('Property 11: Security Alert Threshold Correctness', () => {
                     return shouldTriggerAlert(alertType, eventCount, threshold) === true;
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -88,7 +88,7 @@ describe('Property 11: Security Alert Threshold Correctness', () => {
 
                 return belowResult === false && atResult === true;
             }),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

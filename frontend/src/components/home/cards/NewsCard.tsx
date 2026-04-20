@@ -15,12 +15,12 @@ export default function NewsCard({ item }: NewsCardProps) {
 
   return (
     <motion.div
-      whileHover={{ y: -3 }}
+      whileHover={{ y: -4, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
       className="snap-start shrink-0 w-[280px] sm:w-[300px] md:w-[320px]"
     >
       <Link
         to={`/news/${item.slug}`}
-        className="block rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow group h-full flex flex-col"
+        className="block rounded-[1.5rem] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-700/60 shadow-[0_8px_30px_rgba(15,23,42,0.08)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.14)] dark:shadow-[0_8px_30px_rgba(4,12,24,0.2)] dark:hover:shadow-[0_20px_50px_rgba(4,12,24,0.3)] transition-all duration-500 group h-full flex flex-col"
       >
         {/* Cover image */}
         <div className="h-40 bg-gray-100 dark:bg-gray-800 overflow-hidden relative">

@@ -144,6 +144,24 @@ export function hasAuthSessionHint(): boolean {
     return readLocalStorageValue(AUTH_SESSION_HINT_KEY).length > 0;
 }
 
+export function readAuthSessionHint(): { active: boolean; portal: string; updatedAt: number } | null {
+    const raw = readLocalStorageValue(AUTH_SESSION_HINT_KEY);
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'object' && parsed !== null) {
+            return {
+                active: Boolean(parsed.active),
+                portal: String(parsed.portal || 'unknown'),
+                updatedAt: Number(parsed.updatedAt) || 0,
+            };
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
 function isProtectedBootstrapPath(pathname: string): boolean {
     const path = String(pathname || '').trim();
     if (!path) return false;
@@ -164,39 +182,81 @@ function isProtectedBootstrapPath(pathname: string): boolean {
         return false;
     }
 
+    // Protected paths from Requirements 1.5:
+    // /exam/:examId, /exam/:examId/result, /exam/:examId/solutions, /exams,
+    // /dashboard, /results, /payments, /notifications, /support, /profile,
+    // /student/*, /profile-center
+    // Plus admin/chairman paths for completeness
     const protectedPrefixes = [
+        // Admin paths
         '/__cw_admin__',
         '/campusway-secure-admin',
         '/admin',
         '/admin-dashboard',
         '/chairman',
+        // Exam paths (Requirements 1.5)
         '/exam-portal',
-        '/exams',
-        '/student/dashboard',
-        '/student/profile',
-        '/student/security',
-        '/student/applications',
-        '/student/resources',
-        '/student/exams-hub',
+        '/exam/',          // Matches /exam/:examId, /exam/:examId/result, /exam/:examId/solutions
+        '/exams',          // Matches /exams (exact) and /exams/* paths
+        // Student panel paths (Requirements 1.5)
+        '/student/',       // Matches /student/* paths
         '/dashboard',
-        '/profile',
         '/results',
         '/payments',
         '/notifications',
         '/support',
-        '/exam/',
+        '/profile',
+        '/profile-center',
     ];
 
-    if (protectedPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(prefix))) {
+    // Check if path matches any protected prefix
+    // A path is protected if it equals the prefix or starts with the prefix
+    if (protectedPrefixes.some((prefix) => path === prefix || path.startsWith(prefix))) {
         return true;
     }
 
-    return /^\/exams\/[^/]+/.test(path);
+    return false;
+}
+
+export { isProtectedBootstrapPath };
+
+/**
+ * Determines whether the given pathname is a public auth route where
+ * bootstrap should NOT be attempted (login, register, forgot-password, etc.).
+ */
+function isPublicAuthPath(pathname: string): boolean {
+    const path = String(pathname || '').trim();
+    if (!path || path === '/') return true;
+
+    const publicAuthPaths = new Set([
+        '/login',
+        '/student/login',
+        '/student/register',
+        '/student/forgot-password',
+        '/student/reset-password',
+        '/chairman/login',
+        '/__cw_admin__/login',
+        '/admin/login',
+        '/otp-verify',
+    ]);
+
+    return publicAuthPaths.has(path);
 }
 
 export function shouldAttemptAuthBootstrap(): boolean {
     if (typeof window === 'undefined') return false;
-    return hasAuthSessionHint() || isProtectedBootstrapPath(window.location.pathname);
+    const pathname = window.location.pathname;
+
+    // Fast path: if we have a session hint, always attempt bootstrap
+    if (hasAuthSessionHint()) return true;
+
+    // Always attempt bootstrap on non-public paths.
+    // The refresh cookie is httpOnly so we cannot read it directly —
+    // instead we optimistically attempt bootstrap on any path that is
+    // not a public auth route (login, register, etc.).
+    if (!isPublicAuthPath(pathname)) return true;
+
+    return false;
 }
 
 export interface SensitiveActionProof {
@@ -322,7 +382,11 @@ export async function refreshAccessToken(): Promise<string | null> {
             const nextToken = String(res.data?.token || '').trim();
             if (!nextToken) return null;
             setAccessToken(nextToken);
-            markAuthSessionHint();
+            // Only refresh the hint timestamp; preserve existing portal value
+            if (hasAuthSessionHint()) {
+                const existing = readAuthSessionHint();
+                markAuthSessionHint(existing?.portal);  // preserve portal
+            }
             return nextToken;
         })
         .catch(() => null)
@@ -388,7 +452,7 @@ api.interceptors.response.use(
         }
 
         if (status === 401) {
-            if (hasToken && (code === 'SESSION_INVALIDATED' || code === 'LEGACY_TOKEN_NOT_ALLOWED')) {
+            if (code === 'SESSION_INVALIDATED' || code === 'LEGACY_TOKEN_NOT_ALLOWED') {
                 emitForceLogout(code);
                 return Promise.reject(error);
             }
@@ -400,6 +464,20 @@ api.interceptors.response.use(
                     originalConfig.headers = {
                         ...(originalConfig.headers || {}),
                         Authorization: `Bearer ${nextToken}`,
+                        'X-Browser-Fingerprint': ensureBrowserFingerprint(),
+                    };
+                    return api(originalConfig);
+                }
+
+                // First refresh returned null — attempt one more refresh
+                // before giving up. This covers the case where the refresh
+                // cookie exists but the first attempt failed transiently.
+                const retryToken = await refreshAccessToken();
+                if (retryToken) {
+                    originalConfig.__isRetryRequest = true;
+                    originalConfig.headers = {
+                        ...(originalConfig.headers || {}),
+                        Authorization: `Bearer ${retryToken}`,
                         'X-Browser-Fingerprint': ensureBrowserFingerprint(),
                     };
                     return api(originalConfig);
@@ -907,6 +985,36 @@ export interface HomeUniversityCardConfig {
     showExamDates: boolean;
     defaultSort: UniversityCardSort;
 }
+
+/* ── Page Hero Banner Settings ── */
+
+export type PageHeroVantaEffect =
+    | 'birds' | 'net' | 'globe' | 'waves' | 'fog'
+    | 'clouds' | 'cells' | 'trunk' | 'halo' | 'dots'
+    | 'rings' | 'topology' | 'none';
+
+export interface PageHeroConfig {
+    enabled: boolean;
+    title: string;
+    subtitle: string;
+    pillText: string;
+    vantaEffect: PageHeroVantaEffect;
+    vantaColor: string;
+    vantaBackgroundColor: string;
+    gradientFrom: string;
+    gradientTo: string;
+    showSearch: boolean;
+    searchPlaceholder: string;
+    primaryCTA: { label: string; url: string };
+    secondaryCTA: { label: string; url: string };
+}
+
+export type PageHeroKey =
+    | 'home' | 'universities' | 'news' | 'exams' | 'resources'
+    | 'subscriptionPlans' | 'contact'
+    | 'about' | 'helpCenter' | 'privacy' | 'terms';
+
+export type PageHeroSettingsMap = Record<PageHeroKey, PageHeroConfig>;
 
 export interface HomeSettingsConfig {
     sectionVisibility: {
@@ -4798,6 +4906,7 @@ export interface ApiNewsV2Settings {
     defaultSourceIconUrl?: string;
     fetchFullArticleEnabled?: boolean;
     fullArticleFetchMode?: 'rss_content' | 'readability_scrape' | 'both';
+    aiExtractionFallback?: boolean;
     rss: {
         enabled: boolean;
         defaultFetchIntervalMin: number;
@@ -4932,6 +5041,8 @@ export const adminNewsV2UpdateItem = (id: string, data: Partial<ApiNews>) =>
     api.put<{ item: ApiNews; message: string }>(`/${ADMIN_PATH}/news/${id}`, data);
 export const adminNewsV2SubmitReview = (id: string) =>
     api.post<{ item: ApiNews; message: string }>(`/${ADMIN_PATH}/news/${id}/submit-review`);
+export const adminNewsV2ConvertToEditable = (id: string) =>
+    api.post<{ item: ApiNews; message: string }>(`/${ADMIN_PATH}/news/${id}/convert-to-editable`);
 export const adminNewsV2Approve = (id: string) =>
     api.post<{ item: ApiNews; message: string }>(`/${ADMIN_PATH}/news/${id}/approve`);
 export const adminNewsV2ApprovePublish = (id: string) =>
@@ -5599,6 +5710,12 @@ export const adminExportExamReport = (
         headers: buildSensitiveActionHeaders(proof),
     });
 export const adminUpdateWebsiteSettings = (data: FormData) => api.put(`/${ADMIN_PATH}/home/settings`, data);
+export const adminUpdatePageHeroSettings = (data: Partial<PageHeroSettingsMap>) =>
+    api.put<{ pageHeroSettings: PageHeroSettingsMap }>(`/${ADMIN_PATH}/home/settings`, (() => {
+        const fd = new FormData();
+        fd.append('pageHeroSettings', JSON.stringify(data));
+        return fd;
+    })());
 export const adminUpdateHomePage = (data: Record<string, unknown>) => api.put(`/${ADMIN_PATH}/home`, data);
 export const adminUpdateHomeHero = (data: FormData) => api.put(`/${ADMIN_PATH}/home/hero`, data);
 export const adminUpdateHomeBanner = (data: FormData) => api.put(`/${ADMIN_PATH}/home/banner`, data);

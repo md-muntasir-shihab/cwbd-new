@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, LogIn } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import AuthBrandHeader from '../components/auth/AuthBrandHeader';
@@ -13,6 +13,21 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    /**
+     * Validates the returnTo parameter to prevent open redirect attacks.
+     * Only allows relative paths starting with '/'.
+     */
+    const getValidReturnTo = (): string | null => {
+        const returnTo = searchParams.get('returnTo');
+        if (!returnTo) return null;
+        // Must start with '/' and must NOT start with '//' (protocol-relative URL)
+        if (returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+            return returnTo;
+        }
+        return null;
+    };
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault();
@@ -29,7 +44,8 @@ export default function LoginPage() {
                 navigate('/otp-verify?from=student', { replace: true });
                 return;
             }
-            navigate('/dashboard', { replace: true });
+            const returnTo = getValidReturnTo();
+            navigate(returnTo || '/dashboard', { replace: true });
         } catch (err: any) {
             const message = String(err?.response?.data?.message || 'Login failed. Please try again.');
             if (/admin|chairman/i.test(message)) {

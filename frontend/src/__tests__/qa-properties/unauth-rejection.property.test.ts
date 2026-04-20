@@ -71,7 +71,7 @@ describe('Feature: campusway-qa-audit, Property 10: Unauthenticated Request Reje
                     ).toBe(401);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

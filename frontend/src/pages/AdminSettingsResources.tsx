@@ -12,6 +12,8 @@ import {
     Type,
 } from 'lucide-react';
 import AdminGuardShell from '../components/admin/AdminGuardShell';
+import AdminTabNav from '../components/admin/AdminTabNav';
+import { ADMIN_PATHS } from '../routes/adminPaths';
 import {
     adminGetResourceSettings,
     adminUpdateResourceSettings,
@@ -122,14 +124,12 @@ function ToggleRow({
                 aria-label={title}
                 disabled={disabled}
                 onClick={onChange}
-                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${
-                    checked ? 'bg-indigo-600' : 'bg-slate-700'
-                } ${disabled ? 'cursor-not-allowed' : ''}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${checked ? 'bg-indigo-600' : 'bg-slate-700'
+                    } ${disabled ? 'cursor-not-allowed' : ''}`}
             >
                 <span
-                    className={`mt-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                        checked ? 'translate-x-5' : 'translate-x-0.5'
-                    }`}
+                    className={`mt-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
                 />
             </button>
         </label>
@@ -439,11 +439,10 @@ function ResourceSettingsPanel() {
                                         key={item.value}
                                         type="button"
                                         onClick={() => toggleAllowedType(item.value)}
-                                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                                            active
-                                                ? 'border-indigo-400/60 bg-indigo-500/20 text-indigo-200'
-                                                : 'border-white/10 bg-slate-950/55 text-slate-400 hover:border-indigo-400/30 hover:text-slate-200'
-                                        }`}
+                                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${active
+                                            ? 'border-indigo-400/60 bg-indigo-500/20 text-indigo-200'
+                                            : 'border-white/10 bg-slate-950/55 text-slate-400 hover:border-indigo-400/30 hover:text-slate-200'
+                                            }`}
                                     >
                                         {item.label}
                                     </button>
@@ -506,6 +505,10 @@ export default function AdminSettingsResourcesPage() {
             description="Control branding, discovery defaults, visibility, and upload policy for the shared resources hub."
             allowedRoles={['superadmin', 'admin', 'moderator']}
         >
+            <AdminTabNav tabs={[
+                { key: 'list', label: 'All Resources', path: ADMIN_PATHS.resources, icon: FileStack },
+                { key: 'settings', label: 'Resource Settings', path: ADMIN_PATHS.resourceSettings, icon: Shield },
+            ]} />
             <ResourceSettingsPanel />
         </AdminGuardShell>
     );

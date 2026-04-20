@@ -145,8 +145,15 @@ export interface INews extends Document {
     seoDescription?: string;
     views: number;
     shareCount?: number;
+    isEdited?: boolean;
+    editedAt?: Date;
     createdAt: Date;
     updatedAt: Date;
+
+    /* ── Open Graph metadata for social sharing ── */
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
 }
 
 const NewsSchema = new Schema<INews>({
@@ -292,6 +299,13 @@ const NewsSchema = new Schema<INews>({
     seoDescription: { type: String, default: '' },
     views: { type: Number, default: 0 },
     shareCount: { type: Number, default: 0 },
+    isEdited: { type: Boolean, default: false },
+    editedAt: { type: Date, default: null },
+
+    /* ── Open Graph metadata for social sharing ── */
+    ogTitle: { type: String, default: '' },
+    ogDescription: { type: String, default: '' },
+    ogImage: { type: String, default: '' },
 }, { timestamps: true });
 
 NewsSchema.index({ publishDate: -1 });

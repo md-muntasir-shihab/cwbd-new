@@ -27,6 +27,7 @@ async function createAudit(req: AuthRequest, action: string, details?: Record<st
 
 const VALID_PLACEMENTS = [
     'HOME_TOP', 'HOME_MID', 'HOME_BOTTOM',
+    'HOME_HERO', 'HOME_FEATURES', 'HOME_TESTIMONIALS', 'HOME_CTA',
     'EXAM_LIST', 'STUDENT_DASHBOARD', 'NEWS_PAGE',
     'UNIVERSITY_LIST', 'PRICING_PAGE',
 ];

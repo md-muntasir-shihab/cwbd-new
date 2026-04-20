@@ -7,6 +7,7 @@ import QuestionBankUsage from '../models/QuestionBankUsage';
 import QuestionBankAnalytics from '../models/QuestionBankAnalytics';
 import QuestionBankSettings from '../models/QuestionBankSettings';
 import { ExamQuestionModel } from '../models/examQuestion.model';
+import Exam from '../models/Exam';
 import { AnswerModel } from '../models/answer.model';
 import AuditLog from '../models/AuditLog';
 
@@ -43,7 +44,7 @@ async function audit(
         target_id: targetId && mongoose.Types.ObjectId.isValid(targetId) ? targetId : undefined,
         target_type: 'question_bank_v2',
         details: details || {},
-    }).catch(() => {});
+    }).catch(() => { });
 }
 
 // ─── Settings (singleton) ────────────────────────────────
@@ -661,21 +662,21 @@ async function resolveRuleBasedQuestions(rules: ISetRules) {
         const [easy, medium, hard] = await Promise.all([
             mix.easy > 0
                 ? QuestionBankQuestion.aggregate([
-                      { $match: { ...filter, difficulty: 'easy' } },
-                      { $sample: { size: mix.easy } },
-                  ])
+                    { $match: { ...filter, difficulty: 'easy' } },
+                    { $sample: { size: mix.easy } },
+                ])
                 : [],
             mix.medium > 0
                 ? QuestionBankQuestion.aggregate([
-                      { $match: { ...filter, difficulty: 'medium' } },
-                      { $sample: { size: mix.medium } },
-                  ])
+                    { $match: { ...filter, difficulty: 'medium' } },
+                    { $sample: { size: mix.medium } },
+                ])
                 : [],
             mix.hard > 0
                 ? QuestionBankQuestion.aggregate([
-                      { $match: { ...filter, difficulty: 'hard' } },
-                      { $sample: { size: mix.hard } },
-                  ])
+                    { $match: { ...filter, difficulty: 'hard' } },
+                    { $sample: { size: mix.hard } },
+                ])
                 : [],
         ]);
         return [...easy, ...medium, ...hard];
@@ -789,7 +790,7 @@ export async function finalizeExamSnapshot(examId: string, adminId: string) {
     }));
 
     if (usageDocs.length > 0) {
-        await QuestionBankUsage.insertMany(usageDocs, { ordered: false }).catch(() => {});
+        await QuestionBankUsage.insertMany(usageDocs, { ordered: false }).catch(() => { });
     }
 
     await audit(adminId, 'qbank_exam_finalize', examId, {
@@ -1019,7 +1020,145 @@ export async function bulkDelete(ids: string[], adminId: string) {
         return bulkArchive(ids, adminId);
     }
     const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+
+    // Cascade: for each question, remove linked ExamQuestions and recalculate Exam totals
+    const questionIdStrings = validIds.map((id) => id.toString());
+
+    // Get all affected exam IDs BEFORE deleting ExamQuestions
+    const affectedExamIds = await ExamQuestionModel.distinct('examId', {
+        fromBankQuestionId: { $in: questionIdStrings },
+    });
+
+    // Remove all ExamQuestion records referencing any of the deleted bank questions
+    await ExamQuestionModel.deleteMany({ fromBankQuestionId: { $in: questionIdStrings } });
+
+    // Recalculate totalQuestions and totalMarks for each affected exam
+    for (const examId of affectedExamIds) {
+        const remaining = await ExamQuestionModel.find({ examId });
+        await Exam.findByIdAndUpdate(examId, {
+            totalQuestions: remaining.length,
+            totalMarks: remaining.reduce((sum: number, q: any) => sum + (q.marks || 0), 0),
+        });
+    }
+
+    // Delete the bank questions themselves
     const result = await QuestionBankQuestion.deleteMany({ _id: { $in: validIds } });
-    await audit(adminId, 'qbank_bulk_delete', undefined, { ids: validIds, deleted: result.deletedCount });
+    await audit(adminId, 'qbank_bulk_delete', undefined, {
+        ids: validIds,
+        deleted: result.deletedCount,
+        cascadeExamIds: affectedExamIds,
+    });
     return result;
+}
+
+// ─── PDF Export ──────────────────────────────────────────
+export async function exportQuestionsPdf(filters: ListBankQuestionsParams): Promise<PDFKit.PDFDocument> {
+    const result = await listBankQuestions({ ...filters, page: 1, limit: 10000 });
+    const questions = result.questions;
+
+    const PDFDocument = (await import('pdfkit')).default;
+    const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true });
+
+    // Title
+    doc.fontSize(20).font('Helvetica-Bold').text('Question Bank Export', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Helvetica').text(`Total Questions: ${questions.length}  |  Generated: ${new Date().toISOString().slice(0, 10)}`, { align: 'center' });
+    doc.moveDown(1);
+
+    const difficultyLabel: Record<string, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+
+    for (let i = 0; i < questions.length; i++) {
+        const q = questions[i] as any;
+
+        // Check if we need a new page (leave room for at least a card header)
+        if (doc.y > 680) doc.addPage();
+
+        // Card header line
+        doc.fontSize(12).font('Helvetica-Bold')
+            .text(`Q${i + 1}.`, { continued: true })
+            .font('Helvetica')
+            .text(`  [${q.subject || 'N/A'}]  [${difficultyLabel[q.difficulty] || q.difficulty}]`);
+        doc.moveDown(0.3);
+
+        // Question text (en)
+        if (q.question_en) {
+            doc.fontSize(11).font('Helvetica-Bold').text('EN: ', { continued: true })
+                .font('Helvetica').text(q.question_en);
+        }
+        // Question text (bn)
+        if (q.question_bn) {
+            doc.fontSize(11).font('Helvetica-Bold').text('BN: ', { continued: true })
+                .font('Helvetica').text(q.question_bn);
+        }
+        doc.moveDown(0.3);
+
+        // Options
+        if (q.options && q.options.length > 0) {
+            for (const opt of q.options) {
+                const isCorrect = opt.key === q.correctKey;
+                const prefix = isCorrect ? `✓ ${opt.key})` : `  ${opt.key})`;
+                const optText = [opt.text_en, opt.text_bn].filter(Boolean).join(' / ');
+                doc.fontSize(10).font(isCorrect ? 'Helvetica-Bold' : 'Helvetica')
+                    .text(`${prefix} ${optText}`);
+            }
+        }
+        doc.moveDown(0.3);
+
+        // Correct answer
+        doc.fontSize(10).font('Helvetica-Bold').text(`Correct Answer: ${q.correctKey}`);
+
+        // Explanation
+        const explanation = q.explanation_en || q.explanation_bn;
+        if (explanation) {
+            doc.fontSize(10).font('Helvetica-Bold').text('Explanation: ', { continued: true })
+                .font('Helvetica').text(explanation);
+        }
+
+        // Separator
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#cccccc').stroke();
+        doc.moveDown(0.5);
+    }
+
+    return doc;
+}
+
+export async function bulkCopy(ids: string[], adminId: string) {
+    const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const sources = await QuestionBankQuestion.find({
+        _id: { $in: validIds },
+        isActive: true,
+        isArchived: false,
+    }).lean();
+
+    if (sources.length !== validIds.length) {
+        const foundIds = new Set(sources.map((s: any) => String(s._id)));
+        const missing = validIds.filter((id) => !foundIds.has(id));
+        throw new Error(`Some question IDs not found or inactive: ${missing.join(', ')}`);
+    }
+
+    const newQuestions = [];
+    for (const src of sources) {
+        const { _id, bankQuestionId, createdAt, updatedAt, ...rest } = src as any;
+        const copyData = {
+            ...rest,
+            bankQuestionId: undefined,
+            question_en: (rest.question_en || '') ? `${rest.question_en} (Copy)` : '',
+            question_bn: (rest.question_bn || '') ? `${rest.question_bn} (Copy)` : '',
+            versionNo: 1,
+            parentQuestionId: null,
+            createdByAdminId: adminId,
+            updatedByAdminId: adminId,
+        };
+        copyData.contentHash = computeContentHash(copyData);
+        const doc = await QuestionBankQuestion.create(copyData);
+        newQuestions.push(doc);
+    }
+
+    await audit(adminId, 'qbank_bulk_copy', undefined, {
+        sourceIds: validIds,
+        copied: newQuestions.length,
+    });
+
+    return { copied: newQuestions.length, newQuestions };
 }

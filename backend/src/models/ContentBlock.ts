@@ -58,6 +58,7 @@ const ContentBlockSchema = new Schema<IContentBlock>(
             type: String,
             enum: [
                 'HOME_TOP', 'HOME_MID', 'HOME_BOTTOM',
+                'HOME_HERO', 'HOME_FEATURES', 'HOME_TESTIMONIALS', 'HOME_CTA',
                 'EXAM_LIST', 'STUDENT_DASHBOARD', 'NEWS_PAGE',
                 'UNIVERSITY_LIST', 'PRICING_PAGE',
             ],

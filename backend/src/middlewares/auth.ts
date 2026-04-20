@@ -165,7 +165,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
                 next();
             });
     } catch {
-        res.status(401).json({ message: 'Invalid or expired token' });
+        res.status(401).json({ message: 'Invalid or expired token', code: 'TOKEN_EXPIRED' });
     }
 }
 

@@ -1,4 +1,6 @@
 import { Helmet } from 'react-helmet-async';
+import { useQuery } from '@tanstack/react-query';
+import { getPublicSettings } from '../../services/api';
 
 interface SEOProps {
     title?: string;
@@ -12,36 +14,52 @@ interface SEOProps {
 
 export function SEO({
     title,
-    description = "CampusWay - The ultimate platform for university admissions and career guidance in Bangladesh.",
-    keywords = "CampusWay, University Admissions, Admission Test, Bangladesh Universities, Mock Test",
-    image = "/cw-banner.png", // Assuming a default banner image exists in public/
-    url = "https://campusway.net",
-    type = "website",
-    siteName = "CampusWay"
+    description,
+    keywords = 'CampusWay, University Admissions, Admission Test, Bangladesh Universities, Mock Test',
+    image,
+    url = typeof window !== 'undefined' ? window.location.href : 'https://campusway.net',
+    type,
+    siteName,
 }: SEOProps) {
-    const defaultTitle = siteName;
-    const pageTitle = title ? `${title} | ${siteName}` : defaultTitle;
+    const { data: siteSettings } = useQuery({
+        queryKey: ['public-settings'],
+        queryFn: async () => (await getPublicSettings()).data,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const sp = (siteSettings as any)?.socialPreview;
+    const resolvedSiteName = siteName || siteSettings?.websiteName || 'CampusWay';
+    const resolvedDescription = description || sp?.ogDescription || siteSettings?.metaDescription || 'CampusWay - The ultimate platform for university admissions and career guidance in Bangladesh.';
+    const resolvedImage = image || sp?.ogImageUrl || '/cw-banner.png';
+    const resolvedType = type || sp?.ogType || 'website';
+    const resolvedTwitterCard = sp?.twitterCard || 'summary_large_image';
+    const resolvedTwitterSite = sp?.twitterSite || '';
+
+    const pageTitle = title
+        ? `${title} | ${resolvedSiteName}`
+        : (sp?.ogTitle || siteSettings?.metaTitle || resolvedSiteName);
 
     return (
         <Helmet>
             <title>{pageTitle}</title>
-            <meta name="description" content={description} />
+            <meta name="description" content={resolvedDescription} />
             <meta name="keywords" content={keywords} />
 
-            {/* Open Graph / Facebook */}
-            <meta property="og:type" content={type} />
+            {/* Open Graph */}
+            <meta property="og:type" content={resolvedType} />
             <meta property="og:url" content={url} />
             <meta property="og:title" content={pageTitle} />
-            <meta property="og:description" content={description} />
-            <meta property="og:image" content={image} />
-            <meta property="og:site_name" content={siteName} />
+            <meta property="og:description" content={resolvedDescription} />
+            <meta property="og:image" content={resolvedImage} />
+            <meta property="og:site_name" content={resolvedSiteName} />
 
             {/* Twitter */}
-            <meta property="twitter:card" content="summary_large_image" />
-            <meta property="twitter:url" content={url} />
-            <meta property="twitter:title" content={pageTitle} />
-            <meta property="twitter:description" content={description} />
-            <meta property="twitter:image" content={image} />
+            <meta name="twitter:card" content={resolvedTwitterCard} />
+            <meta name="twitter:url" content={url} />
+            <meta name="twitter:title" content={pageTitle} />
+            <meta name="twitter:description" content={resolvedDescription} />
+            <meta name="twitter:image" content={resolvedImage} />
+            {resolvedTwitterSite && <meta name="twitter:site" content={resolvedTwitterSite} />}
         </Helmet>
     );
 }

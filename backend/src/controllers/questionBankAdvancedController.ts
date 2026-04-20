@@ -125,6 +125,17 @@ export async function bulkDelete(req: AuthRequest, res: Response) {
     return ok(res, data);
 }
 
+export async function bulkCopy(req: AuthRequest, res: Response) {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return bad(res, 'ids array required');
+    try {
+        const data = await svc.bulkCopy(ids, adminId(req));
+        return ok(res, data);
+    } catch (err: any) {
+        return bad(res, err.message || 'Bulk copy failed');
+    }
+}
+
 /* ─── Import / Export ─────────────────────────────────── */
 export async function importPreview(req: AuthRequest, res: Response) {
     if (!req.file) return bad(res, 'File required');
@@ -245,6 +256,23 @@ export async function finalizeExamSnapshot(req: AuthRequest, res: Response) {
 }
 
 /* ─── Analytics ───────────────────────────────────────── */
+
+export async function exportPdf(req: AuthRequest, res: Response) {
+    const doc = await svc.exportQuestionsPdf({
+        subject: req.query.subject as string,
+        moduleCategory: req.query.moduleCategory as string,
+        topic: req.query.topic as string,
+        difficulty: req.query.difficulty as string,
+        tag: req.query.tag as string,
+        status: req.query.status as string,
+        q: req.query.search as string || req.query.q as string,
+    });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="questions-export.pdf"');
+    doc.pipe(res);
+    doc.end();
+}
+
 export async function getAnalytics(req: AuthRequest, res: Response) {
     const data = await svc.getAnalytics({
         subject: req.query.subject as string,

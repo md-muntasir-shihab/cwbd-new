@@ -7,6 +7,7 @@ export const qbKeys = {
     all: ['questionBankV2'] as const,
     list: (f: BankQuestionFilters) => [...qbKeys.all, 'list', f] as const,
     detail: (id: string) => [...qbKeys.all, 'detail', id] as const,
+    facets: [...(['questionBankV2', 'facets'] as const)] as const,
     sets: ['questionBankV2', 'sets'] as const,
     setDetail: (id: string) => [...qbKeys.sets, id] as const,
     setResolve: (id: string) => [...qbKeys.sets, 'resolve', id] as const,
@@ -33,6 +34,13 @@ export const useBankQuestionList = (filters: BankQuestionFilters) =>
         queryKey: qbKeys.list(filters),
         queryFn: () => qbApi.listBankQuestions(filters),
         placeholderData: (prev: BankQuestionListResponse | undefined) => prev,
+    });
+
+export const useBankQuestionFacets = () =>
+    useQuery({
+        queryKey: qbKeys.facets,
+        queryFn: qbApi.getFacets,
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
 export const useBankQuestionDetail = (id: string) =>
@@ -122,6 +130,14 @@ export const useBulkDelete = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: qbApi.bulkDelete,
+        onSuccess: () => qc.invalidateQueries({ queryKey: qbKeys.all }),
+    });
+};
+
+export const useBulkCopy = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: qbApi.bulkCopy,
         onSuccess: () => qc.invalidateQueries({ queryKey: qbKeys.all }),
     });
 };

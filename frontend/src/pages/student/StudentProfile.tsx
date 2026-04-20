@@ -194,15 +194,19 @@ export default function StudentProfile() {
             const res = await uploadStudentDocument(formDataUpload);
 
             if (type === 'profile_photo') {
-                setFormData(prev => ({ ...prev, profile_photo_url: res.data.url }));
-                setProfile((prev: any) => ({ ...(prev || {}), profile_photo_url: res.data.url }));
+                const photoUrl = res.data.url || (res.data as any).absoluteUrl || '';
+                setFormData(prev => ({ ...prev, profile_photo_url: photoUrl }));
+                setProfile((prev: any) => ({ ...(prev || {}), profile_photo_url: photoUrl }));
                 toast.success('Profile photo uploaded successfully', { id: toastId });
             } else {
                 toast.success('Document uploaded!', { id: toastId });
                 fetchProfile();
             }
-        } catch (err: any) {
-            toast.error(err?.response?.data?.message || 'Upload failed', { id: toastId });
+        } catch (err: unknown) {
+            const errMsg = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+                || (err as { message?: string })?.message
+                || 'Upload failed';
+            toast.error(errMsg, { id: toastId });
         } finally {
             if (type === 'profile_photo') setPhotoUploading(false);
             e.target.value = ''; // reset input
@@ -511,7 +515,7 @@ export default function StudentProfile() {
                     {/* Profile Photo Upload */}
                     <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm group">
                         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5 opacity-50"></div>
-                        
+
                         <div className="relative p-6 flex flex-col items-center">
                             <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white self-start w-full border-b border-slate-100 dark:border-slate-700/50 pb-4">
                                 <Camera className="w-5 h-5 text-indigo-500" />
@@ -534,7 +538,7 @@ export default function StudentProfile() {
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 <label className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-sm text-white opacity-0 hover:opacity-100 transition-all duration-300 cursor-pointer rounded-full z-10">
                                     <div className="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 flex flex-col items-center">
                                         <Camera className="w-8 h-8 mb-2 text-white" />
@@ -546,16 +550,15 @@ export default function StudentProfile() {
 
                             <label
                                 htmlFor="profile-photo-upload"
-                                className={`w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer relative z-20 ${
-                                    photoUploading 
-                                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed' 
-                                    : 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20'
-                                }`}
+                                className={`w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 cursor-pointer relative z-20 ${photoUploading
+                                        ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                        : 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20'
+                                    }`}
                             >
                                 {photoUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                 {photoUploading ? 'Processing...' : 'Upload New Photo'}
                             </label>
-                            
+
                             <div className="mt-4 flex items-center justify-center gap-2 opacity-70">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
                                 <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest">Auto-compressed to ~150KB</p>

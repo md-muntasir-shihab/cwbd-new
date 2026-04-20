@@ -215,6 +215,11 @@ export async function getStudentExams(req: AuthRequest, res: Response): Promise<
                 return {
                     ...e,
                     status,
+                    submissionStatus: result
+                        ? (isExamResultPublished(e as Record<string, unknown>, now)
+                            ? 'published'
+                            : ((result as Record<string, unknown>).status === 'evaluated' ? 'graded' : 'submitted'))
+                        : (activeSessionMap.has(e._id!.toString()) ? 'pending_review' : undefined),
                     attemptsUsed: attempts,
                     attemptsLeft: Math.max(0, e.attemptLimit - attempts),
                     paymentPending: paymentPendingForExam,
@@ -2718,7 +2723,21 @@ export async function getExamResult(req: AuthRequest, res: Response): Promise<vo
                 ...context.result,
                 rank: context.rank,
                 answers: context.answers,
-                detailedAnswers: context.answers,
+                detailedAnswers: context.answers.map((a: Record<string, unknown>) => ({
+                    ...a,
+                    marks: a.marks !== undefined ? Number(a.marks) : 0,
+                    marksObtained: a.isCorrect ? Number(a.marks || 0) : 0,
+                    correctWrongIndicator: !a.selectedAnswer && !a.selectedOption
+                        ? 'unanswered'
+                        : a.isCorrect ? 'correct' : 'wrong',
+                    explanation: String(a.explanation || ''),
+                })),
+            },
+            performanceSummary: (context.result as Record<string, unknown>).performanceSummary || {
+                totalScore: Number(context.result.obtainedMarks || 0),
+                percentage: Number(context.result.percentage || 0),
+                strengths: [],
+                weaknesses: [],
             },
             exam: {
                 title: context.exam.title,
@@ -2731,6 +2750,75 @@ export async function getExamResult(req: AuthRequest, res: Response): Promise<vo
         });
     } catch (err) {
         console.error('getExamResult error:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export async function getDetailedExamResult(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const studentId = req.user!._id;
+        const examId = String(req.params.id || req.params.examId || '');
+        const context = await loadExamAttemptResultContext({ studentId, examId });
+
+        if (!context.ok) {
+            res.status(context.statusCode).json({ message: context.message });
+            return;
+        }
+
+        if (!context.resultPublished) {
+            res.json({
+                resultPublished: false,
+                message: 'Result not published yet',
+            });
+            return;
+        }
+
+        const detailedAnswers = context.answers.map((a: Record<string, unknown>) => ({
+            questionId: a.questionId,
+            question: a.question,
+            questionImage: a.questionImage,
+            selectedAnswer: a.selectedAnswer || a.selectedOption,
+            correctAnswer: a.correctAnswer || a.correctOption,
+            isCorrect: Boolean(a.isCorrect),
+            marks: a.marks !== undefined ? Number(a.marks) : 0,
+            marksObtained: a.isCorrect ? Number(a.marks || 0) : 0,
+            explanation: String(a.explanation || ''),
+            solutionImage: a.solutionImage || null,
+            correctWrongIndicator: !a.selectedAnswer && !a.selectedOption
+                ? 'unanswered'
+                : a.isCorrect ? 'correct' : 'wrong',
+            section: a.section || null,
+        }));
+
+        const performanceSummary = (context.result as Record<string, unknown>).performanceSummary || {
+            totalScore: Number(context.result.obtainedMarks || 0),
+            percentage: Number(context.result.percentage || 0),
+            strengths: [],
+            weaknesses: [],
+        };
+
+        res.json({
+            resultPublished: true,
+            result: {
+                obtainedMarks: Number(context.result.obtainedMarks || 0),
+                totalMarks: Number(context.result.totalMarks || context.exam.totalMarks || 0),
+                percentage: Number(context.result.percentage || 0),
+                correctCount: Number(context.result.correctCount || 0),
+                wrongCount: Number(context.result.wrongCount || 0),
+                unansweredCount: Number(context.result.unansweredCount || 0),
+                rank: context.rank,
+                detailedAnswers,
+            },
+            performanceSummary,
+            exam: {
+                title: context.exam.title,
+                subject: context.exam.subject,
+                totalMarks: context.exam.totalMarks,
+                totalQuestions: context.exam.totalQuestions,
+            },
+        });
+    } catch (err) {
+        console.error('getDetailedExamResult error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 }

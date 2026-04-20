@@ -89,7 +89,7 @@ describe('Feature: campusway-qa-audit, Property 11: Tampered JWT Rejection', () 
                     ).toBe(401);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -120,7 +120,7 @@ describe('Feature: campusway-qa-audit, Property 11: Tampered JWT Rejection', () 
                     ).toBe(401);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

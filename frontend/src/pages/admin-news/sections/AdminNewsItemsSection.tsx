@@ -35,6 +35,7 @@ import {
     SensitiveActionProof,
 } from '../../../services/api';
 import { buildMediaUrl } from '../../../utils/mediaUrl';
+import { extractUploadUrl, extractUploadError } from '../../../components/common/CompressedImageInput';
 
 interface Props {
     status: ApiNews['status'] | 'all';
@@ -470,6 +471,9 @@ export default function AdminNewsItemsSection({
             coverImageSource,
             seoTitle: String(editing.seoTitle || '').trim(),
             seoDescription: String(editing.seoDescription || '').trim(),
+            ogTitle: String((editing as any).ogTitle || '').trim(),
+            ogDescription: String((editing as any).ogDescription || '').trim(),
+            ogImage: String((editing as any).ogImage || '').trim(),
             aiEnrichment: {
                 ...(editing.aiEnrichment || {}),
                 shortSummary: String(editing.aiEnrichment?.shortSummary || editing.shortSummary || editing.shortDescription || '').trim(),
@@ -684,8 +688,8 @@ export default function AdminNewsItemsSection({
         setUploadingCover(true);
         try {
             const result = await adminNewsV2UploadMedia(file, { altText: editing?.title || 'news-cover' });
-            const url = result.data?.item?.url || '';
-            if (!url) throw new Error('Upload failed');
+            const url = extractUploadUrl(result.data);
+            if (!url) throw new Error('Upload returned empty URL');
             setEditing((prev) => ({
                 ...(prev || {}),
                 coverImageUrl: url,
@@ -694,8 +698,8 @@ export default function AdminNewsItemsSection({
                 coverImageSource: 'admin',
             }));
             toast.success('Cover image uploaded');
-        } catch (error: any) {
-            toast.error(error?.response?.data?.message || 'Cover upload failed');
+        } catch (error: unknown) {
+            toast.error(extractUploadError(error, 'Cover upload failed'));
         } finally {
             setUploadingCover(false);
         }
@@ -990,18 +994,35 @@ export default function AdminNewsItemsSection({
             </div>
 
             {editing && (
-                <div ref={editorRef} className="card-flat border border-cyan-400/30 p-4">
-                    <h3 className="mb-3 text-lg font-semibold">{editing._id ? 'Edit Article' : 'Create Article'}</h3>
-                    <div className="grid gap-3 md:grid-cols-2">
-                        <input className="input-field md:col-span-2" placeholder="Title" value={editing.title || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), title: e.target.value }))} />
-                        <input className="input-field" placeholder="Category" value={editing.category || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), category: e.target.value }))} />
-                        <input className="input-field" placeholder="Original Source Link" value={editing.originalLink || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), originalLink: e.target.value }))} />
-                        <input className="input-field" placeholder="SEO Title" value={editing.seoTitle || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), seoTitle: e.target.value }))} />
-                        <textarea className="input-field min-h-[96px] md:col-span-2" placeholder="SEO Description" value={editing.seoDescription || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), seoDescription: e.target.value }))} />
-                        <div className="md:col-span-2 space-y-2 rounded-xl border border-slate-300/70 bg-slate-100/60 p-3 dark:border-slate-700/70 dark:bg-slate-950/30">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Cover Banner (URL + Upload)</p>
+                <div ref={editorRef} className="rounded-2xl border border-cyan-400/20 bg-white/95 shadow-card dark:bg-slate-950/60 overflow-hidden">
+                    {/* Editor Header */}
+                    <div className="border-b border-slate-200/60 bg-gradient-to-r from-cyan-500/5 to-transparent px-5 py-4 dark:border-slate-800/60">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">{editing._id ? 'Edit Article' : 'Create Article'}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Fill in the details below. Fields marked with sections are optional.</p>
+                        {editing.sourceType === 'rss' && (
+                            <div className="mt-2 flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" /></svg>
+                                <span>Imported from RSS — source attribution preserved{editing.sourceName ? ` (${editing.sourceName})` : ''}</span>
                             </div>
+                        )}
+                    </div>
+
+                    <div className="p-5 space-y-6">
+                        {/* ── Basic Info ── */}
+                        <fieldset className="space-y-3">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">Basic Information</legend>
+                            <input className="input-field" placeholder="Title" value={editing.title || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), title: e.target.value }))} />
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <input className="input-field" placeholder="Category" value={editing.category || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), category: e.target.value }))} />
+                                <input className="input-field" placeholder="Original Source Link" value={editing.originalLink || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), originalLink: e.target.value }))} />
+                            </div>
+                            <input className="input-field" placeholder="Short Summary" value={editing.shortDescription || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), shortDescription: e.target.value }))} />
+                            <input className="input-field" placeholder="Public Tags (comma separated)" value={tagInput} onChange={(e) => setTagInput(e.target.value)} />
+                        </fieldset>
+
+                        {/* ── Cover Image ── */}
+                        <fieldset className="space-y-3 rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 dark:border-slate-800/50 dark:bg-slate-900/30">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400 px-1">Cover Image</legend>
                             <input
                                 className="input-field"
                                 placeholder="https://.../banner.jpg"
@@ -1016,168 +1037,125 @@ export default function AdminNewsItemsSection({
                                     }))
                                 }
                             />
-                            <div className="flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    className={`rounded-lg border px-2 py-1 text-xs ${editing.coverImageSource === 'rss' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-200' : 'border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-200'}`}
-                                    onClick={() => setEditing((prev) => ({ ...(prev || {}), coverImageSource: 'rss' }))}
-                                >
-                                    Use extracted
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`rounded-lg border px-2 py-1 text-xs ${editing.coverImageSource === 'admin' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-200' : 'border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-200'}`}
-                                    onClick={() => setEditing((prev) => ({ ...(prev || {}), coverImageSource: 'admin' }))}
-                                >
-                                    Use uploaded/custom
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`rounded-lg border px-2 py-1 text-xs ${editing.coverImageSource === 'default' ? 'border-cyan-500 bg-cyan-500/15 text-cyan-200' : 'border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-200'}`}
-                                    onClick={() =>
-                                        setEditing((prev) => ({
-                                            ...(prev || {}),
-                                            coverImageSource: 'default',
-                                            coverImageUrl: '',
-                                            coverImage: '',
-                                            featuredImage: '',
-                                        }))
-                                    }
-                                >
-                                    Use default
-                                </button>
-                            </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <label className="inline-flex cursor-pointer items-center rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-700 transition hover:border-cyan-500/60 dark:border-slate-700 dark:text-slate-200">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={(event) => {
-                                            const file = event.target.files?.[0];
-                                            onUploadCover(file);
-                                            event.currentTarget.value = '';
-                                        }}
-                                    />
-                                    {uploadingCover ? 'Uploading...' : 'Upload Banner'}
+                                {(['rss', 'admin', 'default'] as const).map((src) => (
+                                    <button
+                                        key={src}
+                                        type="button"
+                                        className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${editing.coverImageSource === src ? 'border-cyan-500 bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : 'border-slate-300/70 text-slate-600 hover:border-cyan-400/40 dark:border-slate-700/70 dark:text-slate-300'}`}
+                                        onClick={() =>
+                                            setEditing((prev) => ({
+                                                ...(prev || {}),
+                                                coverImageSource: src,
+                                                ...(src === 'default' ? { coverImageUrl: '', coverImage: '', featuredImage: '' } : {}),
+                                            }))
+                                        }
+                                    >
+                                        {src === 'rss' ? 'Use extracted' : src === 'admin' ? 'Use uploaded/custom' : 'Use default'}
+                                    </button>
+                                ))}
+                                <label className="inline-flex cursor-pointer items-center rounded-lg border border-slate-300/70 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-cyan-500/40 dark:border-slate-700/70 dark:text-slate-300">
+                                    <input type="file" accept="image/*" className="hidden" onChange={(event) => { onUploadCover(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+                                    {uploadingCover ? 'Uploading…' : 'Upload Banner'}
                                 </label>
-                                {editing.coverImageUrl || editing.coverImage || editing.featuredImage ? (
-                                    <img
-                                        src={buildMediaUrl(String(editing.coverImageUrl || editing.coverImage || editing.featuredImage || ''))}
-                                        alt="cover preview"
-                                        className="h-12 w-20 rounded-md border border-slate-300/70 object-cover dark:border-slate-700/70"
-                                    />
-                                ) : null}
+                                {(editing.coverImageUrl || editing.coverImage || editing.featuredImage) && (
+                                    <img src={buildMediaUrl(String(editing.coverImageUrl || editing.coverImage || editing.featuredImage || ''))} alt="cover" className="h-12 w-20 rounded-lg border border-slate-200/60 object-cover dark:border-slate-700/60" />
+                                )}
                             </div>
-                        </div>
-                        <input className="input-field md:col-span-2" placeholder="Short Summary" value={editing.shortDescription || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), shortDescription: e.target.value }))} />
-                        <input className="input-field md:col-span-2" placeholder="Public Tags (comma separated)" value={tagInput} onChange={(e) => setTagInput(e.target.value)} />
-                        <div className="grid gap-3 md:col-span-2 md:grid-cols-3">
-                            <label className="space-y-1">
-                                <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Display Type</span>
-                                <select
-                                    className="input-field"
-                                    value={editing.displayType || 'news'}
-                                    onChange={(e) => setEditing((prev) => ({ ...(prev || {}), displayType: e.target.value as 'news' | 'update' }))}
-                                >
-                                    <option value="news">News</option>
-                                    <option value="update">Update</option>
-                                </select>
-                            </label>
-                            <label className="space-y-1">
-                                <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Priority</span>
-                                <select
-                                    className="input-field"
-                                    value={editing.priority || 'normal'}
-                                    onChange={(e) => setEditing((prev) => ({ ...(prev || {}), priority: e.target.value as 'normal' | 'priority' | 'breaking' }))}
-                                >
-                                    <option value="normal">Normal</option>
-                                    <option value="priority">Priority</option>
-                                    <option value="breaking">Breaking</option>
-                                </select>
-                            </label>
-                            <label className="flex items-center justify-between rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-700 dark:border-slate-700 dark:text-slate-300">
-                                <span>Featured on homepage</span>
-                                <input
-                                    type="checkbox"
-                                    checked={Boolean(editing.isFeatured)}
-                                    onChange={(e) => setEditing((prev) => ({ ...(prev || {}), isFeatured: e.target.checked }))}
-                                />
-                            </label>
-                        </div>
-                        <input
-                            className="input-field md:col-span-2"
-                            placeholder="Student-friendly explanation"
-                            value={editing.aiEnrichment?.studentFriendlyExplanation || ''}
-                            onChange={(e) => updateAiEnrichmentField('studentFriendlyExplanation', e.target.value)}
-                        />
-                        <textarea
-                            className="input-field min-h-[96px] md:col-span-2"
-                            placeholder="Key points (comma separated)"
-                            value={Array.isArray(editing.aiEnrichment?.keyPoints) ? editing.aiEnrichment?.keyPoints.join(', ') : ''}
-                            onChange={(e) => updateAiEnrichmentField('keyPoints', parseCommaList(e.target.value))}
-                        />
-                        <input
-                            className="input-field"
-                            placeholder="Email subject"
-                            value={editing.aiEnrichment?.emailSubject || ''}
-                            onChange={(e) => updateAiEnrichmentField('emailSubject', e.target.value)}
-                        />
-                        <input
-                            className="input-field"
-                            placeholder="SMS text"
-                            value={editing.aiEnrichment?.smsText || ''}
-                            onChange={(e) => updateAiEnrichmentField('smsText', e.target.value)}
-                        />
-                        <input
-                            className="input-field"
-                            placeholder="Classification primary category"
-                            value={editing.classification?.primaryCategory || editing.category || ''}
-                            onChange={(e) => setEditing((prev) => ({
-                                ...(prev || {}),
-                                category: e.target.value,
-                                classification: {
-                                    ...(prev?.classification || {}),
-                                    primaryCategory: e.target.value,
-                                },
-                            }))}
-                        />
-                        <textarea
-                            className="input-field min-h-[110px] md:col-span-2"
-                            placeholder="Email body / delivery copy"
-                            value={editing.aiEnrichment?.emailBody || ''}
-                            onChange={(e) => updateAiEnrichmentField('emailBody', e.target.value)}
-                        />
-                        <div className="md:col-span-2">
+                        </fieldset>
+
+                        {/* ── Article Options ── */}
+                        <fieldset className="space-y-3">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">Article Options</legend>
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <label className="space-y-1">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">Display Type</span>
+                                    <select className="input-field" value={editing.displayType || 'news'} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), displayType: e.target.value as 'news' | 'update' }))}>
+                                        <option value="news">News</option>
+                                        <option value="update">Update</option>
+                                    </select>
+                                </label>
+                                <label className="space-y-1">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">Priority</span>
+                                    <select className="input-field" value={editing.priority || 'normal'} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), priority: e.target.value as 'normal' | 'priority' | 'breaking' }))}>
+                                        <option value="normal">Normal</option>
+                                        <option value="priority">Priority</option>
+                                        <option value="breaking">Breaking</option>
+                                    </select>
+                                </label>
+                                <label className="flex items-center justify-between rounded-xl border border-slate-200/60 px-3 py-2 text-sm text-slate-700 dark:border-slate-700/60 dark:text-slate-300">
+                                    <span>Featured</span>
+                                    <input type="checkbox" checked={Boolean(editing.isFeatured)} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), isFeatured: e.target.checked }))} className="h-4 w-4 rounded" />
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        {/* ── SEO ── */}
+                        <fieldset className="space-y-3 rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 dark:border-slate-800/50 dark:bg-slate-900/30">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 px-1">SEO (Optional)</legend>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <input className="input-field" placeholder="SEO Title" value={editing.seoTitle || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), seoTitle: e.target.value }))} />
+                                <input className="input-field" placeholder="Classification Category" value={editing.classification?.primaryCategory || editing.category || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), category: e.target.value, classification: { ...(prev?.classification || {}), primaryCategory: e.target.value } }))} />
+                            </div>
+                            <textarea className="input-field min-h-[80px]" placeholder="SEO Description" value={editing.seoDescription || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), seoDescription: e.target.value }))} />
+                        </fieldset>
+
+                        {/* ── Open Graph / Social Sharing ── */}
+                        <fieldset className="space-y-3 rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 dark:border-slate-800/50 dark:bg-slate-900/30">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 px-1">Social Sharing Preview (Optional)</legend>
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <input className="input-field" placeholder="OG Title (defaults to article title)" value={(editing as any).ogTitle || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), ogTitle: e.target.value }))} />
+                                <input className="input-field" placeholder="OG Image URL (defaults to cover image)" value={(editing as any).ogImage || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), ogImage: e.target.value }))} />
+                            </div>
+                            <textarea className="input-field min-h-[80px]" placeholder="OG Description (defaults to summary)" value={(editing as any).ogDescription || ''} onChange={(e) => setEditing((prev) => ({ ...(prev || {}), ogDescription: e.target.value }))} />
+                        </fieldset>
+
+                        {/* ── Communication / AI Enrichment ── */}
+                        <fieldset className="space-y-3 rounded-xl border border-slate-200/60 bg-slate-50/50 p-4 dark:border-slate-800/50 dark:bg-slate-900/30">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 px-1">Communication & AI Enrichment (Optional)</legend>
+                            <input className="input-field" placeholder="Student-friendly explanation" value={editing.aiEnrichment?.studentFriendlyExplanation || ''} onChange={(e) => updateAiEnrichmentField('studentFriendlyExplanation', e.target.value)} />
+                            <textarea className="input-field min-h-[80px]" placeholder="Key points (comma separated)" value={Array.isArray(editing.aiEnrichment?.keyPoints) ? editing.aiEnrichment?.keyPoints.join(', ') : ''} onChange={(e) => updateAiEnrichmentField('keyPoints', parseCommaList(e.target.value))} />
+                            <div className="grid gap-3 md:grid-cols-2">
+                                <input className="input-field" placeholder="Email subject" value={editing.aiEnrichment?.emailSubject || ''} onChange={(e) => updateAiEnrichmentField('emailSubject', e.target.value)} />
+                                <input className="input-field" placeholder="SMS text" value={editing.aiEnrichment?.smsText || ''} onChange={(e) => updateAiEnrichmentField('smsText', e.target.value)} />
+                            </div>
+                            <textarea className="input-field min-h-[96px]" placeholder="Email body / delivery copy" value={editing.aiEnrichment?.emailBody || ''} onChange={(e) => updateAiEnrichmentField('emailBody', e.target.value)} />
+                        </fieldset>
+
+                        {/* ── Content Editor ── */}
+                        <fieldset className="space-y-3">
+                            <legend className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">Article Content</legend>
                             <SimpleRichTextEditor
                                 value={editing.content || ''}
                                 onChange={(value) => setEditing((prev) => ({ ...(prev || {}), content: value }))}
                                 placeholder="Write article content..."
                             />
-                        </div>
+                        </fieldset>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        <button className="btn-primary" onClick={onSave} disabled={saveMutation.isPending}>{saveMutation.isPending ? 'Saving...' : 'Save'}</button>
-                        {editing._id ? (
-                            <button
-                                className="btn-outline"
-                                onClick={() => actionMutation.mutate({ type: 'ai-check', id: editing._id, applyToDraft: true })}
-                                disabled={actionMutation.isPending}
-                            >
-                                {actionMutation.isPending ? 'Checking AI...' : 'AI Check + Apply'}
-                            </button>
-                        ) : null}
-                        {(editing.slug || editing._id) ? (
-                            <Link
-                                to={`/news/${editing.slug || editing._id}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn-outline"
-                            >
-                                Preview as public
-                            </Link>
-                        ) : null}
-                        <button className="btn-outline" onClick={() => setEditing(null)}>Close</button>
+
+                    {/* Editor Footer */}
+                    <div className="sticky bottom-0 border-t border-slate-200/60 bg-white/90 px-5 py-3 backdrop-blur-md dark:border-slate-800/60 dark:bg-slate-950/90">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button className="btn-primary" onClick={onSave} disabled={saveMutation.isPending}>{saveMutation.isPending ? 'Saving…' : 'Save'}</button>
+                            {editing._id && editing.status !== 'published' ? (
+                                <button
+                                    className="rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                                    onClick={() => { onSave(); if (editing._id) setTimeout(() => actionMutation.mutate({ type: 'publish', id: editing._id! }), 300); }}
+                                    disabled={saveMutation.isPending || actionMutation.isPending}
+                                >
+                                    Save & Publish
+                                </button>
+                            ) : null}
+                            {editing._id ? (
+                                <button className="btn-outline" onClick={() => actionMutation.mutate({ type: 'ai-check', id: editing._id, applyToDraft: true })} disabled={actionMutation.isPending}>
+                                    {actionMutation.isPending ? 'Checking AI…' : 'AI Check + Apply'}
+                                </button>
+                            ) : null}
+                            {(editing.slug || editing._id) ? (
+                                <Link to={`/news/${editing.slug || editing._id}`} target="_blank" rel="noreferrer" className="btn-outline">Preview</Link>
+                            ) : null}
+                            <button className="btn-outline ml-auto" onClick={() => setEditing(null)}>Close</button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1199,9 +1177,9 @@ export default function AdminNewsItemsSection({
                                 {/* Image / Cover */}
                                 <div className="relative aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
                                     {coverImg ? (
-                                        <img 
-                                            src={coverImg} 
-                                            alt={item.title} 
+                                        <img
+                                            src={coverImg}
+                                            alt={item.title}
                                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             onError={(e) => {
                                                 e.currentTarget.style.display = 'none';
@@ -1216,7 +1194,7 @@ export default function AdminNewsItemsSection({
                                             <Newspaper className="h-8 w-8 text-slate-400/50 dark:text-slate-600/50" />
                                         </div>
                                     )}
-                                    
+
                                     {/* Selection overlay */}
                                     <div className="absolute left-3 top-3 z-10">
                                         <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white/90 p-1.5 shadow-sm backdrop-blur-md transition-colors hover:bg-white dark:bg-slate-900/90 dark:hover:bg-slate-900">
@@ -1231,15 +1209,14 @@ export default function AdminNewsItemsSection({
                                             />
                                         </label>
                                     </div>
-                                    
+
                                     {/* Status Badge */}
                                     <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
-                                        <span className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-sm backdrop-blur-md ${
-                                            item.status === 'published' ? 'bg-emerald-500/90 text-white' : 
-                                            item.status === 'rejected' ? 'bg-rose-500/90 text-white' : 
-                                            item.status === 'draft' ? 'bg-slate-800/90 text-white dark:bg-slate-200/90 dark:text-slate-900' :
-                                            'bg-amber-500/90 text-white'
-                                        }`}>
+                                        <span className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider shadow-sm backdrop-blur-md ${item.status === 'published' ? 'bg-emerald-500/90 text-white' :
+                                            item.status === 'rejected' ? 'bg-rose-500/90 text-white' :
+                                                item.status === 'draft' ? 'bg-slate-800/90 text-white dark:bg-slate-200/90 dark:text-slate-900' :
+                                                    'bg-amber-500/90 text-white'
+                                            }`}>
                                             {statusToListLabel(item.status)}
                                         </span>
                                     </div>
@@ -1254,15 +1231,21 @@ export default function AdminNewsItemsSection({
                                         <span>•</span>
                                         <span className="shrink-0">{formatQueueTime(item.createdAt)}</span>
                                     </div>
-                                    
+                                    {item.sourceType === 'rss' && (
+                                        <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-sky-50 px-2 py-1 text-[10px] font-medium text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" /></svg>
+                                            <span>Imported from RSS — source attribution preserved</span>
+                                        </div>
+                                    )}
+
                                     <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-tight text-slate-900 dark:text-white" title={item.title}>
                                         {item.title}
                                     </h3>
-                                    
+
                                     <p className="mb-4 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">
                                         {buildListSummary(item)}
                                     </p>
-                                    
+
                                     <div className="mt-auto space-y-3">
                                         {/* Actions */}
                                         <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800/60">
@@ -1270,7 +1253,7 @@ export default function AdminNewsItemsSection({
                                                 {renderItemActions(item)}
                                             </div>
                                         </div>
-                                        
+
                                         {/* Expanded details */}
                                         {expandedItemIds.includes(item._id) ? (
                                             <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200/50 bg-slate-50 p-2.5 text-[10px] text-slate-600 dark:border-slate-800/50 dark:bg-slate-900/30 dark:text-slate-400">

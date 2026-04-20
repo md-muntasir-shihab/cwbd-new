@@ -14,6 +14,7 @@ import {
   expireSubscriptionNow, toggleAutoRenew,
   addTimelineEntry, deleteTimelineEntry,
   createFinanceAdjustment, getStudentPayments, getStudentFinanceStatement,
+  getStudentExtendedProfile,
 } from '../../../api/adminStudentApi';
 import {
   adminSetPassword, resendAccountInfo, toggleForceReset, revokeStudentSessions,
@@ -22,7 +23,7 @@ import { adminGetSubscriptionPlans, type AdminSubscriptionPlan } from '../../../
 
 type Tab = 'overview' | 'profile' | 'guardian' | 'subscription' | 'payments' |
   'finance' | 'exams' | 'results' | 'weak-topics' | 'communication' |
-  'crm-timeline' | 'security' | 'support';
+  'crm-timeline' | 'security' | 'support' | 'extended-profile';
 
 const TABS: { key: Tab; label: string; icon: typeof User }[] = [
   { key: 'overview', label: 'Overview', icon: Eye },
@@ -34,6 +35,7 @@ const TABS: { key: Tab; label: string; icon: typeof User }[] = [
   { key: 'exams', label: 'Exams', icon: BookOpen },
   { key: 'results', label: 'Results', icon: FileText },
   { key: 'weak-topics', label: 'Weak Topics', icon: AlertTriangle },
+  { key: 'extended-profile', label: 'Extended Data', icon: GraduationCap },
   { key: 'communication', label: 'Communication', icon: MessageSquare },
   { key: 'crm-timeline', label: 'CRM', icon: Clock },
   { key: 'security', label: 'Security', icon: Shield },
@@ -221,11 +223,10 @@ export default function StudentManagementDetailPage() {
         {TABS.map(t => (
           <div key={t.key} className="flex items-center gap-1">
             <button onClick={() => setTab(t.key)}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                tab === t.key
-                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-900 dark:text-indigo-400'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}>
+              className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition ${tab === t.key
+                ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-900 dark:text-indigo-400'
+                : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}>
               <t.icon size={13} />
               {t.label}
             </button>
@@ -247,6 +248,7 @@ export default function StudentManagementDetailPage() {
         {tab === 'communication' && <CommunicationTab s={s} />}
         {tab === 'crm-timeline' && <CrmTimelineTab s={s} setAddNoteModal={setAddNoteModal} deleteNoteMut={deleteNoteMut} />}
         {tab === 'security' && <SecurityTab s={s} setSetPassModal={setSetPassModal} resetPassMut={resetPassMut} resendMut={resendMut} forceResetMut={forceResetMut} revokeMut={revokeMut} />}
+        {tab === 'extended-profile' && <ExtendedProfileTab studentId={id!} />}
         {tab === 'support' && <SupportTab s={s} />}
       </div>
 
@@ -932,6 +934,80 @@ function SecurityTab({ s, setSetPassModal, resetPassMut, resendMut, forceResetMu
   );
 }
 
+function ExtendedProfileTab({ studentId }: { studentId: string }) {
+  const extQuery = useQuery({
+    queryKey: ['student-extended-profile', studentId],
+    queryFn: () => getStudentExtendedProfile(studentId),
+    enabled: Boolean(studentId),
+  });
+
+  if (extQuery.isLoading) return <div className="p-4 text-sm text-slate-500">Loading extended profile...</div>;
+  if (extQuery.isError) return <div className="p-4 text-sm text-red-500">Failed to load extended profile.</div>;
+
+  const data = extQuery.data;
+  if (!data) return <div className="p-4 text-sm text-slate-500">No data available.</div>;
+
+  return (
+    <div className="space-y-4">
+      {/* Performance Analytics */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Performance Analytics</h3>
+        <div className="grid gap-3 sm:grid-cols-4">
+          <div><p className="text-xs text-slate-500">Total Exams</p><p className="text-lg font-bold">{data.performanceAnalytics?.totalExams ?? 0}</p></div>
+          <div><p className="text-xs text-slate-500">Average Score</p><p className="text-lg font-bold">{data.performanceAnalytics?.averageScore ?? 0}%</p></div>
+          <div><p className="text-xs text-slate-500">Trend</p><p className={`text-lg font-bold ${(data.performanceAnalytics?.trend ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{(data.performanceAnalytics?.trend ?? 0) >= 0 ? '+' : ''}{data.performanceAnalytics?.trend ?? 0}%</p></div>
+          <div><p className="text-xs text-slate-500">Weak Topics</p><p className="text-lg font-bold text-orange-600">{data.performanceAnalytics?.weakTopics?.length ?? 0}</p></div>
+        </div>
+      </div>
+
+      {/* Exam History */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Exam History</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-xs text-slate-500 border-b"><th className="text-left p-2">Exam</th><th className="text-left p-2">Subject</th><th className="text-right p-2">Score</th><th className="text-right p-2">%</th><th className="text-right p-2">Date</th></tr></thead>
+            <tbody>
+              {(data.examHistory || []).slice(0, 20).map((e: any, i: number) => (
+                <tr key={i} className="border-b border-slate-100 dark:border-slate-800">
+                  <td className="p-2">{e.examTitle}</td>
+                  <td className="p-2">{e.subject}</td>
+                  <td className="p-2 text-right">{e.obtainedMarks}/{e.totalMarks}</td>
+                  <td className="p-2 text-right">{e.percentage}%</td>
+                  <td className="p-2 text-right text-xs text-slate-400">{e.submittedAt ? new Date(e.submittedAt).toLocaleDateString() : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Device & IP Info */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Device & IP History</h3>
+        <div className="space-y-2">
+          {(data.ipHistory || []).map((ip: string, i: number) => (
+            <span key={i} className="inline-block mr-2 mb-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-mono dark:bg-slate-800">{ip}</span>
+          ))}
+        </div>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-xs text-slate-500 border-b"><th className="text-left p-2">IP</th><th className="text-left p-2">User Agent</th><th className="text-right p-2">Time</th></tr></thead>
+            <tbody>
+              {(data.deviceInfo || []).slice(0, 10).map((d: any, i: number) => (
+                <tr key={i} className="border-b border-slate-100 dark:border-slate-800">
+                  <td className="p-2 font-mono text-xs">{d.ip}</td>
+                  <td className="p-2 text-xs truncate max-w-[200px]">{d.userAgent}</td>
+                  <td className="p-2 text-right text-xs text-slate-400">{d.timestamp ? new Date(d.timestamp).toLocaleString() : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SupportTab({ s }: { s: S }) {
   const sup = s.support;
   return (
@@ -956,9 +1032,8 @@ function SupportTab({ s }: { s: S }) {
                 <p className="text-xs text-slate-400">#{t.ticketNo} • {new Date(t.createdAt).toLocaleDateString()}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  t.priority === 'high' || t.priority === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
-                }`}>{t.priority}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.priority === 'high' || t.priority === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
+                  }`}>{t.priority}</span>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge(t.status)}`}>{t.status}</span>
               </div>
             </div>

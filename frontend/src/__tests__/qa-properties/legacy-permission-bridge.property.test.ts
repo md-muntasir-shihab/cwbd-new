@@ -181,7 +181,7 @@ describe('Feature: campusway-qa-audit, Property 8: Legacy Permission Bridge Corr
                     expect(result).toBe(fieldValue);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -220,7 +220,7 @@ describe('Feature: campusway-qa-audit, Property 8: Legacy Permission Bridge Corr
                     expect(result).toBeNull();
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

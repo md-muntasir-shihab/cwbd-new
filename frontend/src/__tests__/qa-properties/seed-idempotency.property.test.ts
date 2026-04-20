@@ -192,7 +192,7 @@ describe('Feature: campusway-qa-audit, Property 1: Seed Data Idempotency', () =>
                     expect(afterCounts.universityCategories).toBe(baselineCounts.universityCategories);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

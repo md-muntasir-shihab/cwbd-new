@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Award, CheckCircle2, Clock3, Download, SkipForward, Trophy, XCircle } from "lucide-react";
+import { Award, BarChart3, CheckCircle2, Clock3, Download, SkipForward, Trophy, XCircle } from "lucide-react";
 import { downloadPdfEndpoint, examPdfUrls } from "../../api/examApi";
 import { useExamResult, useExamSolutions, usePdfAvailability } from "../../hooks/useExamQueries";
 
@@ -66,6 +66,118 @@ function ScoreRing({ percentage }: { percentage: number }) {
                 <span className="text-xs text-text-muted dark:text-dark-text/60">Score</span>
             </div>
         </div>
+    );
+}
+
+function SubmissionStatusBadge({ status }: { status?: string }) {
+    if (!status) return null;
+    const config: Record<string, { label: string; className: string }> = {
+        submitted: { label: "Submitted", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+        pending_review: { label: "Pending Review", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" },
+        graded: { label: "Graded", className: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" },
+        published: { label: "Published", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" },
+    };
+    const c = config[status] || { label: status, className: "bg-gray-100 text-gray-700" };
+    return (
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.className}`}>
+            {c.label}
+        </span>
+    );
+}
+
+function PerformanceSummary({ summary }: { summary: { totalScore: number; percentage: number; strengths: string[]; weaknesses: string[] } }) {
+    return (
+        <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="card-flat mt-4 overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-card-border px-5 py-3">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-semibold text-text dark:text-dark-text">Performance Summary</h2>
+            </div>
+            <div className="grid gap-4 p-5 sm:grid-cols-2">
+                <div>
+                    <h3 className="mb-2 text-xs font-medium uppercase text-success">Strengths</h3>
+                    {summary.strengths.length > 0 ? (
+                        <ul className="space-y-1">
+                            {summary.strengths.map((s) => (
+                                <li key={s} className="flex items-center gap-1.5 text-sm text-text dark:text-dark-text">
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                                    {s}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-xs text-text-muted dark:text-dark-text/60">No strong topics identified</p>
+                    )}
+                </div>
+                <div>
+                    <h3 className="mb-2 text-xs font-medium uppercase text-danger">Needs Improvement</h3>
+                    {summary.weaknesses.length > 0 ? (
+                        <ul className="space-y-1">
+                            {summary.weaknesses.map((w) => (
+                                <li key={w} className="flex items-center gap-1.5 text-sm text-text dark:text-dark-text">
+                                    <XCircle className="h-3.5 w-3.5 text-danger" />
+                                    {w}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-xs text-text-muted dark:text-dark-text/60">No weak topics identified</p>
+                    )}
+                </div>
+            </div>
+        </motion.section>
+    );
+}
+
+function QuestionBreakdown({ answers }: { answers: NonNullable<import("../../types/exam").ResultResponsePublished["detailedAnswers"]> }) {
+    const [expanded, setExpanded] = useState(false);
+    const visible = expanded ? answers : answers.slice(0, 5);
+
+    return (
+        <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} className="card-flat mt-4 overflow-hidden">
+            <div className="border-b border-card-border px-5 py-3">
+                <h2 className="text-sm font-semibold text-text dark:text-dark-text">Question Breakdown</h2>
+            </div>
+            <div className="divide-y divide-card-border">
+                {visible.map((a, i) => (
+                    <div key={a.questionId || i} className="flex items-start gap-3 px-5 py-3">
+                        <div className="mt-0.5 flex-shrink-0">
+                            {a.correctWrongIndicator === "correct" ? (
+                                <CheckCircle2 className="h-5 w-5 text-success" />
+                            ) : a.correctWrongIndicator === "wrong" ? (
+                                <XCircle className="h-5 w-5 text-danger" />
+                            ) : (
+                                <SkipForward className="h-5 w-5 text-warning" />
+                            )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-medium text-text dark:text-dark-text">Q{i + 1}</span>
+                                <span className="text-xs font-semibold text-text-muted dark:text-dark-text/60">
+                                    {a.marksObtained}/{a.marks}
+                                </span>
+                            </div>
+                            {a.question ? (
+                                <p className="mt-0.5 text-xs text-text-muted dark:text-dark-text/70 line-clamp-2">{a.question}</p>
+                            ) : null}
+                            {a.explanation ? (
+                                <p className="mt-1 text-xs text-primary/80 dark:text-primary/60">{a.explanation}</p>
+                            ) : null}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {answers.length > 5 ? (
+                <div className="border-t border-card-border px-5 py-3 text-center">
+                    <button
+                        type="button"
+                        className="text-xs font-medium text-primary hover:underline"
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        {expanded ? "Show less" : `Show all ${answers.length} questions`}
+                    </button>
+                </div>
+            ) : null}
+        </motion.section>
     );
 }
 
@@ -288,6 +400,16 @@ export const ExamResultPage = () => {
                     ) : null}
                 </div>
             </motion.section>
+
+            {/* Performance Summary */}
+            {result.performanceSummary ? (
+                <PerformanceSummary summary={result.performanceSummary} />
+            ) : null}
+
+            {/* Question Breakdown */}
+            {result.detailedAnswers && result.detailedAnswers.length > 0 ? (
+                <QuestionBreakdown answers={result.detailedAnswers} />
+            ) : null}
         </div>
     );
 };

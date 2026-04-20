@@ -20,8 +20,17 @@ import {
 } from 'lucide-react';
 import { useWebsiteSettings } from '../../hooks/useWebsiteSettings';
 import { mergeWebsiteStaticPages, sortByOrder } from '../../lib/websiteStaticPages';
+import PageHeroBanner from '../common/PageHeroBanner';
+import { usePageHeroSettings } from '../../hooks/usePageHeroSettings';
+import type { PageHeroKey } from '../../services/api';
 
 type StaticPageKey = 'about' | 'terms' | 'privacy';
+
+const PAGE_HERO_KEY_MAP: Record<StaticPageKey, PageHeroKey> = {
+    about: 'about',
+    terms: 'terms',
+    privacy: 'privacy',
+};
 
 const ICON_MAP = {
     info: Info,
@@ -70,35 +79,33 @@ export default function StaticContentPage({ page }: StaticContentPageProps) {
         ? sortByOrder(staticPages.about.founderProfiles.filter((item) => item.enabled))
         : [];
     const isAboutPage = page === 'about';
+    const heroKey = PAGE_HERO_KEY_MAP[page];
+    const hero = usePageHeroSettings(heroKey);
 
     return (
         <div className="min-h-screen">
-            <section className="page-hero relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute left-6 top-10 h-56 w-56 rounded-full bg-white/20 blur-3xl sm:left-12 sm:h-72 sm:w-72" />
-                    <div className="absolute bottom-8 right-10 h-64 w-64 rounded-full bg-accent/30 blur-3xl sm:right-20 sm:h-96 sm:w-96" />
-                </div>
-                <div className="section-container relative z-10 py-14 text-center sm:py-18 lg:py-20">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/15 px-4 py-1.5 text-sm backdrop-blur-sm">
-                        <Info className="h-4 w-4" />
-                        <span>{pageConfig.eyebrow}</span>
-                    </div>
-                    <h1 className="mx-auto mt-4 max-w-4xl text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-                        {pageConfig.title}
-                    </h1>
-                    <p className="mx-auto mt-4 max-w-3xl text-sm text-white/80 sm:text-base lg:text-lg">
-                        {pageConfig.subtitle}
-                    </p>
-                    {pageConfig.lastUpdatedLabel ? (
-                        <p className="mt-4 text-xs uppercase tracking-[0.22em] text-white/60">
-                            {pageConfig.lastUpdatedLabel}
-                        </p>
-                    ) : null}
-                </div>
-            </section>
+            {hero.enabled && (
+                <PageHeroBanner
+                    title={hero.title}
+                    subtitle={hero.subtitle}
+                    pillText={hero.pillText}
+                    vantaEffect={hero.vantaEffect}
+                    vantaColor={hero.vantaColor}
+                    vantaBackgroundColor={hero.vantaBackgroundColor}
+                    gradientFrom={hero.gradientFrom}
+                    gradientTo={hero.gradientTo}
+                    primaryCTA={hero.primaryCTA}
+                    secondaryCTA={hero.secondaryCTA}
+                />
+            )}
 
             <div className="section-container py-10 lg:py-14">
                 <div className={isAboutPage ? 'space-y-10' : 'mx-auto max-w-4xl space-y-6'}>
+                    {pageConfig.lastUpdatedLabel ? (
+                        <p className="text-center text-xs uppercase tracking-[0.22em] text-text-muted dark:text-dark-text/60">
+                            {pageConfig.lastUpdatedLabel}
+                        </p>
+                    ) : null}
                     <div className={isAboutPage ? 'grid gap-6 md:grid-cols-2' : 'space-y-6'}>
                         {sortedSections.map((section) => {
                             const SectionIcon = getIcon(section.iconKey);

@@ -9,6 +9,7 @@ import api, {
     setAccessToken,
     shouldAttemptAuthBootstrap,
 } from '../services/api';
+import { preserveExamProgress } from '../utils/examProgressPreservation';
 
 interface User {
     _id: string;
@@ -68,6 +69,7 @@ interface AuthContextType {
     pending2FA: Pending2FA | null;
     setPending2FA: (data: Pending2FA | null) => void;
     forceLogoutAlert: boolean;
+    forceLogoutReason: string | null;
     setForceLogoutAlert: (val: boolean) => void;
     login: (
         identifier: string,
@@ -87,6 +89,7 @@ const AuthContext = createContext<AuthContextType>({
     pending2FA: null,
     setPending2FA: () => { },
     forceLogoutAlert: false,
+    forceLogoutReason: null,
     setForceLogoutAlert: () => { },
     login: async () => ({}),
     completeLogin: () => { },
@@ -112,6 +115,10 @@ function broadcastAuthSyncEvent(type: AuthSyncEventType, reason?: string): void 
     }
 }
 
+// Module-level guard to prevent multiple simultaneous bootstrap attempts
+// during navigation/remount (e.g., React strict mode or route changes).
+let bootstrapInFlight = false;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const queryClient = useQueryClient();
     const [user, setUser] = useState<User | null>(null);
@@ -119,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [pending2FA, setPending2FA] = useState<Pending2FA | null>(null);
     const [forceLogoutAlert, setForceLogoutAlert] = useState(false);
+    const [forceLogoutReason, setForceLogoutReason] = useState<string | null>(null);
 
     const clearAuthState = useCallback(() => {
         setUser(null);
@@ -134,6 +142,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const reason = String(_reason || 'SESSION_INVALIDATED');
         const shouldShowAlert = Boolean(user);
         broadcastAuthSyncEvent('force-logout', reason);
+
+        // Preserve exam progress if student is currently in the exam runner
+        const currentPath = window.location.pathname;
+        const examMatch = currentPath.match(/^\/exam\/([^/]+)/);
+        if (examMatch) {
+            const examId = examMatch[1];
+            const sessionId = window.localStorage.getItem(`cw_exam_last_session_${examId}`) || '';
+            if (sessionId) {
+                preserveExamProgress(examId, sessionId);
+            }
+        }
+
+        setForceLogoutReason(reason);
         clearAuthState();
         if (shouldShowAlert) {
             setForceLogoutAlert(true);
@@ -160,22 +181,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const nextToken = await refreshAccessToken();
-            if (cancelled) return;
-            if (!nextToken) {
-                clearAuthState();
-                setIsLoading(false);
+            // Guard: skip if another bootstrap is already in flight
+            if (bootstrapInFlight) {
                 return;
             }
+            bootstrapInFlight = true;
 
-            setToken(nextToken);
             try {
-                const res = await api.get('/auth/me');
-                if (!cancelled) setUser(res.data.user);
-            } catch {
-                if (!cancelled) clearAuthState();
+                const nextToken = await refreshAccessToken();
+                if (cancelled) return;
+                if (!nextToken) {
+                    clearAuthState();
+                    setIsLoading(false);
+                    return;
+                }
+
+                setToken(nextToken);
+                try {
+                    const res = await api.get('/auth/me');
+                    if (!cancelled) {
+                        const fetchedUser = res.data.user;
+                        setUser(fetchedUser);
+
+                        // Persist session hint so subsequent reloads detect the active session
+                        const portal = fetchedUser.role === 'chairman'
+                            ? 'chairman'
+                            : ['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'].includes(fetchedUser.role)
+                                ? 'admin'
+                                : 'student';
+                        markAuthSessionHint(portal);
+                    }
+                } catch {
+                    if (!cancelled) clearAuthState();
+                } finally {
+                    if (!cancelled) setIsLoading(false);
+                }
             } finally {
-                if (!cancelled) setIsLoading(false);
+                bootstrapInFlight = false;
             }
         })();
 
@@ -188,7 +230,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const onForceLogout = (event: Event) => {
             const detail = (event as CustomEvent<{ reason?: string }>).detail;
-            triggerForcedLogout(detail?.reason);
+            const reason = detail?.reason || 'SESSION_INVALIDATED';
+            triggerForcedLogout(reason);
         };
 
         window.addEventListener('campusway:force-logout', onForceLogout as EventListener);
@@ -423,12 +466,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         pending2FA,
         setPending2FA,
         forceLogoutAlert,
+        forceLogoutReason,
         setForceLogoutAlert,
         login,
         completeLogin,
         logout,
         refreshUser,
-    }), [user, token, isLoading, pending2FA, forceLogoutAlert, login, completeLogin, logout, refreshUser]);
+    }), [user, token, isLoading, pending2FA, forceLogoutAlert, forceLogoutReason, login, completeLogin, logout, refreshUser]);
 
     return (
         <AuthContext.Provider value={value}>

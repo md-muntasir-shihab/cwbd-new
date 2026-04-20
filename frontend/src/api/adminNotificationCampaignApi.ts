@@ -60,6 +60,9 @@ export interface NotificationTemplate {
   channel: string;
   subject?: string;
   body: string;
+  htmlBody?: string;
+  bodyFormat?: 'plain' | 'html';
+  designPreset?: string;
   category?: string;
   versionNo?: number;
   isActive: boolean;
@@ -255,6 +258,9 @@ function normalizeTemplate(rawValue: unknown): NotificationTemplate {
     channel: String(raw.channel ?? 'sms'),
     subject: typeof raw.subject === 'string' ? raw.subject : undefined,
     body: String(raw.body ?? ''),
+    htmlBody: typeof raw.htmlBody === 'string' ? raw.htmlBody : undefined,
+    bodyFormat: raw.bodyFormat === 'html' ? 'html' : 'plain',
+    designPreset: typeof raw.designPreset === 'string' ? raw.designPreset : undefined,
     category: typeof raw.category === 'string' ? raw.category : undefined,
     versionNo: Number(raw.versionNo ?? 1),
     isActive: Boolean(raw.isActive ?? raw.isEnabled ?? true),
@@ -454,6 +460,9 @@ export const createTemplate = (data: Record<string, unknown>) =>
     channel: data.channel,
     subject: data.subject,
     body: data.body,
+    htmlBody: data.htmlBody ?? '',
+    bodyFormat: data.bodyFormat ?? 'plain',
+    designPreset: data.designPreset ?? '',
     category: data.category,
     isEnabled: data.isActive ?? data.enabled ?? true,
     placeholdersAllowed: data.placeholdersAllowed,
@@ -465,6 +474,9 @@ export const updateTemplate = (id: string, data: Record<string, unknown>) =>
     channel: data.channel,
     subject: data.subject,
     body: data.body,
+    htmlBody: data.htmlBody ?? '',
+    bodyFormat: data.bodyFormat ?? 'plain',
+    designPreset: data.designPreset ?? '',
     category: data.category,
     isEnabled: data.isActive ?? data.enabled ?? true,
     placeholdersAllowed: data.placeholdersAllowed,

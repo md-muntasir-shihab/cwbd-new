@@ -5,6 +5,7 @@ import {
     ArrowUp,
     Check,
     GraduationCap,
+    Home,
     Layers3,
     Loader2,
     RefreshCw,
@@ -14,6 +15,8 @@ import {
     X,
 } from 'lucide-react';
 import AdminGuardShell from '../components/admin/AdminGuardShell';
+import AdminTabNav from '../components/admin/AdminTabNav';
+import { ADMIN_PATHS } from '../routes/adminPaths';
 import AdminImageUploadField from '../components/admin/AdminImageUploadField';
 import {
     adminGetHomeConfig,
@@ -344,7 +347,7 @@ function ToggleCard({
     onToggle: () => void;
 }) {
     return (
-        <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-card-border bg-surface/60 px-4 py-3 transition-colors hover:border-primary/30">
+        <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-slate-700/30 bg-surface/60 px-4 py-3 shadow-sm shadow-black/5 ring-1 ring-white/[0.03] transition-colors hover:border-primary/30">
             <div>
                 <p className="text-sm font-semibold cw-text">{label}</p>
                 <p className="mt-1 text-xs cw-muted">{hint}</p>
@@ -379,7 +382,7 @@ function TextInput({
             <input
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white outline-none transition-all focus:border-indigo-500/50"
+                className="mt-1 w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white outline-none transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
             />
             {helper ? <p className="mt-1 text-[11px] text-slate-500">{helper}</p> : null}
         </div>
@@ -404,7 +407,7 @@ function NumberInput({
                 type="number"
                 value={Number.isFinite(value) ? value : 0}
                 onChange={(event) => onChange(Number(event.target.value || 0))}
-                className="mt-1 w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white outline-none transition-all focus:border-indigo-500/50"
+                className="mt-1 w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white outline-none transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
             />
             {helper ? <p className="mt-1 text-[11px] text-slate-500">{helper}</p> : null}
         </div>
@@ -705,30 +708,33 @@ export default function AdminUniversitySettingsPage() {
             title="University Settings"
             description="Canonical control for university browse defaults, home section visibility, featured content, category highlights, cluster feed order, and university card display rules."
         >
+            <AdminTabNav tabs={[
+                { key: 'list', label: 'All Universities', path: ADMIN_PATHS.universities, icon: GraduationCap },
+                { key: 'settings', label: 'University Settings', path: ADMIN_PATHS.universitySettings, icon: Settings2 },
+            ]} />
             {toast ? (
                 <div
-                    className={`fixed right-4 top-4 z-50 flex items-center gap-3 rounded-xl border px-5 py-3 text-sm font-medium shadow-xl ${
-                        toast.type === 'success'
-                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                            : 'border-rose-500/30 bg-rose-500/10 text-rose-400'
-                    }`}
+                    className={`fixed right-4 top-4 z-50 flex items-center gap-3 rounded-2xl border px-5 py-3.5 text-sm font-semibold shadow-2xl backdrop-blur-sm ${toast.type === 'success'
+                        ? 'border-emerald-200 bg-emerald-50/95 text-emerald-700 shadow-emerald-500/10 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400'
+                        : 'border-rose-200 bg-rose-50/95 text-rose-700 shadow-rose-500/10 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400'
+                        }`}
                 >
-                    {toast.type === 'success' ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    {toast.type === 'success' ? '✅' : '❌'}
                     {toast.msg}
                 </div>
             ) : null}
 
             <div className="space-y-6">
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-card-border bg-surface px-5 py-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-lg shadow-black/5 dark:border-slate-700/30 dark:bg-slate-900 dark:ring-1 dark:ring-white/[0.03]">
                     <div className="space-y-1">
-                        <p className={`text-sm ${isDirty ? 'text-amber-400' : 'cw-muted'}`}>
-                            {isDirty ? 'You have unsaved university-setting changes.' : 'University settings are up to date.'}
+                        <p className={`text-sm font-medium ${isDirty ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                            {isDirty ? '⚠️ You have unsaved university-setting changes.' : '✅ University settings are up to date.'}
                         </p>
-                        {pageError ? <p className="text-xs text-rose-400">{pageError}</p> : null}
+                        {pageError ? <p className="text-xs text-rose-600 dark:text-rose-400">{pageError}</p> : null}
                     </div>
                     <div className="flex gap-2">
                         {isDirty ? (
-                            <button onClick={handleReset} className="btn-outline inline-flex items-center gap-2 text-sm">
+                            <button onClick={handleReset} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors">
                                 <RefreshCw className="h-4 w-4" />
                                 Discard
                             </button>
@@ -736,7 +742,7 @@ export default function AdminUniversitySettingsPage() {
                         <button
                             onClick={() => mutation.mutate(local)}
                             disabled={!isDirty || mutation.isPending}
-                            className="btn-primary inline-flex items-center gap-2 text-sm disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 hover:shadow-xl disabled:opacity-50 transition-all"
                         >
                             {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                             Save Changes
@@ -745,39 +751,34 @@ export default function AdminUniversitySettingsPage() {
                 </div>
 
                 <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                    <div className="card-flat border border-primary/10 p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">Categories</p>
-                        <p className="mt-2 text-2xl font-semibold cw-text">{local.settings.categoryOrder.length}</p>
-                        <p className="mt-1 text-xs cw-muted">Ordered browse tabs and category priority</p>
-                    </div>
-                    <div className="card-flat border border-primary/10 p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">Home Sections</p>
-                        <p className="mt-2 text-2xl font-semibold cw-text">{activeHomeSectionCount}</p>
-                        <p className="mt-1 text-xs cw-muted">University-related home sections currently visible</p>
-                    </div>
-                    <div className="card-flat border border-primary/10 p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">Highlights</p>
-                        <p className="mt-2 text-2xl font-semibold cw-text">{enabledHighlightedCount}</p>
-                        <p className="mt-1 text-xs cw-muted">Home category spotlights currently enabled</p>
-                    </div>
-                    <div className="card-flat border border-primary/10 p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">Featured Universities</p>
-                        <p className="mt-2 text-2xl font-semibold cw-text">{enabledFeaturedCount}</p>
-                        <p className="mt-1 text-xs cw-muted">Manual home-featured university picks</p>
-                    </div>
-                    <div className="card-flat border border-primary/10 p-4">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-muted">Featured Clusters</p>
-                        <p className="mt-2 text-2xl font-semibold cw-text">{homeVisibleClusterCount}</p>
-                        <p className="mt-1 text-xs cw-muted">Active clusters visible in Home featured feed</p>
-                    </div>
+                    {[
+                        { label: 'Categories', value: local.settings.categoryOrder.length, desc: 'Ordered browse tabs and category priority', Icon: Layers3, bg: 'bg-indigo-50 dark:bg-indigo-950/30' },
+                        { label: 'Home Sections', value: activeHomeSectionCount, desc: 'University-related home sections currently visible', Icon: Home, bg: 'bg-sky-50 dark:bg-sky-950/30' },
+                        { label: 'Highlights', value: enabledHighlightedCount, desc: 'Home category spotlights currently enabled', Icon: Star, bg: 'bg-amber-50 dark:bg-amber-950/30' },
+                        { label: 'Featured Universities', value: enabledFeaturedCount, desc: 'Manual home-featured university picks', Icon: GraduationCap, bg: 'bg-emerald-50 dark:bg-emerald-950/30' },
+                        { label: 'Featured Clusters', value: homeVisibleClusterCount, desc: 'Active clusters visible in Home featured feed', Icon: Layers3, bg: 'bg-violet-50 dark:bg-violet-950/30' },
+                    ].map(s => (
+                        <div key={s.label} className={`group relative overflow-hidden rounded-2xl ${s.bg} p-5 transition-all hover:shadow-md border border-slate-200/50 dark:border-slate-700/30 dark:ring-1 dark:ring-white/[0.03]`}>
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">{s.label}</p>
+                                    <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{s.value}</p>
+                                    <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{s.desc}</p>
+                                </div>
+                                <s.Icon className="h-6 w-6 opacity-40 group-hover:scale-110 transition-transform text-slate-500 dark:text-slate-400" />
+                            </div>
+                        </div>
+                    ))}
                 </section>
 
-                <section className="card-flat border border-primary/10 p-5">
+                <section className="rounded-2xl border border-indigo-200/50 bg-gradient-to-r from-indigo-50 to-indigo-100/50 p-5 shadow-sm dark:border-slate-700/30 dark:from-indigo-950/30 dark:to-indigo-900/20 dark:ring-1 dark:ring-white/[0.03]">
                     <div className="flex items-start gap-3">
-                        <Settings2 className="mt-0.5 h-5 w-5 text-primary" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                            <Settings2 className="h-5 w-5" />
+                        </div>
                         <div>
-                            <h2 className="text-base font-semibold cw-text">Canonical Ownership</h2>
-                            <p className="mt-1 text-sm cw-muted">
+                            <h2 className="text-base font-bold text-slate-800 dark:text-white">Canonical Ownership</h2>
+                            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                                 This page now owns the working university-related website controls. Home Control keeps only global layout and non-university sections.
                                 Duplicate university widgets there are removed from the visible admin surface, while backend compatibility stays intact.
                             </p>
@@ -857,7 +858,7 @@ export default function AdminUniversitySettingsPage() {
                                         },
                                     },
                                 }) : prev)}
-                                className="mt-1 w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white"
+                                className="mt-1 w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
                             >
                                 {defaultCategoryOptions.map((category) => (
                                     <option key={category} value={category}>{category}</option>
@@ -975,11 +976,10 @@ export default function AdminUniversitySettingsPage() {
                                                 itemIndex === index ? { ...item, isActive: item.isActive === false } : item
                                             )),
                                         }) : prev)}
-                                        className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                                            section.isActive !== false
-                                                ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
-                                                : 'border-slate-600 bg-slate-800/70 text-slate-300'
-                                        }`}
+                                        className={`rounded-full border px-3 py-1 text-xs font-medium ${section.isActive !== false
+                                            ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300'
+                                            : 'border-slate-600 bg-slate-800/70 text-slate-300'
+                                            }`}
                                     >
                                         {section.isActive !== false ? 'Visible' : 'Hidden'}
                                     </button>
@@ -1084,7 +1084,7 @@ export default function AdminUniversitySettingsPage() {
                                         },
                                     },
                                 }) : prev)}
-                                className="mt-1 w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white"
+                                className="mt-1 w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
                             >
                                 <option value="manual">Manual Featured Picks</option>
                                 <option value="auto">Auto from Active Universities</option>
@@ -1105,7 +1105,7 @@ export default function AdminUniversitySettingsPage() {
                         <select
                             value={categoryToAdd}
                             onChange={(event) => setCategoryToAdd(event.target.value)}
-                            className="w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white"
+                            className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
                         >
                             <option value="">Select category to add</option>
                             {categoryOptions.map((category) => (
@@ -1139,7 +1139,7 @@ export default function AdminUniversitySettingsPage() {
                                 setCategoryToAdd('');
                             }}
                             disabled={!pickText(categoryToAdd)}
-                            className="rounded-xl border border-cyan-500/30 px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-500/10 disabled:opacity-50"
+                            className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-500/15 disabled:opacity-50"
                         >
                             Add
                         </button>
@@ -1149,9 +1149,9 @@ export default function AdminUniversitySettingsPage() {
                     ) : (
                         <div className="mt-3 space-y-2">
                             {local.home.highlightedCategories.map((item, index) => (
-                                <div key={`${item.category}-${index}`} className="rounded-xl border border-indigo-500/15 bg-slate-950/55 p-3">
+                                <div key={`${item.category}-${index}`} className="rounded-xl border border-slate-700/20 bg-slate-950/30 p-3">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-200">#{index + 1}</span>
+                                        <span className="rounded-full bg-indigo-500/25 px-2 py-0.5 text-[11px] text-indigo-200">#{index + 1}</span>
                                         <p className="text-sm font-medium text-white">{item.category}</p>
                                         <div className="ml-auto flex items-center gap-2">
                                             <button
@@ -1164,7 +1164,7 @@ export default function AdminUniversitySettingsPage() {
                                                     },
                                                 }) : prev)}
                                                 disabled={index === 0}
-                                                className="rounded-lg border border-indigo-500/25 px-2 py-1 text-xs text-indigo-200 disabled:opacity-40"
+                                                className="rounded-lg border border-slate-600/40 bg-slate-800/30 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-500/15 disabled:opacity-40"
                                             >
                                                 Up
                                             </button>
@@ -1178,7 +1178,7 @@ export default function AdminUniversitySettingsPage() {
                                                     },
                                                 }) : prev)}
                                                 disabled={index === local.home.highlightedCategories.length - 1}
-                                                className="rounded-lg border border-indigo-500/25 px-2 py-1 text-xs text-indigo-200 disabled:opacity-40"
+                                                className="rounded-lg border border-slate-600/40 bg-slate-800/30 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-500/15 disabled:opacity-40"
                                             >
                                                 Down
                                             </button>
@@ -1193,7 +1193,7 @@ export default function AdminUniversitySettingsPage() {
                                                             .map((entry, idx) => ({ ...entry, order: idx + 1 })),
                                                     },
                                                 }) : prev)}
-                                                className="rounded-lg border border-rose-500/25 px-2 py-1 text-xs text-rose-200"
+                                                className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/15"
                                             >
                                                 Remove
                                             </button>
@@ -1246,7 +1246,7 @@ export default function AdminUniversitySettingsPage() {
                         <select
                             value={featuredUniversityToAdd}
                             onChange={(event) => setFeaturedUniversityToAdd(event.target.value)}
-                            className="w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white"
+                            className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
                         >
                             <option value="">Select university to add</option>
                             {universityOptions.map((item) => (
@@ -1280,7 +1280,7 @@ export default function AdminUniversitySettingsPage() {
                                 setFeaturedUniversityToAdd('');
                             }}
                             disabled={!pickText(featuredUniversityToAdd)}
-                            className="rounded-xl border border-cyan-500/30 px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-500/10 disabled:opacity-50"
+                            className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-500/15 disabled:opacity-50"
                         >
                             Add
                         </button>
@@ -1290,9 +1290,9 @@ export default function AdminUniversitySettingsPage() {
                     ) : (
                         <div className="mt-3 space-y-2">
                             {local.home.featuredUniversities.map((item, index) => (
-                                <div key={`${item.universityId}-${index}`} className="rounded-xl border border-indigo-500/15 bg-slate-950/55 p-3">
+                                <div key={`${item.universityId}-${index}`} className="rounded-xl border border-slate-700/20 bg-slate-950/30 p-3">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-200">#{index + 1}</span>
+                                        <span className="rounded-full bg-indigo-500/25 px-2 py-0.5 text-[11px] text-indigo-200">#{index + 1}</span>
                                         <p className="text-sm font-medium text-white">{universityLabelMap.get(item.universityId) || item.universityId}</p>
                                         <div className="ml-auto flex items-center gap-2">
                                             <button
@@ -1305,7 +1305,7 @@ export default function AdminUniversitySettingsPage() {
                                                     },
                                                 }) : prev)}
                                                 disabled={index === 0}
-                                                className="rounded-lg border border-indigo-500/25 px-2 py-1 text-xs text-indigo-200 disabled:opacity-40"
+                                                className="rounded-lg border border-slate-600/40 bg-slate-800/30 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-500/15 disabled:opacity-40"
                                             >
                                                 Up
                                             </button>
@@ -1319,7 +1319,7 @@ export default function AdminUniversitySettingsPage() {
                                                     },
                                                 }) : prev)}
                                                 disabled={index === local.home.featuredUniversities.length - 1}
-                                                className="rounded-lg border border-indigo-500/25 px-2 py-1 text-xs text-indigo-200 disabled:opacity-40"
+                                                className="rounded-lg border border-slate-600/40 bg-slate-800/30 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-500/15 disabled:opacity-40"
                                             >
                                                 Down
                                             </button>
@@ -1334,7 +1334,7 @@ export default function AdminUniversitySettingsPage() {
                                                             .map((entry, idx) => ({ ...entry, order: idx + 1 })),
                                                     },
                                                 }) : prev)}
-                                                className="rounded-lg border border-rose-500/25 px-2 py-1 text-xs text-rose-200"
+                                                className="rounded-lg border border-rose-500/30 bg-rose-500/5 px-2 py-1 text-xs text-rose-200 hover:bg-rose-500/15"
                                             >
                                                 Remove
                                             </button>
@@ -1388,11 +1388,11 @@ export default function AdminUniversitySettingsPage() {
                     ) : (
                         <div className="space-y-2">
                             {local.clusters.map((cluster, index) => (
-                                <div key={cluster._id} className="rounded-xl border border-indigo-500/15 bg-slate-950/55 p-3">
+                                <div key={cluster._id} className="rounded-xl border border-slate-700/20 bg-slate-950/30 p-3">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[11px] text-indigo-200">#{index + 1}</span>
+                                        <span className="rounded-full bg-indigo-500/25 px-2 py-0.5 text-[11px] text-indigo-200">#{index + 1}</span>
                                         <p className="text-sm font-medium text-white">{cluster.name}</p>
-                                        <span className="rounded-full border border-indigo-500/25 px-2 py-0.5 text-[10px] text-indigo-200">
+                                        <span className="rounded-full border border-slate-600/40 px-2 py-0.5 text-[10px] text-indigo-200">
                                             {cluster.memberCount} members
                                         </span>
                                         <div className="ml-auto flex items-center gap-2">
@@ -1403,7 +1403,7 @@ export default function AdminUniversitySettingsPage() {
                                                     clusters: moveItem(prev.clusters, index, 'up'),
                                                 }) : prev)}
                                                 disabled={index === 0}
-                                                className="rounded-lg border border-indigo-500/25 px-2 py-1 text-xs text-indigo-200 disabled:opacity-40"
+                                                className="rounded-lg border border-slate-600/40 bg-slate-800/30 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-500/15 disabled:opacity-40"
                                             >
                                                 Up
                                             </button>
@@ -1414,7 +1414,7 @@ export default function AdminUniversitySettingsPage() {
                                                     clusters: moveItem(prev.clusters, index, 'down'),
                                                 }) : prev)}
                                                 disabled={index === local.clusters.length - 1}
-                                                className="rounded-lg border border-indigo-500/25 px-2 py-1 text-xs text-indigo-200 disabled:opacity-40"
+                                                className="rounded-lg border border-slate-600/40 bg-slate-800/30 px-2 py-1 text-xs text-indigo-200 hover:bg-indigo-500/15 disabled:opacity-40"
                                             >
                                                 Down
                                             </button>
@@ -1509,7 +1509,7 @@ export default function AdminUniversitySettingsPage() {
                                             },
                                         },
                                     }) : prev)}
-                                    className="mt-1 w-full rounded-xl border border-indigo-500/15 bg-slate-950/65 px-3 py-2 text-sm text-white"
+                                    className="mt-1 w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-3 py-2 text-sm text-white transition-all focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20"
                                 >
                                     <option value="alphabetical">Name (A-Z)</option>
                                     <option value="nearest_deadline">Nearest Deadline</option>

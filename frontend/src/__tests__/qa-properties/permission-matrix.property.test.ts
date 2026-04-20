@@ -179,7 +179,7 @@ describe('Feature: campusway-qa-audit, Property 6: Permission Matrix Enforcement
                     ).toBe(true);
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

@@ -7,7 +7,7 @@ import { NewsSettingsModel } from "../models/newsSettings.model";
 import { RssSourceModel } from "../models/rssSource.model";
 import { sanitizeNewsHtml, slugify, hashKey, normalizeTitle } from "../utils/content";
 import { buildDuplicateKeyHash, findDuplicate } from "./duplicateService";
-import { generateAiDraftFromRss } from "./aiDraftService";
+import { generateAiDraftFromRss, extractFullArticleWithAi } from "./aiDraftService";
 
 const parser = new Parser({
   customFields: {
@@ -26,8 +26,8 @@ const scrapeReadableContent = async (url: string) => {
     });
 
     if (!response.ok) {
-        console.warn(`[RSS Scrape] Failed to fetch ${url} (status: ${response.status})`);
-        return "";
+      console.warn(`[RSS Scrape] Failed to fetch ${url} (status: ${response.status})`);
+      return "";
     }
 
     const html = await response.text();
@@ -73,7 +73,7 @@ function extractRssImage(item: Record<string, unknown>): string | null {
   const contentStr = String(item['content:encoded'] || item.content || item.description || "");
   const imgMatch = contentStr.match(/<img[^>]+src=["']([^"']+)["']/i);
   if (imgMatch && imgMatch[1]) {
-      return imgMatch[1];
+    return imgMatch[1];
   }
 
   return null;
@@ -111,6 +111,30 @@ export const runRssIngestion = async () => {
               fetchedFullText = Boolean(fullText);
             } catch {
               fetchedFullText = false;
+            }
+
+            // AI extraction fallback: if standard extraction failed or returned
+            // very little content, try AI-powered extraction
+            if (
+              (!fetchedFullText || fullContent.length < 200) &&
+              (settings as any).aiExtractionFallback &&
+              settings.aiSettings?.enabled &&
+              settings.aiSettings?.apiKey
+            ) {
+              try {
+                const aiExtracted = await extractFullArticleWithAi(
+                  originalArticleUrl,
+                  source.name,
+                  settings.aiSettings.apiProviderUrl,
+                  settings.aiSettings.apiKey,
+                );
+                if (aiExtracted && aiExtracted.length > fullContent.length) {
+                  fullContent = aiExtracted;
+                  fetchedFullText = true;
+                }
+              } catch {
+                // AI extraction failed, keep whatever we had
+              }
             }
           }
 

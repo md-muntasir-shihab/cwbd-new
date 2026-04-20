@@ -34,6 +34,7 @@ const ALLOWED_MIME_TYPES = new Set([
     'image/svg+xml',
     'image/heic',
     'image/heif',
+    'image/tiff',
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -49,6 +50,7 @@ const ALLOWED_MIME_TYPES = new Set([
     'video/mp4',
     'video/webm',
     'video/quicktime',
+    'video/x-matroska',
 ]);
 
 const ALLOWED_EXTENSIONS = new Set([
@@ -60,6 +62,8 @@ const ALLOWED_EXTENSIONS = new Set([
     '.svg',
     '.heic',
     '.heif',
+    '.tiff',
+    '.tif',
     '.pdf',
     '.doc',
     '.docx',
@@ -73,6 +77,7 @@ const ALLOWED_EXTENSIONS = new Set([
     '.mp4',
     '.webm',
     '.mov',
+    '.mkv',
 ]);
 
 function isAllowedUpload(file: Pick<Express.Multer.File, 'mimetype' | 'originalname'>): boolean {
@@ -101,12 +106,12 @@ const storage = multer.diskStorage({
 });
 
 // Create the upload middleware (limit 25MB)
-export const uploadMiddleware = multer({ 
+export const uploadMiddleware = multer({
     storage,
     limits: { fileSize: 25 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
         if (!isAllowedUpload(file)) {
-            cb(new Error('Unsupported file type'));
+            cb(new Error(`Unsupported file type: ${file.mimetype}`));
             return;
         }
         cb(null, true);
@@ -126,7 +131,7 @@ export async function uploadMedia(req: AuthRequest, res: Response): Promise<void
         }
 
         if (!isAllowedUpload(req.file)) {
-            res.status(400).json({ message: 'Unsupported file type.' });
+            res.status(400).json({ message: `Unsupported file type: ${req.file.mimetype}` });
             return;
         }
 
@@ -142,30 +147,35 @@ export async function uploadMedia(req: AuthRequest, res: Response): Promise<void
             .filter(Boolean);
         const firebaseBucket = getFirebaseStorageBucket();
         if (firebaseBucket && requestedVisibility !== 'protected') {
-            const ext = path.extname(req.file.originalname || '').toLowerCase() || path.extname(req.file.filename || '');
-            const safeExt = ext && ext.length <= 10 ? ext : '';
-            const objectKey = `media/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${safeExt}`;
-            const fileRef = firebaseBucket.file(objectKey);
-            await fileRef.save(fs.readFileSync(req.file.path), {
-                metadata: {
-                    contentType: req.file.mimetype,
-                },
-                resumable: false,
-                public: true,
-            });
+            try {
+                const ext = path.extname(req.file.originalname || '').toLowerCase() || path.extname(req.file.filename || '');
+                const safeExt = ext && ext.length <= 10 ? ext : '';
+                const objectKey = `media/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${safeExt}`;
+                const fileRef = firebaseBucket.file(objectKey);
+                await fileRef.save(fs.readFileSync(req.file.path), {
+                    metadata: {
+                        contentType: req.file.mimetype,
+                    },
+                    resumable: false,
+                    public: true,
+                });
 
-            const publicUrl = `https://storage.googleapis.com/${firebaseBucket.name}/${objectKey}`;
-            fs.unlink(req.file.path, () => { /* ignore */ });
-            res.status(201).json({
-                message: 'File uploaded successfully.',
-                url: publicUrl,
-                absoluteUrl: publicUrl,
-                filename: objectKey,
-                mimetype: req.file.mimetype,
-                size: req.file.size,
-                provider: 'firebase',
-            });
-            return;
+                const publicUrl = `https://storage.googleapis.com/${firebaseBucket.name}/${objectKey}`;
+                fs.unlink(req.file.path, () => { /* ignore */ });
+                res.status(201).json({
+                    message: 'File uploaded successfully.',
+                    url: publicUrl,
+                    absoluteUrl: publicUrl,
+                    filename: objectKey,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size,
+                    provider: 'firebase',
+                });
+                return;
+            } catch (firebaseErr) {
+                console.warn('[uploadMedia] Firebase upload failed, falling back to local storage:', firebaseErr);
+                // Fall through to local storage
+            }
         }
 
         if (requestedVisibility === 'protected') {
@@ -191,6 +201,11 @@ export async function uploadMedia(req: AuthRequest, res: Response): Promise<void
             return;
         }
 
+        // Runtime check: ensure upload directory exists before local storage write
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
         // Construct the public URL for the uploaded file
         // For development, it will be served from the local Node server e.g. /uploads/filename.ext
         const fileUrl = `/uploads/${req.file.filename}`;
@@ -207,6 +222,7 @@ export async function uploadMedia(req: AuthRequest, res: Response): Promise<void
         });
     } catch (err) {
         console.error('[uploadMedia]', err);
-        res.status(500).json({ message: 'Server error during file upload.' });
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        res.status(500).json({ message: `Server error during file upload: ${errorMessage}` });
     }
 }

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
 import { useModuleAccess } from '../../hooks/useModuleAccess';
 import ThemeSwitchPro from '../ui/ThemeSwitchPro';
+import LanguageToggle from './LanguageToggle';
 import { ADMIN_MENU_ITEMS, ADMIN_PATHS, isAdminPathActive, type AdminMenuItem } from '../../routes/adminPaths';
 import { adminGetActionableAlerts, adminGetAdminUiLayout, adminMarkActionableAlertsRead } from '../../services/api';
 
@@ -175,6 +176,9 @@ export default function AdminShell({ title, description, children }: AdminShellP
         const active = isAdminPathActive(location.pathname, item) || matchesMenuPath(item.path);
         const Icon = item.icon;
 
+        // Unread badge for Support & Communication
+        const unreadCount = item.key === 'support' ? (alertsQuery.data?.unreadCount || 0) : 0;
+
         return (
             <div key={item.key} className="space-y-1">
                 {hasChildren ? (
@@ -201,8 +205,20 @@ export default function AdminShell({ title, description, children }: AdminShellP
                                 ${collapsed ? 'justify-center px-2 py-3.5' : 'px-3.5 py-3'}
                             `}
                         >
-                            {Icon && <Icon className="h-[18px] w-[18px] flex-shrink-0" />}
-                            {!collapsed && <span className="truncate">{item.label}</span>}
+                            <span className="relative flex-shrink-0">
+                                {Icon && <Icon className="h-[18px] w-[18px]" />}
+                                {collapsed && unreadCount > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white shadow-sm">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                )}
+                            </span>
+                            {!collapsed && (
+                                <>
+                                    <span className="truncate">{item.label}</span>
+                                    {unreadCount > 0 && (
+                                        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white shadow-sm animate-pulse-slow">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                                    )}
+                                </>
+                            )}
                         </Link>
                         {!collapsed && (
                             <button
@@ -237,8 +253,20 @@ export default function AdminShell({ title, description, children }: AdminShellP
                                 ${collapsed ? 'justify-center px-2 py-3.5' : 'px-3.5 py-3'}
                             `}
                         >
-                            {Icon && <Icon className="h-[18px] w-[18px] flex-shrink-0" />}
-                            {!collapsed && <span className="truncate">{item.label}</span>}
+                            <span className="relative flex-shrink-0">
+                                {Icon && <Icon className="h-[18px] w-[18px]" />}
+                                {collapsed && unreadCount > 0 && (
+                                    <span className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white shadow-sm">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                )}
+                            </span>
+                            {!collapsed && (
+                                <>
+                                    <span className="truncate">{item.label}</span>
+                                    {unreadCount > 0 && (
+                                        <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white shadow-sm animate-pulse-slow">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                                    )}
+                                </>
+                            )}
                         </Link>
                     </div>
                 )}
@@ -403,6 +431,7 @@ export default function AdminShell({ title, description, children }: AdminShellP
                             </div>
                             <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
 
+                                <LanguageToggle />
                                 <ThemeSwitchPro />
                                 {canReadActionableAlerts && (
                                     <div ref={notifRef} className="relative">
@@ -441,9 +470,8 @@ export default function AdminShell({ title, description, children }: AdminShellP
                                                             key={item._id}
                                                             type="button"
                                                             onClick={() => void openAlert(item._id, item.linkUrl)}
-                                                            className={`block w-full border-b border-slate-200 px-4 py-3 text-left transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 ${
-                                                                item.isRead ? '' : 'bg-indigo-50/70 dark:bg-indigo-500/10'
-                                                            }`}
+                                                            className={`block w-full border-b border-slate-200 px-4 py-3 text-left transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 ${item.isRead ? '' : 'bg-indigo-50/70 dark:bg-indigo-500/10'
+                                                                }`}
                                                         >
                                                             <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title}</p>
                                                             <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{item.message}</p>

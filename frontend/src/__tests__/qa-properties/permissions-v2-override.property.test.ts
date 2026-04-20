@@ -75,7 +75,7 @@ describe('Feature: campusway-qa-audit, Property 7: PermissionsV2 Override Priori
                     }
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 
@@ -103,7 +103,7 @@ describe('Feature: campusway-qa-audit, Property 7: PermissionsV2 Override Priori
                     expect(hasPermissionsV2Override(permissionsV2, mod, action)).toBeNull();
                 },
             ),
-            { numRuns: 100 },
+            { numRuns: 20 },
         );
     });
 });

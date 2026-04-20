@@ -14,6 +14,8 @@ import {
     X,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { getStudentMeNotifications } from '../../services/api';
 import GlobalAlertGate from '../../components/student/GlobalAlertGate';
 
 type NavItem = {
@@ -57,9 +59,11 @@ function isActivePath(currentPath: string, targetPath: string): boolean {
 function StudentNavigation({
     pathname,
     onSelect,
+    unreadNotifCount = 0,
 }: {
     pathname: string;
     onSelect?: () => void;
+    unreadNotifCount?: number;
 }) {
     return (
         <div className="space-y-2">
@@ -70,31 +74,39 @@ function StudentNavigation({
             </div>
             {NAV_ITEMS.map((item) => {
                 const active = isActivePath(pathname, item.path);
+                const showBadge = item.path === '/notifications' && unreadNotifCount > 0;
                 return (
                     <Link
                         key={`side-${item.path}`}
                         to={item.path}
                         onClick={onSelect}
-                        className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
-                            active
-                                ? 'bg-white dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/50 dark:border-indigo-500/20'
-                                : 'text-slate-600 hover:bg-white/60 dark:text-slate-400 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
-                        }`}
+                        className={`group flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ${active
+                            ? 'bg-white dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/50 dark:border-indigo-500/20'
+                            : 'text-slate-600 hover:bg-white/60 dark:text-slate-400 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'
+                            }`}
                     >
                         <div className="flex items-center gap-3">
                             <div
-                                className={`p-1.5 rounded-lg transition-colors duration-300 ${
-                                    active
-                                        ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'
-                                        : 'bg-transparent text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
-                                }`}
+                                className={`relative p-1.5 rounded-lg transition-colors duration-300 ${active
+                                    ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'
+                                    : 'bg-transparent text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                                    }`}
                             >
                                 {item.icon}
+                                {showBadge && (
+                                    <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white">
+                                        {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                                    </span>
+                                )}
                             </div>
                             {item.label}
                         </div>
                         {active ? (
                             <ChevronRight className="w-4 h-4 text-indigo-400 dark:text-indigo-500 opacity-60" />
+                        ) : showBadge ? (
+                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-100 px-1.5 text-[10px] font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
+                                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
+                            </span>
                         ) : null}
                     </Link>
                 );
@@ -107,6 +119,16 @@ export default function StudentLayout() {
     const { isAuthenticated, isLoading, user } = useAuth();
     const location = useLocation();
     const [drawerOpen, setDrawerOpen] = useState(false);
+
+    // Fetch unread notification count for badge
+    const notifQuery = useQuery({
+        queryKey: ['student-hub', 'notifications', 'all'],
+        queryFn: async () => (await getStudentMeNotifications('all')).data,
+        staleTime: 30_000,
+        refetchInterval: 60_000,
+        enabled: isAuthenticated && user?.role === 'student',
+    });
+    const unreadNotifCount = Number(notifQuery.data?.unreadCount || 0);
 
     const quickNavItems = useMemo(
         () => NAV_ITEMS.filter((item) => QUICK_NAV_PATHS.includes(item.path as (typeof QUICK_NAV_PATHS)[number])),
@@ -156,7 +178,7 @@ export default function StudentLayout() {
             <div className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-5 md:py-8 flex gap-6 xl:gap-8">
                 <aside className="hidden lg:block w-[260px] shrink-0">
                     <div className="sticky top-[88px] rounded-3xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4">
-                        <StudentNavigation pathname={location.pathname} />
+                        <StudentNavigation pathname={location.pathname} unreadNotifCount={unreadNotifCount} />
                     </div>
                 </aside>
 
@@ -202,9 +224,8 @@ export default function StudentLayout() {
                     onClick={() => setDrawerOpen(false)}
                 />
                 <aside
-                    className={`absolute inset-y-0 left-0 w-full max-w-[320px] bg-[#F8FAFC] px-4 py-5 shadow-2xl transition-transform dark:bg-[#0B1120] ${
-                        drawerOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
+                    className={`absolute inset-y-0 left-0 w-full max-w-[320px] bg-[#F8FAFC] px-4 py-5 shadow-2xl transition-transform dark:bg-[#0B1120] ${drawerOpen ? 'translate-x-0' : '-translate-x-full'
+                        }`}
                 >
                     <div className="flex items-center justify-between pb-4">
                         <div>
@@ -225,7 +246,7 @@ export default function StudentLayout() {
                         </button>
                     </div>
                     <div className="rounded-3xl border border-slate-200/70 bg-white/85 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
-                        <StudentNavigation pathname={location.pathname} onSelect={() => setDrawerOpen(false)} />
+                        <StudentNavigation pathname={location.pathname} onSelect={() => setDrawerOpen(false)} unreadNotifCount={unreadNotifCount} />
                     </div>
                 </aside>
             </div>
@@ -238,11 +259,10 @@ export default function StudentLayout() {
                             <Link
                                 key={`mobile-${item.path}`}
                                 to={item.path}
-                                className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 transition-all duration-300 ${
-                                    active
-                                        ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                                }`}
+                                className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 transition-all duration-300 ${active
+                                    ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                    }`}
                             >
                                 <div className={`rounded-xl p-1 transition-all duration-300 ${active ? 'scale-110' : 'scale-100'}`}>
                                     {item.icon}
@@ -256,11 +276,10 @@ export default function StudentLayout() {
                     <button
                         type="button"
                         onClick={() => setDrawerOpen(true)}
-                        className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 transition-all duration-300 ${
-                            moreActive || drawerOpen
-                                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                        }`}
+                        className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 transition-all duration-300 ${moreActive || drawerOpen
+                            ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
                         aria-label="More student navigation"
                     >
                         <div className={`rounded-xl p-1 transition-all duration-300 ${moreActive || drawerOpen ? 'scale-110' : 'scale-100'}`}>

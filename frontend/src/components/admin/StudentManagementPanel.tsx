@@ -113,8 +113,11 @@ function ImportWizard({ groups, plans, onSuccess, onClose }: {
             });
             setMapping(initialMapping);
             setStep('mapping');
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Upload failed');
+        } catch (err: unknown) {
+            const errMsg = (err as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message
+                || (err as { message?: string })?.message
+                || 'Upload failed';
+            toast.error(errMsg);
         } finally {
             setLoading(false);
         }

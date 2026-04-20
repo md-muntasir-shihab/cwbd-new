@@ -1,3 +1,5 @@
+import type { BankQuestion } from './questionBank';
+
 export type ExamStatus = "live" | "upcoming" | "ended";
 export type AttemptStatus = "not_started" | "in_progress" | "submitted";
 export type AccessStatus = "allowed" | "blocked";
@@ -216,6 +218,25 @@ export interface ResultResponsePublished {
     percentage: number;
     rank?: number;
     timeTakenSeconds: number;
+    detailedAnswers?: {
+        questionId?: string;
+        question?: string;
+        questionImage?: string;
+        selectedAnswer?: string;
+        correctAnswer?: string;
+        isCorrect: boolean;
+        marks: number;
+        marksObtained: number;
+        explanation: string;
+        correctWrongIndicator: "correct" | "wrong" | "unanswered";
+        section?: string;
+    }[];
+    performanceSummary?: {
+        totalScore: number;
+        percentage: number;
+        strengths: string[];
+        weaknesses: string[];
+    };
 }
 
 export type ResultResponse = ResultResponseLocked | ResultResponsePublished;
@@ -239,3 +260,49 @@ export type SolutionsResponse =
             explanationImageUrl?: string;
         }>;
     };
+
+/* ── Auto-Generate Types ── */
+
+export interface AutoGenerateRequest {
+    subject?: string;
+    moduleCategory?: string;
+    distribution: { easy: number; medium: number; hard: number };
+    defaultMarksPerQuestion?: number;
+}
+
+export interface AutoGenerateResponse {
+    questions: BankQuestion[];
+    distribution: {
+        easy: { requested: number; available: number; selected: number };
+        medium: { requested: number; available: number; selected: number };
+        hard: { requested: number; available: number; selected: number };
+    };
+}
+
+/* ── Bulk Attach Types ── */
+
+export interface BulkAttachRequest {
+    questions: Array<{ bankQuestionId: string; marks: number; orderIndex: number }>;
+}
+
+/* ── Exam Preview Types ── */
+
+export interface ExamPreviewResponse {
+    exam: {
+        title: string;
+        subject: string;
+        duration: number;
+        totalMarks: number;
+        totalQuestions: number;
+        negativeMarking: boolean;
+        negativeMarkValue: number;
+    };
+    questions: Array<{
+        orderIndex: number;
+        question_en?: string;
+        question_bn?: string;
+        questionImageUrl?: string;
+        options: Array<{ key: string; text_en?: string; text_bn?: string }>;
+        marks: number;
+    }>;
+}
