@@ -1,90 +1,119 @@
+# ─── Dependencies ─────────────────────────────────────────────
 node_modules/
 **/node_modules/
 
-# Environment files
+# ─── Environment files ────────────────────────────────────────
 .env
 .env.*
 !.env.example
 !**/.env.example
 
-# Local instructions and IDE settings
-AGENTS.md
-.claude/
-
-# Local databases and runtime data
-.local-mongo/
-.mongo-local/
-backend/public/uploads/
-backend/backup-snapshots/
-
-# Build output
+# ─── Build output ─────────────────────────────────────────────
 backend/dist/
 frontend/dist/
-frontend-next/.next/
+frontend-next/
+.vite/
+**/.vite/
 *.tsbuildinfo
 
-# Logs
+# ─── Logs ─────────────────────────────────────────────────────
 *.log
 *.err.log
 *.out.log
+**/*.log
+**/*.err.log
+**/*.out.log
 
-# Test and QA artifacts
+# ─── Local databases & runtime ────────────────────────────────
+.local-mongo/
+backend/public/uploads/
+backend/backup-snapshots/
+backend/.runtime-logs/
+
+# ─── AI / IDE / Editor config ─────────────────────────────────
+.claude/
+AGENTS.md
+.vscode/
+
+# ─── Test & QA artifacts ─────────────────────────────────────
 qa-artifacts/
+**/qa-artifacts/
+qa/
+**/qa/
 playwright-report/
+**/playwright-report/
 test-results/
-frontend/playwright-*-results.json
-TXT Files/
+**/test-results/
+testsprite_tests/
+**/testsprite_tests/
+frontend/playwright-*-results*.json
+frontend/output/
+frontend/e2e/screenshots/
+**/__screenshots__/
 
-# Local exports and scratch files
-Documents/Files/
-
-# Root-level screenshot artifacts (binary page captures — not source code)
-admin-dashboard
-admin-login
-contact-page
-exams-page
-homepage-full
-login-page
-news-page
-resources-page
-subscription-plans
-team-members
-universities-page
-
-# Process ID files (produced by dev run scripts)
-PID
-PID Files/
-
-# Temp/scratch files
+# ─── Temp / scratch files ────────────────────────────────────
+*.tmp
 tmp-*.json
 tmp-*.cjs
 tmp_*.md
-*.tmp
+.tmp-*
+**/.tmp-*
+temp-*
 output/
 
-# JSON Files scratch directory
-JSON Files/
+# ─── QA / Audit reports (generated, not source) ──────────────
+MASTER_QA_PROMPT.md
+QA-RELEASE-AUDIT-REPORT.md
+QA_AUDIT_AND_TESTING_PROMPT.md
+PHASE_0_MCP_GATE_REPORT.md
+PHASE_1_INVENTORY_AND_RISK_CLASSIFICATION.md
+PHASE_1_INVENTORY_LOG.md
+PHASE_1_ROUTE_INVENTORY.json
+PHASE_2_4_TEST_EXECUTION_REPORT.md
+SESSION_2_COMPLETION_SUMMARY.md
 
-# Legacy directories (old alternative implementations, not active)
+# ─── E2E docs (generated) ────────────────────────────────────
+frontend/E2E_*.md
+
+# ─── Frontend deploy caches ──────────────────────────────────
+frontend/.firebase/
+frontend/.vercel/
+
+# ─── Backend temp & sensitive files ──────────────────────────
+backend/.trigger
+backend/.e2e-security-backup.json
+backend/INITIAL_ACCESS_INFO.txt
+backend/reset-passwords.ts
+backend/test-db.ts
+
+# ─── Frontend temp & test runner scripts ─────────────────────
+frontend/admin-deep-results.log
+frontend/qa-audit-results.log
+frontend/test_output.log
+frontend/test-output.txt
+frontend/tsc_errors.txt
+frontend/tmp_walk.md
+frontend/run_e2e_tests.cjs
+frontend/run-bug-tests.mjs
+frontend/run-preservation-tests.mjs
+frontend/test-search-bars.mjs
+frontend/patch.js
+
+# ─── Local utility scripts ───────────────────────────────────
+run_project.bat
+run_project.ps1
+setup_and_run_project.bat
+setup_and_run_project.ps1
+upload_code.bat
+
+# ─── Empty / legacy directories ──────────────────────────────
+Documents/
+TXT Files/
+JSON Files/
+PID Files/
+New folder/
 client/
 server/
-New folder/
 
-# Snapshot artifacts
+# ─── Misc binary artifacts ───────────────────────────────────
 snapshot-*.md
-qa/
-qa-artifacts/
-
-# Playwright test artifacts
-playwright-report/
-frontend/test-results/
-frontend/testsprite_tests/
-frontend/playwright-*-results*.json
-frontend/output/
-
-# Backend runtime log files
-backend/*.log
-backend/*.err.log
-backend/*.out.log
-backend/tmp-*
-backend/.e2e-security-backup.json
