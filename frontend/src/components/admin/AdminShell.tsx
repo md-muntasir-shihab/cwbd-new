@@ -597,7 +597,7 @@ export default function AdminShell({ title, description, children }: AdminShellP
 
                     </header>
 
-                    <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-7">
+                    <div className="px-3 py-4 sm:px-4 sm:py-6 md:px-6 lg:px-7 max-w-full overflow-x-hidden">
                         {description ? <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">{description}</p> : null}
                         {children}
                     </div>
