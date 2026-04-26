@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import {
     adminGetTestimonials, adminCreateTestimonial, adminUpdateTestimonial, adminDeleteTestimonial,
+    adminApproveTestimonial, adminRejectTestimonial, adminToggleFeatureTestimonial, adminReorderTestimonial,
     adminGetPartners, adminCreatePartner, adminUpdatePartner, adminDeletePartner,
 } from '../controllers/testimonialPartnerController';
 import ExcelJS from 'exceljs';
@@ -1519,6 +1520,10 @@ router.get('/testimonials', requirePermission('site_settings', 'view'), adminGet
 router.post('/testimonials', requirePermission('site_settings', 'create'), adminCreateTestimonial);
 router.put('/testimonials/:id', requirePermission('site_settings', 'edit'), adminUpdateTestimonial);
 router.delete('/testimonials/:id', requirePermission('site_settings', 'delete'), adminDeleteTestimonial);
+router.post('/testimonials/:id/approve', requirePermission('site_settings', 'approve'), adminApproveTestimonial);
+router.post('/testimonials/:id/reject', requirePermission('site_settings', 'edit'), adminRejectTestimonial);
+router.post('/testimonials/:id/feature', requirePermission('site_settings', 'edit'), adminToggleFeatureTestimonial);
+router.post('/testimonials/reorder', requirePermission('site_settings', 'edit'), adminReorderTestimonial);
 router.get('/partners', requirePermission('site_settings', 'view'), adminGetPartners);
 router.post('/partners', requirePermission('site_settings', 'create'), adminCreatePartner);
 router.put('/partners/:id', requirePermission('site_settings', 'edit'), adminUpdatePartner);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { globalSearch } from '../controllers/globalSearchController';
-import { getPublicTestimonials, getPublicPartners } from '../controllers/testimonialPartnerController';
+import { getPublicTestimonials, getPublicPartners, getPublicFeaturedTestimonials, getPublicTestimonialBySlug } from '../controllers/testimonialPartnerController';
 import {
     beginTotpSetup,
     confirmTotpSetup,
@@ -268,6 +268,8 @@ router.get('/services/:id', getServiceDetails);
 
 /* ── Public — Testimonials & Partners ── */
 router.get('/testimonials', getPublicTestimonials);
+router.get('/testimonials/featured', getPublicFeaturedTestimonials);
+router.get('/testimonials/:slug', getPublicTestimonialBySlug);
 router.get('/partners', getPublicPartners);
 
 /* ── Public — Contact Submit ── */

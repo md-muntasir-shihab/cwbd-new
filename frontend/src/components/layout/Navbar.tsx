@@ -17,6 +17,7 @@ const BASE_LINKS = [
     { name: 'Exams', path: '/exams' },
     { name: 'News', path: '/news' },
     { name: 'Resources', path: '/resources' },
+    { name: 'Testimonials', path: '/testimonials' },
     { name: 'Contact', path: '/contact' },
 ];
 
