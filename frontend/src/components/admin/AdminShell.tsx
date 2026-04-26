@@ -567,7 +567,7 @@ export default function AdminShell({ title, description, children }: AdminShellP
                                                     <div className="border-t border-slate-100 px-4 py-2.5 dark:border-slate-800">
                                                         <button
                                                             type="button"
-                                                            onClick={() => void markReadMutation.mutateAsync()}
+                                                            onClick={() => void markReadMutation.mutateAsync(undefined)}
                                                             className="w-full rounded-lg py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                                                         >
                                                             Mark all as read

@@ -1162,7 +1162,7 @@ export default function StudentGroupDetailPage() {
                             </td>
                             <td className="px-3 py-1.5 text-slate-500">
                               {(r.email || r.phone || '—') as string}
-                              {r.reason && <span className="ml-1 text-[10px] text-slate-400">({r.reason as string})</span>}
+                              {r.reason ? <span className="ml-1 text-[10px] text-slate-400">({String(r.reason)})</span> : null}
                             </td>
                             <td className="px-3 py-1.5">{statusBadge(r.status as string)}</td>
                           </tr>

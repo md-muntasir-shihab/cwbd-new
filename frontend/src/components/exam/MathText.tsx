@@ -18,13 +18,14 @@ export default function MathText({ children, inline, className }: MathTextProps)
     if (!children) return null;
 
     return (
-        <ReactMarkdown
-            remarkPlugins={[remarkMath]}
-            rehypePlugins={[rehypeKatex]}
-            className={className}
-            components={inline ? { p: ({ children: c }) => <span>{c}</span> } : undefined}
-        >
-            {children}
-        </ReactMarkdown>
+        <div className={className}>
+            <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={inline ? { p: ({ children: c }: any) => <span>{c}</span> } : undefined}
+            >
+                {children}
+            </ReactMarkdown>
+        </div>
     );
 }

@@ -1735,10 +1735,10 @@ export default function UniversitiesPanel() {
                   <p className="text-slate-500 font-medium">Feed Mode</p><p className="text-slate-300 font-bold">{c.homeFeedMode === 'cluster_only' ? '🏷️ Cluster Only' : c.homeFeedMode === 'members_only' ? '🎓 Members Only' : '📋 Both'}</p>
                   <p className="text-slate-500 font-medium">Warnings</p><p className="text-amber-300 font-bold">{c.resolution?.warnings?.length || 0}</p>
                   <p className="text-slate-500 font-medium">Centers</p><p className="text-slate-300 font-bold">{c.dates?.examCenters?.length || 0}</p>
-                  <p className="text-slate-500 font-medium">Total Seats</p><p className="text-cyan-300 font-bold">{c.seatStats?.totalSeats?.toLocaleString() || '—'}</p>
-                  <p className="text-slate-500 font-medium">Sci / Arts / Com</p><p className="font-bold"><span className="text-emerald-300">{c.seatStats?.scienceSeats || 0}</span> / <span className="text-violet-300">{c.seatStats?.artsSeats || 0}</span> / <span className="text-amber-300">{c.seatStats?.commerceSeats || 0}</span></p>
+                  <p className="text-slate-500 font-medium">Total Seats</p><p className="text-cyan-300 font-bold">{(c as any).seatStats?.totalSeats?.toLocaleString() || '—'}</p>
+                  <p className="text-slate-500 font-medium">Sci / Arts / Com</p><p className="font-bold"><span className="text-emerald-300">{(c as any).seatStats?.scienceSeats || 0}</span> / <span className="text-violet-300">{(c as any).seatStats?.artsSeats || 0}</span> / <span className="text-amber-300">{(c as any).seatStats?.commerceSeats || 0}</span></p>
                 </div>
-                {(c.categoryRules?.length > 0 || c.categoryRuleIds?.length > 0) && (
+                {((c.categoryRules?.length ?? 0) > 0 || ((c as any).categoryRuleIds?.length ?? 0) > 0) && (
                   <div className="flex flex-wrap gap-1.5">
                     {(c.categoryRules || []).map((cat) => (
                       <span key={cat} className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300">{cat}</span>

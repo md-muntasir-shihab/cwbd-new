@@ -123,8 +123,8 @@ export default function SiteSettingsPanel() {
             ...data,
             staticPages: mergeWebsiteStaticPages(data.staticPages),
             socialPreview: {
-                ...defaultSettings.socialPreview,
-                ...(data.socialPreview || {}),
+                ...(defaultSettings as any).socialPreview,
+                ...((data as any).socialPreview || {}),
             },
             socialLinks: {
                 ...defaultSettings.socialLinks,

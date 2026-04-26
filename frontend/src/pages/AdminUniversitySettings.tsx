@@ -307,6 +307,7 @@ function buildInitialDraft(data: UniversitySettingsPageData): UniversitySettings
             name: pickText(item.name),
             homeVisible: Boolean(item.homeVisible),
             homeOrder: Number(item.homeOrder || 0),
+            homeFeedMode: (item as any).homeFeedMode || 'both' as const,
             memberCount: Number(item.memberCount || 0),
         }))
         .filter((item) => item._id && item.name)

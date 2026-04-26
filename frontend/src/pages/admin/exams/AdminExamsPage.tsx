@@ -2037,7 +2037,7 @@ export function AdminExamsPage() {
                         {renderFormField('Shuffle Options', 'shuffleOptions', 'checkbox')}
                         {renderFormField('Auto-submit on Timeout', 'autoSubmitOnTimeout', 'checkbox')}
                     </div>
-                    {formData.negativeMarkingEnabled && (
+                    {Boolean(formData.negativeMarkingEnabled) && (
                         <div className="max-w-xs">
                             {renderFormField('Negative Per Wrong', 'negativePerWrong', 'number')}
                         </div>

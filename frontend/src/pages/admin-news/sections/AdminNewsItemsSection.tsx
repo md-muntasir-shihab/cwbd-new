@@ -460,7 +460,7 @@ export default function AdminNewsItemsSection({
         if (coverImageSource === 'default') {
             coverImage = '';
         }
-        const payload: Partial<ApiNews> = {
+        const payload: Record<string, unknown> = {
             ...editing,
             tags: parseCommaList(tagInput),
             publicTags: parseCommaList(tagInput),
@@ -485,7 +485,7 @@ export default function AdminNewsItemsSection({
                 tags: parseCommaList(tagInput),
             },
         };
-        saveMutation.mutate(payload);
+        saveMutation.mutate(payload as Partial<ApiNews>);
     }
 
     function closeActionDialog() {

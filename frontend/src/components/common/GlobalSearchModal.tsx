@@ -66,15 +66,15 @@ export default function GlobalSearchModal({ open, onClose }: GlobalSearchModalPr
 
     /* ── Build search engines for client-side filtering ── */
     const uniEngine = useMemo(
-        () => new SearchEngine(universities, { keys: ['name', 'shortForm', 'category'], categoryField: 'category' }, 'universities'),
+        () => new SearchEngine(universities as unknown as Record<string, unknown>[], { keys: ['name', 'shortForm', 'category'], categoryField: 'category' }, 'universities'),
         [universities],
     );
     const examEngine = useMemo(
-        () => new SearchEngine(exams, { keys: ['title', 'subject', 'groupCategory'], statusField: 'status', categoryField: 'groupCategory', dateField: 'startDate' }, 'exams'),
+        () => new SearchEngine(exams as unknown as Record<string, unknown>[], { keys: ['title', 'subject', 'groupCategory'], statusField: 'status', categoryField: 'groupCategory', dateField: 'startDate' }, 'exams'),
         [exams],
     );
     const newsEngine = useMemo(
-        () => new SearchEngine(news, { keys: ['title', 'category', 'shortSummary'], categoryField: 'category', dateField: 'publishDate' }, 'news'),
+        () => new SearchEngine(news as unknown as Record<string, unknown>[], { keys: ['title', 'category', 'shortSummary'], categoryField: 'category', dateField: 'publishDate' }, 'news'),
         [news],
     );
 
