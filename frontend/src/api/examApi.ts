@@ -228,7 +228,11 @@ function normalizeAnswersFromSession(value: unknown) {
 }
 
 function normalizeExamListPayload(raw: unknown): ExamListResponse {
-    const payload = asRecord(raw);
+    const outer = asRecord(raw);
+    // Handle ResponseBuilder envelope: { success, data: { items } }
+    const payload = outer.data && typeof outer.data === 'object' && !Array.isArray(outer.data)
+        ? asRecord(outer.data)
+        : outer;
     const isContractShape = Array.isArray(payload.items);
     const itemsSource = isContractShape ? payload.items : payload.exams;
     const items: ExamListItem[] = Array.isArray(itemsSource)
