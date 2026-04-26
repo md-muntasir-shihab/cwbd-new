@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -12,6 +12,7 @@ import {
     type AdminActionApproval,
 } from '../../../services/api';
 import { showConfirmDialog } from '../../../lib/appDialog';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 
 type Toast = { show: boolean; message: string; type: 'success' | 'error' };
 
@@ -162,6 +163,12 @@ export default function ActionApprovalsPage() {
         reason: '',
     });
 
+    // Close modals on Escape key
+    const closeRejectModal = useCallback(() => setRejectModal({ open: false, item: null, reason: '' }), []);
+    const closeMobileDrawer = useCallback(() => setMobileDrawerOpen(false), []);
+    useEscapeKey(closeRejectModal, rejectModal.open);
+    useEscapeKey(closeMobileDrawer, mobileDrawerOpen && !rejectModal.open);
+
     const { data, isLoading, isError } = useQuery({
         queryKey: ['admin-pending-approvals'],
         queryFn: () => adminGetPendingApprovals(),
@@ -287,11 +294,10 @@ export default function ActionApprovalsPage() {
                                         key={item._id}
                                         type="button"
                                         onClick={() => openItem(item)}
-                                        className={`w-full rounded-[1.5rem] border p-5 text-left transition ${
-                                            selectedItem?._id === item._id
-                                                ? 'border-indigo-400/60 bg-indigo-500/10'
-                                                : 'border-white/10 bg-slate-900/55 hover:border-white/20 hover:bg-slate-900/80'
-                                        }`}
+                                        className={`w-full rounded-[1.5rem] border p-5 text-left transition ${selectedItem?._id === item._id
+                                            ? 'border-indigo-400/60 bg-indigo-500/10'
+                                            : 'border-white/10 bg-slate-900/55 hover:border-white/20 hover:bg-slate-900/80'
+                                            }`}
                                     >
                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                             <div className="flex min-w-0 items-start gap-4">

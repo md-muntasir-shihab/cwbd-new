@@ -23,7 +23,9 @@ export function formatSubscriptionPlanPrice(
 ): string {
     if (plan.isFree || plan.priceBDT <= 0) return 'Free';
     const label = currencyLabel || plan.currency || 'BDT';
-    return `${label}${Number(plan.priceBDT || 0).toLocaleString()}`;
+    // Add trailing space for alphabetic currency codes (e.g. "BDT" → "BDT "), skip for symbols (e.g. "৳")
+    const formattedLabel = /^[A-Za-z]+$/.test(label.trim()) ? `${label.trim()} ` : label.trim();
+    return `${formattedLabel}${Number(plan.priceBDT || 0).toLocaleString()}`;
 }
 
 export function getSubscriptionPlanPriceSuffix(plan: SubscriptionPlanPublic): string {

@@ -539,11 +539,7 @@ function respondOtpError(
     message: string,
     extra?: Record<string, unknown>
 ): void {
-    res.status(status).json({
-        code,
-        message,
-        ...(extra || {}),
-    });
+    ResponseBuilder.send(res, status, ResponseBuilder.error(code, message, extra));
 }
 
 export async function login(req: Request, res: Response): Promise<void> {

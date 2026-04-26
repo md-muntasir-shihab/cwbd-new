@@ -25,8 +25,7 @@ export function useStudentDashboardFull() {
             const res = await getStudentDashboardFull();
             return res.data;
         },
-        staleTime: 30_000,
-        refetchOnWindowFocus: true,
+        staleTime: 60_000,
     });
 }
 
@@ -82,10 +81,16 @@ export function useDashboardRealtime(enabled: boolean) {
             es.addEventListener('dashboard-update', () => {
                 void qc.invalidateQueries({ queryKey: DASHBOARD_KEYS.full });
             });
+            es.addEventListener('subscription-updated', () => {
+                void qc.invalidateQueries({ queryKey: DASHBOARD_KEYS.full });
+                void qc.invalidateQueries({ queryKey: ['subscription'] });
+            });
             es.onerror = () => {
                 if (cancelled) return;
                 es?.close();
-                timer = setTimeout(connect, reconnectRef.current);
+                // Exponential backoff with jitter (Bug 1.31)
+                const jitter = Math.floor(Math.random() * 1000);
+                timer = setTimeout(connect, reconnectRef.current + jitter);
                 reconnectRef.current = Math.min(reconnectRef.current * 2, 30000);
             };
         };

@@ -273,7 +273,7 @@ const UniversityCard = memo(function UniversityCard({
         <Link
             to={detailsUrl}
             data-testid="university-card-details"
-            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
         >
             View Details
         </Link>
@@ -286,12 +286,12 @@ const UniversityCard = memo(function UniversityCard({
             rel="noopener noreferrer"
             data-testid="university-card-official"
             onClick={() => sendEvent('university_official_click', { universityId: id, slug, website: officialWebsite })}
-            className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
         >
             Official
         </a>
     ) : (
-        <span className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:text-slate-500">
+        <span className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:text-slate-500">
             Official N/A
         </span>
     );
@@ -303,12 +303,12 @@ const UniversityCard = memo(function UniversityCard({
             rel="noopener noreferrer"
             data-testid="university-card-apply"
             onClick={() => sendEvent('university_apply_click', { universityId: id, slug, admissionWebsite })}
-            className="inline-flex min-h-[42px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-90"
         >
             Apply
         </a>
     ) : (
-        <span className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:text-slate-500">
+        <span className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400 dark:border-slate-700 dark:text-slate-500">
             Apply N/A
         </span>
     );

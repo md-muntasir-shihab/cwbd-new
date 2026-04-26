@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
     Plus, Edit, Trash2, Image, RefreshCw, Eye, EyeOff,
@@ -13,6 +13,7 @@ import {
     adminPublishBanner,
 } from '../../services/api';
 import { showConfirmDialog } from '../../lib/appDialog';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 import AdminImageUploadField from './AdminImageUploadField';
 import { uploadSignedBannerAsset } from './bannerUpload';
 import { buildMediaUrl } from '../../utils/mediaUrl';
@@ -120,6 +121,10 @@ export default function CampaignBannersPanel() {
     const [modal, setModal] = useState<null | 'create' | CampaignBanner>(null);
     const [form, setForm] = useState(EMPTY_FORM);
     const [activeTab, setActiveTab] = useState<PanelTab>('home_ads');
+
+    // Close modal on Escape key
+    const closeModal = useCallback(() => setModal(null), []);
+    useEscapeKey(closeModal, modal !== null);
 
     const campaigns = useMemo(
         () =>

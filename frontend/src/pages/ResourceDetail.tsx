@@ -169,7 +169,7 @@ export default function ResourceDetail() {
                         )}
 
                         {/* Tags */}
-                        {resource.tags.length > 0 && (
+                        {Array.isArray(resource.tags) && resource.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mb-5">
                                 <Tag className="w-3.5 h-3.5 text-text-muted mt-0.5 flex-shrink-0" />
                                 {resource.tags.map(tag => (
@@ -193,7 +193,7 @@ export default function ResourceDetail() {
                                 </span>
                             )}
                             <span>
-                                {new Date(resource.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                {resource.publishDate ? new Date(resource.publishDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
                             </span>
                         </div>
 
@@ -250,7 +250,7 @@ export default function ResourceDetail() {
                     {/* Thumbnail */}
                     {resource.thumbnailUrl && (
                         <div className="card overflow-hidden">
-                            <img src={resource.thumbnailUrl} alt={resource.title} className="w-full object-cover max-h-80" loading="lazy" />
+                            <img src={resource.thumbnailUrl} alt={resource.title || 'Resource thumbnail'} className="w-full object-cover max-h-80" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         </div>
                     )}
                 </div>

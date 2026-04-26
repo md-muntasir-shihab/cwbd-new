@@ -665,6 +665,12 @@ export default function AdminSubscriptionPlansPage() {
             toast.error('Plan name is required');
             return;
         }
+        // Validate BDT pricing for paid plans
+        const rawPrice = Number(planForm.priceBDT);
+        if (planForm.planType !== 'free' && (!Number.isFinite(rawPrice) || rawPrice < 0)) {
+            toast.error('BDT price must be a valid non-negative number');
+            return;
+        }
         try {
             if (isEditRoute && params.id) {
                 const response = await updateMutation.mutateAsync({ id: params.id, payload });

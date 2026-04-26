@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useWebsiteSettings } from '../../hooks/useWebsiteSettings';
 import ThemeSwitchPro from '../ui/ThemeSwitchPro';
 import GlobalSearchModal from '../common/GlobalSearchModal';
+import FocusTrap from '../common/FocusTrap';
 import { getStudentMeNotifications } from '../../services/api';
 import { buildMediaUrl } from '../../utils/mediaUrl';
 
@@ -267,34 +268,36 @@ export default function Navbar() {
                 </nav>
 
                 {mobileOpen && !isStudentAppRoute && (
-                    <div className="lg:hidden border-t border-card-border/70 dark:border-dark-border/70 bg-surface dark:bg-dark-surface" role="navigation" aria-label="Mobile navigation">
-                        <div className="section-container py-3 space-y-1">
-                            <Link
-                                to="/subscription-plans"
-                                aria-current={location.pathname === '/subscription-plans' || location.pathname === '/pricing' ? 'page' : undefined}
-                                className={`block rounded-xl px-3 py-2 text-sm ${location.pathname === '/subscription-plans' || location.pathname === '/pricing'
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-text-muted dark:text-dark-text/70 hover:bg-primary/5'
-                                    }`}
-                            >
-                                Subscription Plans
-                            </Link>
-                            {navLinks.map((link) => {
-                                const active = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
-                                return (
-                                    <Link
-                                        key={link.path}
-                                        to={link.path}
-                                        aria-current={active ? 'page' : undefined}
-                                        className={`block rounded-xl px-3 py-2 text-sm ${active ? 'bg-primary/10 text-primary' : 'text-text-muted dark:text-dark-text/70 hover:bg-primary/5'
-                                            }`}
-                                    >
-                                        {link.name}
-                                    </Link>
-                                );
-                            })}
+                    <FocusTrap active={mobileOpen}>
+                        <div className="lg:hidden border-t border-card-border/70 dark:border-dark-border/70 bg-surface dark:bg-dark-surface" role="navigation" aria-label="Mobile navigation">
+                            <div className="section-container py-3 space-y-1">
+                                <Link
+                                    to="/subscription-plans"
+                                    aria-current={location.pathname === '/subscription-plans' || location.pathname === '/pricing' ? 'page' : undefined}
+                                    className={`block rounded-xl px-3 py-2 text-sm ${location.pathname === '/subscription-plans' || location.pathname === '/pricing'
+                                        ? 'bg-primary/10 text-primary'
+                                        : 'text-text-muted dark:text-dark-text/70 hover:bg-primary/5'
+                                        }`}
+                                >
+                                    Subscription Plans
+                                </Link>
+                                {navLinks.map((link) => {
+                                    const active = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
+                                    return (
+                                        <Link
+                                            key={link.path}
+                                            to={link.path}
+                                            aria-current={active ? 'page' : undefined}
+                                            className={`block rounded-xl px-3 py-2 text-sm ${active ? 'bg-primary/10 text-primary' : 'text-text-muted dark:text-dark-text/70 hover:bg-primary/5'
+                                                }`}
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
+                    </FocusTrap>
                 )}
             </header>
             <GlobalSearchModal open={searchOpen} onClose={closeSearch} />

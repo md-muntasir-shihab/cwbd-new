@@ -1300,13 +1300,17 @@ export async function adminAssignSubscription(req: AuthRequest, res: Response): 
         });
 
         const responseStatus = req.params?.id ? 200 : 201;
-        res.status(responseStatus).json({
+        const responseData = {
             message: result.subscription.status === 'active' ? 'Subscription assigned' : 'Subscription created in pending state',
             item: result.subscription,
             payment: result.payment,
             invoice: result.invoice,
             cache: result.cache,
-        });
+        };
+        const builder = responseStatus === 201
+            ? ResponseBuilder.created(responseData, responseData.message)
+            : ResponseBuilder.success(responseData, responseData.message);
+        ResponseBuilder.send(res, responseStatus, builder);
     } catch (error) {
         console.error('adminAssignSubscription error:', error);
         const message = error instanceof Error ? error.message : 'Server error';

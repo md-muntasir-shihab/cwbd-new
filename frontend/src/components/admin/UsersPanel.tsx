@@ -130,23 +130,44 @@ export default function UsersPanel() {
     }, [fetchUsers]);
 
     useEffect(() => {
-        const streamUrl = getAdminUsersStreamUrl();
-        const eventSource = new EventSource(streamUrl, { withCredentials: true });
+        let cancelled = false;
+        let eventSource: EventSource | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+        let backoffMs = 1000;
 
-        eventSource.onopen = () => setLiveConnected(true);
-        eventSource.addEventListener('user-event', (event) => {
-            setLiveConnected(true);
-            try {
-                const payload = JSON.parse((event as MessageEvent).data) as AdminUserStreamEvent;
-                if (payload?.type) void fetchUsers();
-            } catch {
-                void fetchUsers();
-            }
-        });
-        eventSource.onerror = () => setLiveConnected(false);
+        const connect = () => {
+            if (cancelled) return;
+            const streamUrl = getAdminUsersStreamUrl();
+            eventSource = new EventSource(streamUrl, { withCredentials: true });
+
+            eventSource.onopen = () => {
+                setLiveConnected(true);
+                backoffMs = 1000;
+            };
+            eventSource.addEventListener('user-event', (event) => {
+                setLiveConnected(true);
+                try {
+                    const payload = JSON.parse((event as MessageEvent).data) as AdminUserStreamEvent;
+                    if (payload?.type) void fetchUsers();
+                } catch {
+                    void fetchUsers();
+                }
+            });
+            eventSource.onerror = () => {
+                setLiveConnected(false);
+                eventSource?.close();
+                if (cancelled) return;
+                reconnectTimer = setTimeout(connect, backoffMs);
+                backoffMs = Math.min(backoffMs * 2, 30000);
+            };
+        };
+
+        connect();
 
         return () => {
-            eventSource.close();
+            cancelled = true;
+            eventSource?.close();
+            if (reconnectTimer) clearTimeout(reconnectTimer);
             setLiveConnected(false);
         };
     }, [fetchUsers]);

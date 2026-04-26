@@ -15,6 +15,29 @@ export const _delays = {
     sleep: (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms)),
 };
 
+/**
+ * Classify whether an error is transient (network/connectivity) or permanent (logic).
+ * Transient errors should be retried without counting toward the permanent failure limit.
+ */
+export function isTransientError(err: unknown): boolean {
+    if (!(err instanceof Error)) return false;
+    const name = err.name || '';
+    const message = err.message || '';
+    const transientPatterns = [
+        'MongoNetworkError',
+        'MongoTimeoutError',
+        'MongoServerSelectionError',
+        'ECONNREFUSED',
+        'ECONNRESET',
+        'ETIMEDOUT',
+        'EPIPE',
+        'EAI_AGAIN',
+    ];
+    return transientPatterns.some(
+        (pattern) => name.includes(pattern) || message.includes(pattern),
+    );
+}
+
 export async function runJobWithLog(
     jobName: string,
     worker: () => Promise<void | JobWorkResult>,
@@ -77,6 +100,7 @@ export async function runJobWithRetry(
     });
 
     let lastError: unknown;
+    let permanentAttempts = 0;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
@@ -99,6 +123,25 @@ export async function runJobWithRetry(
             return;
         } catch (error) {
             lastError = error;
+
+            // Classify error as transient or permanent
+            const transient = isTransientError(error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            console.log(`[JOB_RUNNER] Error in "${jobName}" (attempt ${attempt}): ${transient ? 'transient' : 'permanent'} — ${errorMsg}`);
+
+            if (transient) {
+                // Transient errors: retry with exponential backoff (1s, 5s, 30s)
+                // without counting toward permanent failure limit
+                const transientDelay = Math.min(1000 * Math.pow(5, attempt), 30000);
+                await _delays.sleep(transientDelay);
+                // Don't increment permanentAttempts — retry again
+                continue;
+            }
+
+            permanentAttempts++;
+            if (permanentAttempts > maxRetries) {
+                break;
+            }
         }
     }
 

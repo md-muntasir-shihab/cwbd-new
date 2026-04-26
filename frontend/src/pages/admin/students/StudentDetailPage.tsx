@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
@@ -8,6 +8,7 @@ import {
   getNotificationLogs, sendNotification, getTemplates,
   getContactTimeline, addTimelineEntry, deleteTimelineEntry,
 } from '../../../api/adminStudentApi';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 import {
   getStudentSecurity, adminSetPassword, resendAccountInfo,
   toggleForceReset, revokeStudentSessions,
@@ -546,6 +547,10 @@ function SecurityTabContent({
 }) {
   const [setPasswordForm, setSetPasswordForm] = useState({ password: '', sendSms: true, sendEmail: false });
   const [showSetPwModal, setShowSetPwModal] = useState(false);
+
+  // Close modal on Escape key
+  const closeSetPwModal = useCallback(() => setShowSetPwModal(false), []);
+  useEscapeKey(closeSetPwModal, showSetPwModal);
 
   const { data: securityData } = useQuery({
     queryKey: ['student-security', studentId],

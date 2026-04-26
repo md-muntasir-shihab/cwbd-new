@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,6 +7,7 @@ import {
 } from '../../../api/adminStudentApi';
 import { adminUi, ADMIN_DASHBOARD } from '../../../lib/appRoutes';
 import { useModuleAccess } from '../../../hooks/useModuleAccess';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 import {
   Plus, Search, Users, X, Palette, Tag,
   Star, MoreVertical, Pencil, Trash2, CheckCircle, XCircle,
@@ -77,6 +78,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = true }: {
 }
 
 function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  useEscapeKey(onClose, open);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

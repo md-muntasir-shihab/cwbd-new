@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { Bell, Plus, Edit, Trash2, RefreshCw, Save, X, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react';
 import {
@@ -9,6 +9,7 @@ import {
     adminUpdateAlert,
 } from '../../services/api';
 import { showConfirmDialog } from '../../lib/appDialog';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 interface HomeAlert {
     _id: string;
@@ -53,6 +54,10 @@ export default function AlertsPanel() {
     const [modal, setModal] = useState<null | 'create' | HomeAlert>(null);
     const [form, setForm] = useState(emptyForm);
     const [saving, setSaving] = useState(false);
+
+    // Close modal on Escape key
+    const closeModal = useCallback(() => setModal(null), []);
+    useEscapeKey(closeModal, modal !== null);
 
     const fetchAlerts = async () => {
         setLoading(true);
@@ -284,65 +289,65 @@ export default function AlertsPanel() {
 
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-indigo-500/10">
-                                    {['Title', 'Target', 'Ack', 'Metrics', 'Schedule', 'Status', 'Actions'].map((header) => (
-                                        <th key={header} className="text-left py-3 px-4 text-xs text-slate-400 uppercase tracking-wider font-medium">{header}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {alerts.map((alert) => {
-                                    const targetSummary = alert.target?.type === 'groups'
-                                        ? `Groups (${(alert.target.groupIds || []).length})`
-                                        : alert.target?.type === 'users'
-                                            ? `Users (${(alert.target.userIds || []).length})`
-                                            : 'All Students';
-                                    return (
-                                        <tr key={alert._id} className="border-b border-indigo-500/5 hover:bg-white/[0.02] transition-colors">
-                                            <td className="py-3 px-4">
-                                                <p className="text-white font-medium max-w-[320px] break-words">{alert.title || 'Untitled'}</p>
-                                                <p className="text-xs text-slate-500 max-w-[360px] break-words">{alert.message}</p>
-                                            </td>
-                                            <td className="py-3 px-4 text-xs text-slate-300">{targetSummary}</td>
-                                            <td className="py-3 px-4 text-xs text-slate-300">{alert.requireAck ? 'Required' : 'Optional'}</td>
-                                            <td className="py-3 px-4 text-xs text-slate-300">
-                                                <div>Impr: {alert.metrics?.impressions || 0}</div>
-                                                <div>Ack: {alert.metrics?.acknowledgements || 0}</div>
-                                            </td>
-                                            <td className="py-3 px-4 text-xs text-slate-400">
-                                                {alert.startAt ? new Date(alert.startAt).toLocaleString() : 'Now'}
-                                                {alert.endAt ? ` -> ${new Date(alert.endAt).toLocaleString()}` : ' -> Open'}
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${isActiveNow(alert) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
-                                                    {isActiveNow(alert) ? 'Live' : alert.status}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={() => void toggleAlert(alert._id, alert.status !== 'published')}
-                                                        className="p-1.5 hover:bg-white/5 rounded-lg"
-                                                        title={alert.status === 'published' ? 'Unpublish' : 'Publish'}
-                                                    >
-                                                        {alert.status === 'published'
-                                                            ? <ToggleRight className="w-4 h-4 text-emerald-400" />
-                                                            : <ToggleLeft className="w-4 h-4 text-slate-500" />
-                                                        }
-                                                    </button>
-                                                    <button onClick={() => openEdit(alert)} className="p-1.5 hover:bg-amber-500/10 rounded-lg" title="Edit">
-                                                        <Edit className="w-4 h-4 text-amber-400" />
-                                                    </button>
-                                                    <button onClick={() => void deleteAlert(alert._id)} className="p-1.5 hover:bg-red-500/10 rounded-lg" title="Delete">
-                                                        <Trash2 className="w-4 h-4 text-red-400" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
+                                <thead>
+                                    <tr className="border-b border-indigo-500/10">
+                                        {['Title', 'Target', 'Ack', 'Metrics', 'Schedule', 'Status', 'Actions'].map((header) => (
+                                            <th key={header} className="text-left py-3 px-4 text-xs text-slate-400 uppercase tracking-wider font-medium">{header}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {alerts.map((alert) => {
+                                        const targetSummary = alert.target?.type === 'groups'
+                                            ? `Groups (${(alert.target.groupIds || []).length})`
+                                            : alert.target?.type === 'users'
+                                                ? `Users (${(alert.target.userIds || []).length})`
+                                                : 'All Students';
+                                        return (
+                                            <tr key={alert._id} className="border-b border-indigo-500/5 hover:bg-white/[0.02] transition-colors">
+                                                <td className="py-3 px-4">
+                                                    <p className="text-white font-medium max-w-[320px] break-words">{alert.title || 'Untitled'}</p>
+                                                    <p className="text-xs text-slate-500 max-w-[360px] break-words">{alert.message}</p>
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-300">{targetSummary}</td>
+                                                <td className="py-3 px-4 text-xs text-slate-300">{alert.requireAck ? 'Required' : 'Optional'}</td>
+                                                <td className="py-3 px-4 text-xs text-slate-300">
+                                                    <div>Impr: {alert.metrics?.impressions || 0}</div>
+                                                    <div>Ack: {alert.metrics?.acknowledgements || 0}</div>
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-400">
+                                                    {alert.startAt ? new Date(alert.startAt).toLocaleString() : 'Now'}
+                                                    {alert.endAt ? ` -> ${new Date(alert.endAt).toLocaleString()}` : ' -> Open'}
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${isActiveNow(alert) ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
+                                                        {isActiveNow(alert) ? 'Live' : alert.status}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => void toggleAlert(alert._id, alert.status !== 'published')}
+                                                            className="p-1.5 hover:bg-white/5 rounded-lg"
+                                                            title={alert.status === 'published' ? 'Unpublish' : 'Publish'}
+                                                        >
+                                                            {alert.status === 'published'
+                                                                ? <ToggleRight className="w-4 h-4 text-emerald-400" />
+                                                                : <ToggleLeft className="w-4 h-4 text-slate-500" />
+                                                            }
+                                                        </button>
+                                                        <button onClick={() => openEdit(alert)} className="p-1.5 hover:bg-amber-500/10 rounded-lg" title="Edit">
+                                                            <Edit className="w-4 h-4 text-amber-400" />
+                                                        </button>
+                                                        <button onClick={() => void deleteAlert(alert._id)} className="p-1.5 hover:bg-red-500/10 rounded-lg" title="Delete">
+                                                            <Trash2 className="w-4 h-4 text-red-400" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
                             </table>
                         </div>
                     </>

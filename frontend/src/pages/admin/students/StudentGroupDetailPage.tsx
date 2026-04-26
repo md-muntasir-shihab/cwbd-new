@@ -13,6 +13,7 @@ import { adminUi } from '../../../lib/appRoutes';
 import { ADMIN_PATHS } from '../../../routes/adminPaths';
 import { downloadFile } from '../../../utils/download';
 import { useModuleAccess } from '../../../hooks/useModuleAccess';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 import {
   ArrowLeft, Users, Search, Plus, Download, X, Pencil, Star,
   CheckCircle, XCircle, UserMinus, BookOpen, Megaphone, FileSpreadsheet,
@@ -124,6 +125,14 @@ export default function StudentGroupDetailPage() {
   const [importPreview, setImportPreview] = useState<Record<string, unknown> | null>(null);
   const [importLoading, setImportLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Close modals on Escape key
+  const closeAddMembersModal = useCallback(() => { setAddMembersPreview(null); setPendingAddIds([]); }, []);
+  const closeImportModal = useCallback(() => { setImportModalOpen(false); setImportPreview(null); }, []);
+  const closeMoveModal = useCallback(() => { setMoveModalOpen(false); setMoveTargetGroupId(null); setMoveGroupSearch(''); }, []);
+  useEscapeKey(closeAddMembersModal, !!addMembersPreview);
+  useEscapeKey(closeImportModal, importModalOpen && !addMembersPreview);
+  useEscapeKey(closeMoveModal, moveModalOpen && !importModalOpen && !addMembersPreview);
 
   // Fetch all groups for Move to Group modal
   const { data: allGroups } = useQuery({
@@ -1135,7 +1144,7 @@ export default function StudentGroupDetailPage() {
                   <h4 className="text-sm font-medium text-slate-900 dark:text-white mb-2 flex items-center gap-1">
                     <FileSpreadsheet size={14} className="text-slate-500" /> Import Preview ({allRows.length} rows)
                   </h4>
-                  <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="max-h-64 overflow-x-auto overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
                     <table className="w-full text-xs">
                       <thead className="bg-slate-50 dark:bg-slate-800/60 sticky top-0">
                         <tr>

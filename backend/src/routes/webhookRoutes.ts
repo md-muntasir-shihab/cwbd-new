@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import ManualPayment from '../models/ManualPayment';
 import PaymentWebhookEvent from '../models/PaymentWebhookEvent';
 import { broadcastFinanceEvent } from '../realtime/financeStream';
+import { broadcastStudentDashboardEvent } from '../realtime/studentDashboardStream';
 import { getPanicSettings } from '../services/securityCenterService';
 import { logger } from '../utils/logger';
 import { createIncomeFromPayment } from '../services/financeCenterService';
@@ -166,13 +167,24 @@ router.post('/sslcommerz/ipn', async (req: Request, res: Response) => {
                 studentId: String(payment.studentId),
             });
 
+            // Push subscription update to student dashboard via SSE (Bug 1.21)
+            broadcastStudentDashboardEvent({
+                type: 'subscription-updated',
+                meta: {
+                    paymentId: String(payment._id),
+                    studentId: String(payment.studentId),
+                    status: 'paid',
+                    entryType: payment.entryType,
+                },
+            });
+
             logger.info('[Webhook] Payment marked as PAID', req, { tran_id, paymentId: String(payment._id) });
 
             // ── Auto-post income to Finance Center ──
             try {
                 const sourceType = payment.entryType === 'subscription' ? 'subscription_payment'
                     : payment.entryType === 'exam_fee' ? 'exam_payment'
-                    : 'manual_income';
+                        : 'manual_income';
                 await createIncomeFromPayment({
                     paymentId: String(payment._id),
                     studentId: String(payment.studentId),

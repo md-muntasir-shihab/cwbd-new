@@ -56,6 +56,8 @@ export default function SystemLogsPanel() {
     const [filterActor, setFilterActor] = useState('');
     const [filterFrom, setFilterFrom] = useState('');
     const [filterTo, setFilterTo] = useState('');
+    const [logsPage, setLogsPage] = useState(1);
+    const LOGS_PER_PAGE = 50;
     const isSuperAdmin = String(user?.role || '').toLowerCase() === 'superadmin';
 
     const logsQuery = useQuery({
@@ -65,12 +67,13 @@ export default function SystemLogsPanel() {
             filterActor,
             filterFrom,
             filterTo,
+            logsPage,
             isSuperAdmin ? 'system' : 'news',
         ],
         queryFn: async () => {
             const res = await adminGetAuditLogs({
-                page: 1,
-                limit: 50,
+                page: logsPage,
+                limit: LOGS_PER_PAGE,
                 action: filterAction || undefined,
                 actor: filterActor || undefined,
                 dateFrom: filterFrom || undefined,
@@ -219,26 +222,26 @@ export default function SystemLogsPanel() {
                 <div className="grid grid-cols-1 gap-3 border-b border-indigo-500/10 px-5 py-3 md:grid-cols-4">
                     <input
                         value={filterAction}
-                        onChange={(event) => setFilterAction(event.target.value)}
+                        onChange={(event) => { setFilterAction(event.target.value); setLogsPage(1); }}
                         placeholder="Filter action"
                         className="rounded-lg border border-indigo-500/20 bg-slate-950/70 px-3 py-2 text-xs text-white"
                     />
                     <input
                         value={filterActor}
-                        onChange={(event) => setFilterActor(event.target.value)}
+                        onChange={(event) => { setFilterActor(event.target.value); setLogsPage(1); }}
                         placeholder="Actor ID"
                         className="rounded-lg border border-indigo-500/20 bg-slate-950/70 px-3 py-2 text-xs text-white"
                     />
                     <input
                         type="date"
                         value={filterFrom}
-                        onChange={(event) => setFilterFrom(event.target.value)}
+                        onChange={(event) => { setFilterFrom(event.target.value); setLogsPage(1); }}
                         className="rounded-lg border border-indigo-500/20 bg-slate-950/70 px-3 py-2 text-xs text-white"
                     />
                     <input
                         type="date"
                         value={filterTo}
-                        onChange={(event) => setFilterTo(event.target.value)}
+                        onChange={(event) => { setFilterTo(event.target.value); setLogsPage(1); }}
                         className="rounded-lg border border-indigo-500/20 bg-slate-950/70 px-3 py-2 text-xs text-white"
                     />
                 </div>
@@ -282,6 +285,26 @@ export default function SystemLogsPanel() {
                             </div>
                         );
                     })}
+                </div>
+                {/* Pagination Controls */}
+                <div className="px-5 py-3 border-t border-indigo-500/10 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-500">Page {logsPage}</span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setLogsPage((p) => Math.max(1, p - 1))}
+                            disabled={logsPage <= 1}
+                            className="px-3 py-1.5 text-xs text-slate-400 hover:text-white bg-white/5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            ← Previous
+                        </button>
+                        <button
+                            onClick={() => setLogsPage((p) => p + 1)}
+                            disabled={logs.length < LOGS_PER_PAGE}
+                            className="px-3 py-1.5 text-xs text-slate-400 hover:text-white bg-white/5 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            Next →
+                        </button>
+                    </div>
                 </div>
             </div>
 

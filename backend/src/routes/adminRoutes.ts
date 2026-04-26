@@ -3,7 +3,7 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import ExcelJS from 'exceljs';
-import { authenticate, authorize, authorizePermission, forbidden, requirePermission } from '../middlewares/auth';
+import { authenticate, authorize, authorizePermission, forbidden, requirePermission, requireRole } from '../middlewares/auth';
 import { enforceAdminPanelPolicy, enforceAdminReadOnlyMode } from '../middlewares/securityGuards';
 import { subscriptionActionRateLimiter, financeExportRateLimiter, financeImportRateLimiter } from '../middlewares/securityRateLimit';
 import { requireSensitiveAction, trackSensitiveExport } from '../middlewares/sensitiveAction';
@@ -19,6 +19,7 @@ import {
     adminAssignExamGroups,
     adminForceSubmit,
     adminPublishResult,
+    adminGetPublishStatus,
     adminGetQuestions,
     adminCreateQuestion,
     adminUpdateQuestion,
@@ -617,6 +618,13 @@ function inferActionFromRequest(method: string, pathname: string): PermissionAct
 const enforceModulePermissions = (req: Request, res: Response, next: NextFunction) => {
     const moduleName = inferModuleFromPath(req.path);
     if (!moduleName) {
+        // Bug 1.14 fix: deny write operations for non-superadmin when module is unknown
+        const method = req.method.toUpperCase();
+        const role = (req as any).user?.role;
+        if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS' && role !== 'superadmin') {
+            res.status(403).json({ code: 'PERMISSION_DENIED', message: 'Write access denied for unmapped endpoint.' });
+            return;
+        }
         next();
         return;
     }
@@ -691,10 +699,20 @@ const requireDestructiveStepUp = (moduleName: string, actionName: string) => (
     })
 );
 
-/* All admin routes require auth + appropriate roles */
+/* All admin routes require auth + appropriate admin-level roles */
 router.use(authenticate);
+router.use(requireRole('admin', 'superadmin', 'chairman', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent'));
 router.use(enforceAdminPanelPolicy);
 router.use(enforceAdminReadOnlyMode);
+
+// Bug 1.16 fix: apply CSRF protection at router level for all state-changing methods
+router.use((req, res, next) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        return csrfProtection(req, res, next);
+    }
+    next();
+});
+
 router.use(enforceModulePermissions);
 
 router.get('/permissions/matrix', requirePermission('team_access_control', 'view'), (req: Request, res: Response) => {
@@ -868,6 +886,7 @@ router.post('/exams/:id/assign-groups', requirePermission('exams', 'edit'), admi
 router.delete('/exams/:id', requirePermission('exams', 'delete'), requireDestructiveStepUp('exams', 'exam_delete'), adminDeleteExam);
 router.patch('/exams/:id/publish', requirePermission('exams', 'publish'), adminPublishExam);
 router.patch('/exams/:id/publish-result', requirePermission('exams', 'publish'), requireTwoPersonForExamResultPublish, adminPublishResult);
+router.get('/exams/:id/publish-status', requirePermission('exams', 'publish'), adminGetPublishStatus);
 router.patch('/exams/:examId/force-submit/:studentId', requirePermission('exams', 'edit'), adminForceSubmit);
 router.patch('/exams/evaluate/:resultId', requirePermission('exams', 'edit'), adminEvaluateResult);
 router.get('/exams/:examId/results', requirePermission('exams', 'view'), adminGetExamResults);

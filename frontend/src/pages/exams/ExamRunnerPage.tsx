@@ -19,6 +19,7 @@ import {
 import { useExamDetail, useSaveAnswers, useSessionQuestions, useStartSession, useSubmitExam } from "../../hooks/useExamQueries";
 import { useExamAntiCheat } from "../../hooks/useExamAntiCheat";
 import { useProactiveTokenRefresh } from "../../hooks/useProactiveTokenRefresh";
+import MathText from "../../components/exam/MathText";
 import type { BlockReason, ExamAnswer, PendingAnswerRow, RunnerCache, SelectedOptionKey } from "../../types/exam";
 
 type SubmitMode = "manual" | "timeout";
@@ -860,9 +861,9 @@ export const ExamRunnerPage = () => {
                                     </button>
                                 </div>
 
-                                <div className="space-y-2 text-sm leading-relaxed text-text dark:text-dark-text">
-                                    {question.question_bn ? <p>{question.question_bn}</p> : null}
-                                    {question.question_en ? <p className={question.question_bn ? "text-text-muted dark:text-dark-text/70" : ""}>{question.question_en}</p> : null}
+                                <div className="space-y-2 text-sm leading-relaxed text-text dark:text-dark-text prose prose-sm max-w-none dark:prose-invert">
+                                    {question.question_bn ? <MathText>{question.question_bn}</MathText> : null}
+                                    {question.question_en ? <MathText className={question.question_bn ? "text-text-muted dark:text-dark-text/70" : ""}>{question.question_en}</MathText> : null}
                                 </div>
 
                                 {question.questionImageUrl ? (
@@ -894,7 +895,7 @@ export const ExamRunnerPage = () => {
                                                         {option.key}
                                                     </span>
                                                     <div className="flex-1">
-                                                        <span className="text-sm text-text dark:text-dark-text">{option.text_bn || option.text_en || "Option"}</span>
+                                                        <span className="text-sm text-text dark:text-dark-text"><MathText inline>{option.text_bn || option.text_en || "Option"}</MathText></span>
                                                         {option.imageUrl ? (
                                                             <img
                                                                 src={option.imageUrl}

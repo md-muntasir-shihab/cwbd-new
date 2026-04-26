@@ -33,11 +33,18 @@ function unpackUniversityList(payload: unknown): ApiUniversity[] {
   const data = payload as {
     universities?: ApiUniversity[];
     items?: ApiUniversity[];
-    data?: ApiUniversity[];
+    data?: unknown;
   };
   if (Array.isArray(data?.universities)) return data.universities;
   if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data)) return data.data as ApiUniversity[];
+  // Handle ResponseBuilder envelope: { success, data: { items: [...] } }
+  if (data?.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+    const inner = data.data as { universities?: ApiUniversity[]; items?: ApiUniversity[]; data?: ApiUniversity[] };
+    if (Array.isArray(inner.universities)) return inner.universities;
+    if (Array.isArray(inner.items)) return inner.items;
+    if (Array.isArray(inner.data)) return inner.data;
+  }
   return [];
 }
 
@@ -106,6 +113,10 @@ export function useUniversityDetail(slug: string | undefined) {
       const res = await getUniversityBySlug(slug!);
       const d = res.data as unknown as Record<string, unknown>;
       if (d && typeof d === 'object' && 'university' in d) return d.university as ApiUniversity;
+      // Handle ResponseBuilder envelope: { success, data: { ...universityFields } }
+      if (d && typeof d === 'object' && 'data' in d && d.data && typeof d.data === 'object') {
+        return d.data as ApiUniversity;
+      }
       return d as unknown as ApiUniversity;
     },
     staleTime: 60_000,

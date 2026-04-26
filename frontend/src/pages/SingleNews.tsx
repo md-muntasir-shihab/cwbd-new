@@ -353,7 +353,7 @@ export default function SingleNewsPage() {
                     className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-slate-950/60"
                 >
                     <div className="relative">
-                        <img src={image} alt={newsItem.title} className="h-56 w-full object-cover sm:h-72 lg:h-[400px]" loading="lazy" />
+                        <img src={image} alt={newsItem.title || 'News article'} className="h-56 w-full object-cover sm:h-72 lg:h-[400px]" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }} />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                         <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
                             <div className="flex flex-wrap items-center gap-2 text-xs mb-3">
@@ -388,6 +388,7 @@ export default function SingleNewsPage() {
                                         src={buildMediaUrl(newsItem.sourceIconUrl || settings.defaultSourceIconUrl || image)}
                                         alt={sourceName}
                                         className="h-4 w-4 rounded-full object-cover"
+                                        onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
                                     />
                                 ) : (
                                     <Globe2 className="h-4 w-4" />
@@ -466,9 +467,10 @@ export default function SingleNewsPage() {
                                     <div className="relative overflow-hidden">
                                         <img
                                             src={getArticleImage(item, settings)}
-                                            alt={item.title}
+                                            alt={item.title || 'Related article'}
                                             className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                             loading="lazy"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
                                         />
                                         {item.category && (
                                             <span className="absolute top-2 left-2 rounded-full bg-black/50 backdrop-blur-sm px-2 py-0.5 text-[10px] font-medium text-white">

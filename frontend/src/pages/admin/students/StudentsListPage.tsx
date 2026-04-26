@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
@@ -9,6 +9,7 @@ import {
 } from '../../../api/adminStudentApi';
 import { showConfirmDialog } from '../../../lib/appDialog';
 import { downloadFile } from '../../../utils/download';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 
 type Toast = { show: boolean; message: string; type: 'success' | 'error' };
 
@@ -77,6 +78,12 @@ export default function StudentsListPage() {
     setToast({ show: true, message, type });
     setTimeout(() => setToast(p => ({ ...p, show: false })), 3000);
   };
+
+  // Close modals on Escape key
+  const closeResetModal = useCallback(() => setResetModal({ open: false, id: '' }), []);
+  const closeImportModal = useCallback(() => setImportOpen(false), []);
+  useEscapeKey(closeResetModal, resetModal.open);
+  useEscapeKey(closeImportModal, importOpen && !resetModal.open);
 
   const handleExport = async () => {
     try {

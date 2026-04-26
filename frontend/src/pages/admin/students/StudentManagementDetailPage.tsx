@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 import {
   User, BookOpen, Shield, CreditCard, BarChart3, MessageSquare,
   AlertTriangle, Headphones, Settings, Heart, FileText, DollarSign,
@@ -87,6 +88,7 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
 }
 
 function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  useEscapeKey(onClose, open);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

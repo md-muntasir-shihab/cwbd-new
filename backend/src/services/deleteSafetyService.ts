@@ -12,6 +12,7 @@ import GroupMembership from '../models/GroupMembership';
 import StudentGroup from '../models/StudentGroup';
 import Exam from '../models/Exam';
 import NotificationJob from '../models/NotificationJob';
+import * as cacheService from './cacheService';
 
 // ─── Interfaces ─────────────────────────────────────────────
 
@@ -130,4 +131,83 @@ export async function bulkDeleteGroups(groupIds: string[]): Promise<BulkDeleteRe
     }
 
     return { deleted, skipped };
+}
+
+
+// ─── University Cascade Deletion (Bug 1.30) ─────────────────
+
+export interface CascadeDeleteResult {
+    success: boolean;
+    deletedCounts: Record<string, number>;
+    error?: string;
+}
+
+/**
+ * Cascade-deletes a university and all related records within a MongoDB transaction.
+ * Deletes: ExamCenter, StudentApplication, UniversityCluster membership, cache entries.
+ * If any deletion fails, the transaction is aborted.
+ *
+ * Requirements: 2.30
+ */
+export async function cascadeDeleteUniversity(
+    universityId: string,
+    session?: mongoose.ClientSession,
+): Promise<CascadeDeleteResult> {
+    const uid = new mongoose.Types.ObjectId(universityId);
+    const deletedCounts: Record<string, number> = {};
+
+    // Use provided session or create a new one
+    const ownSession = !session;
+    const txSession = session ?? await mongoose.startSession();
+
+    try {
+        if (ownSession) txSession.startTransaction();
+
+        // 1. Delete related ExamCenter records
+        const ExamCenter = mongoose.connection.collection('examcenters');
+        const ecResult = await ExamCenter.deleteMany({ universityId: uid }, { session: txSession });
+        deletedCounts.examCenters = ecResult.deletedCount;
+
+        // 2. Delete related StudentApplication records
+        const StudentApplication = mongoose.connection.collection('studentapplications');
+        const saResult = await StudentApplication.deleteMany({ universityId: uid }, { session: txSession });
+        deletedCounts.studentApplications = saResult.deletedCount;
+
+        // 3. Remove from UniversityCluster membership arrays
+        const UniversityCluster = mongoose.connection.collection('universityclusters');
+        const ucResult = await UniversityCluster.updateMany(
+            { universityIds: uid },
+            { $pull: { universityIds: uid } as any },
+            { session: txSession },
+        );
+        deletedCounts.clusterMemberships = ucResult.modifiedCount;
+
+        // 4. Delete the university itself
+        const University = mongoose.connection.collection('universities');
+        const uResult = await University.deleteOne({ _id: uid }, { session: txSession });
+        deletedCounts.university = uResult.deletedCount;
+
+        if (ownSession) await txSession.commitTransaction();
+
+        // 5. Invalidate cache entries (outside transaction)
+        try {
+            await cacheService.del(`university:${universityId}`);
+            await cacheService.del(`universities:list`);
+        } catch {
+            // Cache invalidation is best-effort
+        }
+
+        return { success: true, deletedCounts };
+    } catch (err) {
+        if (ownSession) {
+            try { await txSession.abortTransaction(); } catch { /* ignore */ }
+        }
+        return {
+            success: false,
+            deletedCounts,
+            error: err instanceof Error ? err.message : String(err),
+        };
+    } finally {
+        if (ownSession) txSession.endSession();
+    }
 }

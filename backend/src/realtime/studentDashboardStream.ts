@@ -6,7 +6,8 @@ export interface StudentDashboardEvent {
     | 'notification_updated'
     | 'featured_university_updated'
     | 'profile_updated'
-    | 'dashboard_config_updated';
+    | 'dashboard_config_updated'
+    | 'subscription-updated';
     timestamp: string;
     meta?: Record<string, unknown>;
 }

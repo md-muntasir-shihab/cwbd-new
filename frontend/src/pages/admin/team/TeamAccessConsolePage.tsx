@@ -22,6 +22,7 @@ import {
   Trash2, CheckCircle2, XCircle, AlertTriangle, RefreshCw,
   Fingerprint, KeyRound, UserCheck, UserX, Send,
 } from 'lucide-react';
+import { showConfirmDialog } from '../../../lib/appDialog';
 
 type TeamView = 'members' | 'roles' | 'permissions' | 'approval-rules' | 'activity' | 'security' | 'invites';
 
@@ -502,8 +503,8 @@ export default function TeamAccessConsolePage() {
                 key={tab.key}
                 onClick={() => navigate(tab.path)}
                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-all ${active
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'
                   }`}
               >
                 <TabIcon className="h-3.5 w-3.5" />
@@ -606,7 +607,7 @@ export default function TeamAccessConsolePage() {
               {filteredMembers.map((member) => {
                 const displayName = member.full_name || member.fullName || member.email;
                 return (
-                  <div key={member._id} className="group relative cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-900" onClick={() => navigate(`${ADMIN_PATHS.teamMembers}/${member._id}`)}>
+                  <div key={member._id} className="group relative cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-900 focus-within:ring-2 focus-within:ring-indigo-500" role="group" tabIndex={0} onClick={() => navigate(`${ADMIN_PATHS.teamMembers}/${member._id}`)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`${ADMIN_PATHS.teamMembers}/${member._id}`); } }}>
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
                         {getInitials(displayName)}
@@ -616,7 +617,7 @@ export default function TeamAccessConsolePage() {
                         <p className="truncate text-xs text-slate-500">{member.email}</p>
                       </div>
                       {canCreateTeam && (
-                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                           <button onClick={() => setActionMenuId(actionMenuId === member._id ? null : member._id)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300">
                             <MoreVertical className="h-4 w-4" />
                           </button>
@@ -692,7 +693,7 @@ export default function TeamAccessConsolePage() {
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {roles.map((role) => (
-                <div key={role._id} className={`cursor-pointer rounded-2xl border border-slate-200 border-l-4 p-4 transition-shadow hover:shadow-md dark:border-slate-700 ${ROLE_COLORS[role.name] || 'border-l-slate-400 bg-white dark:bg-slate-900'}`} onClick={() => navigate(`${ADMIN_PATHS.teamRoles}/${role._id}`)}>
+                <div key={role._id} className={`cursor-pointer rounded-2xl border border-slate-200 border-l-4 p-4 transition-shadow hover:shadow-md dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 ${ROLE_COLORS[role.name] || 'border-l-slate-400 bg-white dark:bg-slate-900'}`} role="group" tabIndex={0} onClick={() => navigate(`${ADMIN_PATHS.teamRoles}/${role._id}`)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`${ADMIN_PATHS.teamRoles}/${role._id}`); } }}>
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-slate-900 hover:text-indigo-600 dark:text-slate-100 dark:hover:text-indigo-400">{role.name}</h3>
@@ -719,7 +720,7 @@ export default function TeamAccessConsolePage() {
                       View Permissions
                     </button>
                     {canCreateTeam && <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800" onClick={async () => { await teamApi.duplicateRole(role._id); toast.success('Role duplicated'); await loadRoles(); }}><Copy className="h-3 w-3" /> Duplicate</button>}
-                    {!role.isSystemRole && canDeleteTeam && <button className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/20" onClick={async () => { await teamApi.deleteRole(role._id); toast.success('Role archived'); await loadRoles(); }}><Trash2 className="h-3 w-3" /> Archive</button>}
+                    {!role.isSystemRole && canDeleteTeam && <button className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/20" onClick={async () => { const userCount = role.totalUsers ?? 0; const confirmed = await showConfirmDialog({ title: `Archive role "${role.name}"?`, message: userCount > 0 ? `This role has ${userCount} assigned member${userCount === 1 ? '' : 's'}. They will become unassigned. This action cannot be undone.` : 'This will archive the role. This action cannot be undone.', confirmLabel: 'Archive', tone: 'danger' }); if (!confirmed) return; await teamApi.deleteRole(role._id); toast.success('Role archived'); await loadRoles(); }}><Trash2 className="h-3 w-3" /> Archive</button>}
                   </div>
                 </div>
               ))}

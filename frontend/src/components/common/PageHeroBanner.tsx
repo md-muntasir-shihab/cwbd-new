@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -68,8 +68,24 @@ export default function PageHeroBanner({
     const vantaInstanceRef = useRef<any>(null);
     const [vantaLoaded, setVantaLoaded] = useState(false);
 
+    const handleContextLost = useCallback((e: Event) => {
+        e.preventDefault();
+        // WebGL context lost — destroy Vanta and fall back to gradient
+        if (vantaInstanceRef.current) {
+            try { vantaInstanceRef.current.destroy(); } catch { /* ignore */ }
+            vantaInstanceRef.current = null;
+        }
+        setVantaLoaded(false);
+    }, []);
+
     useEffect(() => {
         if (vantaEffect === 'none' || !VANTA_IMPORT_MAP[vantaEffect]) return;
+
+        // Guard: THREE.js must be available on window for Vanta to work
+        if (!(window as any).THREE) {
+            console.warn('[PageHeroBanner] THREE.js not available on window — skipping Vanta');
+            return;
+        }
 
         let cancelled = false;
 
@@ -105,6 +121,12 @@ export default function PageHeroBanner({
                     ...(vantaEffect === 'halo' ? { size: 1.5, amplitudeFactor: 1.2 } : {}),
                 });
                 setVantaLoaded(true);
+
+                // Listen for WebGL context loss on the canvas Vanta created
+                const canvas = vantaRef.current?.querySelector('canvas');
+                if (canvas) {
+                    canvas.addEventListener('webglcontextlost', handleContextLost);
+                }
             } catch (err) {
                 // Vanta failed to load — gradient fallback will show
                 console.warn('[PageHeroBanner] Vanta init failed:', err);
@@ -113,20 +135,25 @@ export default function PageHeroBanner({
 
         return () => {
             cancelled = true;
+            // Clean up context loss listener
+            const canvas = vantaRef.current?.querySelector('canvas');
+            if (canvas) {
+                canvas.removeEventListener('webglcontextlost', handleContextLost);
+            }
             if (vantaInstanceRef.current) {
-                vantaInstanceRef.current.destroy();
+                try { vantaInstanceRef.current.destroy(); } catch { /* ignore */ }
                 vantaInstanceRef.current = null;
             }
             setVantaLoaded(false);
         };
-    }, [vantaEffect, vantaColor, vantaBackgroundColor]);
+    }, [vantaEffect, vantaColor, vantaBackgroundColor, handleContextLost]);
 
     const fallbackGradient = `linear-gradient(135deg, ${gradientFrom} 0%, ${gradientTo} 100%)`;
 
     return (
         <div
             ref={vantaRef}
-            className={`relative w-full overflow-hidden ${className}`}
+            className={`relative w-full min-h-[280px] sm:min-h-[320px] lg:min-h-[360px] overflow-hidden ${className}`}
             style={{
                 ...(!vantaLoaded ? { background: fallbackGradient } : {}),
             }}

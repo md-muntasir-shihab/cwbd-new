@@ -49,7 +49,15 @@ export const approvalKeys = {
 // ─── API Functions ───────────────────────────────────────────────────────────
 
 const fetchPendingApprovals = (): Promise<PendingApprovalsResponse> =>
-    api.get('/admin/students-v2/pending-approvals').then((r) => r.data);
+    api.get('/admin/students-v2/pending-approvals').then((r) => {
+        const d = r.data || {};
+        return {
+            registrations: d.registrations || d.pendingRegistrations || [],
+            registrationCount: d.registrationCount ?? 0,
+            profileChanges: d.profileChanges || [],
+            profileChangeCount: d.profileChangeCount ?? 0,
+        };
+    });
 
 const approveRegistration = (id: string): Promise<void> =>
     api.post(`/admin/students-v2/approve-registration/${id}`).then((r) => r.data);

@@ -162,6 +162,8 @@ export async function resolveSubscriptionAudience(opts: {
 export async function processSend(
     request: CampaignSendRequest,
 ): Promise<CampaignSendResult> {
+    const BATCH_SIZE = 50;
+    const BATCH_DELAY_MS = 1000;
     const policyResults: PolicyResult[] = [];
     const errors: string[] = [];
     let sent = 0;
@@ -421,53 +423,97 @@ export async function processSend(
         return { sent, blocked, deferred, errors, policyResults };
     }
 
-    // ── Step 10: Route to provider ──────────────────────────────────────
-    let routeResult: SendResult | undefined;
-    try {
-        // Send to each active recipient via the provider router
-        // For simplicity, we route a single representative payload;
-        // real batching would iterate per-recipient.
-        const payload = {
-            to: activeRecipients[0]?.contactIdentifier ?? '',
-            channel: request.channel,
-            subject: request.content.subject,
-            body: request.content.body,
-        };
+    // ── Step 10: Route to provider (with batching for large audiences) ──
+    const batchResults: Array<{ batchIndex: number; sent: number; failed: number; errors: string[] }> = [];
 
-        routeResult = await providerRouterService.route(
-            request.channel,
-            payload,
-            settings.providerRouting,
-        );
-
-        if (routeResult.success) {
-            sent = activeRecipients.length;
-            policyResults.push({
-                policy: 'provider_routing',
-                status: 'pass',
-                reason: `Delivered via provider ${routeResult.providerId ?? 'unknown'}`,
-                detail: routeResult,
-            });
-        } else {
-            blocked += activeRecipients.length;
-            errors.push(routeResult.error ?? 'Provider routing failed');
-            policyResults.push({
-                policy: 'provider_routing',
-                status: 'block',
-                reason: routeResult.error ?? 'All providers exhausted',
-                detail: routeResult,
-            });
-        }
-    } catch (err) {
-        blocked += activeRecipients.length;
-        const errMsg = err instanceof Error ? err.message : String(err);
-        errors.push(errMsg);
-        policyResults.push({
-            policy: 'provider_routing',
-            status: 'block',
-            reason: errMsg,
-        });
+    // Chunk recipients into batches of BATCH_SIZE
+    const batches: typeof activeRecipients[] = [];
+    for (let i = 0; i < activeRecipients.length; i += BATCH_SIZE) {
+        batches.push(activeRecipients.slice(i, i + BATCH_SIZE));
     }
+
+    let routeResult: SendResult | undefined;
+    const failedBatches: number[] = [];
+
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        const batchResult = { batchIndex, sent: 0, failed: 0, errors: [] as string[] };
+
+        try {
+            const payload = {
+                to: batch[0]?.contactIdentifier ?? '',
+                channel: request.channel,
+                subject: request.content.subject,
+                body: request.content.body,
+            };
+
+            routeResult = await providerRouterService.route(
+                request.channel,
+                payload,
+                settings.providerRouting,
+            );
+
+            if (routeResult.success) {
+                batchResult.sent = batch.length;
+                sent += batch.length;
+            } else {
+                batchResult.failed = batch.length;
+                blocked += batch.length;
+                batchResult.errors.push(routeResult.error ?? 'Provider routing failed');
+                errors.push(routeResult.error ?? `Batch ${batchIndex} failed`);
+                failedBatches.push(batchIndex);
+            }
+        } catch (err) {
+            batchResult.failed = batch.length;
+            blocked += batch.length;
+            const errMsg = err instanceof Error ? err.message : String(err);
+            batchResult.errors.push(errMsg);
+            errors.push(errMsg);
+            failedBatches.push(batchIndex);
+        }
+
+        batchResults.push(batchResult);
+
+        // Delay between batches (except after the last one)
+        if (batchIndex < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+        }
+    }
+
+    // Retry failed batches once
+    for (const failedIdx of failedBatches) {
+        const batch = batches[failedIdx];
+        try {
+            const payload = {
+                to: batch[0]?.contactIdentifier ?? '',
+                channel: request.channel,
+                subject: request.content.subject,
+                body: request.content.body,
+            };
+            routeResult = await providerRouterService.route(
+                request.channel,
+                payload,
+                settings.providerRouting,
+            );
+            if (routeResult.success) {
+                sent += batch.length;
+                blocked -= batch.length;
+                batchResults[failedIdx].sent = batch.length;
+                batchResults[failedIdx].failed = 0;
+            }
+        } catch {
+            // Retry failed — keep original failure
+        }
+    }
+
+    policyResults.push({
+        policy: 'provider_routing',
+        status: sent > 0 ? 'pass' : 'block',
+        reason: sent > 0
+            ? `Delivered ${sent} via ${batches.length} batch(es)`
+            : 'All batches failed',
+        detail: { batchResults, totalBatches: batches.length },
+    });
 
     // ── Step 11: Record idempotency key (Req 17.1) ──────────────────────
     const sendResult: CampaignSendResult = { sent, blocked, deferred, errors, policyResults };

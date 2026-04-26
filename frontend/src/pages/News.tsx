@@ -448,9 +448,10 @@ export default function NewsPage() {
                                     <div className="relative overflow-hidden rounded-xl">
                                         <img
                                             src={getArticleImage(preview, settings)}
-                                            alt={preview.title}
+                                            alt={preview.title || 'News article'}
                                             className="h-48 w-full object-cover"
                                             loading="lazy"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
                                         />
                                         {preview.category && (
                                             <span className="absolute top-3 left-3 rounded-full bg-white/90 dark:bg-slate-900/90 px-2.5 py-0.5 text-[10px] font-semibold text-[var(--primary)] backdrop-blur-sm shadow-sm">
@@ -727,9 +728,10 @@ function NewsArticleCard({
                 <div className="relative overflow-hidden rounded-l-2xl">
                     <img
                         src={getArticleImage(news, settings)}
-                        alt={news.title}
+                        alt={news.title || 'News article'}
                         className="h-40 w-full object-cover sm:h-full transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).src = buildMediaUrl('/logo.svg'); }}
                     />
                     {news.category && (
                         <span className="absolute top-2.5 left-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 px-2.5 py-0.5 text-[10px] font-semibold text-[var(--primary)] backdrop-blur-sm shadow-sm">

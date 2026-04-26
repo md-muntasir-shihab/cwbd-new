@@ -1193,6 +1193,17 @@ export async function adminToggleUserStatus(req: AuthRequest, res: Response): Pr
 
         user.status = user.status === 'active' ? 'suspended' : 'active';
         await user.save();
+
+        // Bug 1.10 fix: Revoke protected file access when user is suspended
+        if (user.status === 'suspended') {
+            try {
+                const { revokeUploadsForUser } = await import('../services/secureUploadService');
+                await revokeUploadsForUser(String(user._id));
+            } catch (revokeErr) {
+                console.warn('[adminToggleUserStatus] Failed to revoke uploads for user:', revokeErr);
+            }
+        }
+
         await createAuditLog(req, 'user_status_toggled', String(user._id), 'user', { status: user.status });
         broadcastUserEvent({
             type: 'user_status_changed',
@@ -1229,6 +1240,13 @@ export async function adminBulkUserAction(req: AuthRequest, res: Response): Prom
 
         let affected = 0;
         if (action === 'delete') {
+            // Bug 1.10 fix: Revoke protected file access before deleting users
+            try {
+                const { revokeUploadsForUser } = await import('../services/secureUploadService');
+                await Promise.all(userIds.map((id: string) => revokeUploadsForUser(id)));
+            } catch (revokeErr) {
+                console.warn('[adminBulkUserAction] Failed to revoke uploads for deleted users:', revokeErr);
+            }
             await Promise.all([
                 User.deleteMany({ _id: { $in: userIds } }),
                 StudentProfile.deleteMany({ user_id: { $in: userIds } }),
@@ -1239,6 +1257,13 @@ export async function adminBulkUserAction(req: AuthRequest, res: Response): Prom
         } else if (action === 'suspend') {
             const result = await User.updateMany({ _id: { $in: userIds } }, { $set: { status: 'suspended' } });
             affected = result.modifiedCount;
+            // Bug 1.10 fix: Revoke protected file access for suspended users
+            try {
+                const { revokeUploadsForUser } = await import('../services/secureUploadService');
+                await Promise.all(userIds.map((id: string) => revokeUploadsForUser(id)));
+            } catch (revokeErr) {
+                console.warn('[adminBulkUserAction] Failed to revoke uploads for suspended users:', revokeErr);
+            }
         } else if (action === 'activate') {
             const result = await User.updateMany({ _id: { $in: userIds } }, { $set: { status: 'active' } });
             affected = result.modifiedCount;

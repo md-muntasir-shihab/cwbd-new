@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Plus, Trash2, Eye, X } from 'lucide-react';
 import {
@@ -6,6 +6,7 @@ import {
   previewAudienceSegment, deleteAudienceSegment,
 } from '../../../api/adminStudentApi';
 import { showConfirmDialog } from '../../../lib/appDialog';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 
 type Segment = {
   _id: string; name: string; type: string;
@@ -19,6 +20,11 @@ const STATUSES = ['active', 'suspended', 'blocked', 'pending'];
 export default function StudentAudiencesPage() {
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+
+  // Close create modal on Escape key
+  const closeCreateModal = useCallback(() => setShowCreate(false), []);
+  useEscapeKey(closeCreateModal, showCreate);
+
   const [name, setName] = useState('');
   const [rules, setRules] = useState({
     departments: [] as string[], batches: [] as string[],

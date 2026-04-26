@@ -31,7 +31,7 @@ type AdminImageUploadFieldProps = {
 async function uploadWithDefaultMediaEndpoint(file: File, category: UploadCategory): Promise<string> {
     try {
         const processedFile = await compressImage(file, 0.15); // max 150KB
-        
+
         const response = await adminUploadMedia(processedFile, {
             visibility: 'public',
             category,
@@ -43,9 +43,9 @@ async function uploadWithDefaultMediaEndpoint(file: File, category: UploadCatego
         }
         return nextUrl;
     } catch (error) {
-         console.warn("Upload failed, trying original file...", error);
+        console.warn("Upload failed, trying original file...", error);
         // Fallback or re-throw
-         const response = await adminUploadMedia(file, {
+        const response = await adminUploadMedia(file, {
             visibility: 'public',
             category,
         });
@@ -86,6 +86,14 @@ export default function AdminImageUploadField({
 
     const handleUpload = async (file?: File | null) => {
         if (!file || disabled) return;
+        // Validate file size (max 5MB)
+        const MAX_FILE_SIZE = 5 * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE) {
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            setError(`File too large (${sizeMB}MB). Maximum allowed is 5MB.`);
+            toast.error(`File too large (${sizeMB}MB). Maximum is 5MB.`);
+            return;
+        }
         setUploading(true);
         setError('');
         try {
@@ -157,11 +165,10 @@ export default function AdminImageUploadField({
                             <div className="flex flex-wrap gap-2">
                                 <label
                                     htmlFor={inputId}
-                                    className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                                        disabled || uploading
+                                    className={`inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition ${disabled || uploading
                                             ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500'
                                             : 'border-indigo-500/20 bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/15 dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:text-indigo-100'
-                                    }`}
+                                        }`}
                                 >
                                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageUp className="h-4 w-4" />}
                                     {hasValue ? 'Replace image' : 'Upload image'}

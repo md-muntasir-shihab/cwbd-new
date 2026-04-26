@@ -134,9 +134,10 @@ function ExamCard({
                 <div className="relative h-40 overflow-hidden">
                     <img
                         src={item.bannerImageUrl}
-                        alt={item.title}
+                        alt={item.title || 'Exam banner'}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                     <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg ${isLive ? "bg-success/90" : item.status === "upcoming" ? "bg-primary/90" : "bg-slate-500/90"
@@ -163,7 +164,7 @@ function ExamCard({
                         {item.title}
                     </h3>
                     <p className="mt-1 text-xs text-text-muted dark:text-dark-text/70">
-                        {item.subject} - {item.examCategory}
+                        {item.subject || 'General'} - {item.examCategory || 'Uncategorized'}
                     </p>
                 </div>
 
@@ -176,7 +177,7 @@ function ExamCard({
                     </div>
                     <div className="flex items-center gap-1.5">
                         <Clock3 className="h-3.5 w-3.5 text-primary" />
-                        <span>Duration: {durationLabel(item.durationMinutes)}</span>
+                        <span>Duration: {durationLabel(item.durationMinutes || 0)}</span>
                     </div>
                 </div>
 
@@ -194,7 +195,7 @@ function ExamCard({
                             type="button"
                             onClick={() => void handleExternalStart()}
                             disabled={startingExternal}
-                            className="inline-flex min-h-[42px] items-center justify-center rounded-xl px-4 text-sm font-semibold btn-primary disabled:opacity-50"
+                            className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-semibold btn-primary disabled:opacity-50"
                         >
                             {startingExternal ? "Starting..." : "Start"}
                         </button>
@@ -203,7 +204,7 @@ function ExamCard({
                             href={ctaHref}
                             target="_blank"
                             rel="noreferrer"
-                            className={`inline-flex min-h-[42px] items-center justify-center rounded-xl px-4 text-sm font-semibold ${isBlocked ? "btn-secondary" : "btn-primary"
+                            className={`inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-semibold ${isBlocked ? "btn-secondary" : "btn-primary"
                                 }`}
                         >
                             {ctaLabel}
@@ -211,7 +212,7 @@ function ExamCard({
                     ) : (
                         <Link
                             to={ctaHref}
-                            className={`inline-flex min-h-[42px] items-center justify-center rounded-xl px-4 text-sm font-semibold ${isBlocked ? "btn-secondary" : "btn-primary"
+                            className={`inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-sm font-semibold ${isBlocked ? "btn-secondary" : "btn-primary"
                                 }`}
                         >
                             {ctaLabel}

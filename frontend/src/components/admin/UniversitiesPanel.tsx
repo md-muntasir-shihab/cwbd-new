@@ -1,6 +1,7 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import { Activity, CheckSquare, ChevronDown, ChevronUp, Download, Edit, Loader2, Plus, RefreshCw, Save, Search, Square, Trash2, Upload, X } from 'lucide-react';
 import {
   AdminBulkTargetOptions,
@@ -50,6 +51,13 @@ import { downloadFile } from '../../utils/download';
 import { promptForSensitiveActionProof } from '../../utils/sensitiveAction';
 import { showConfirmDialog, showPromptDialog } from '../../lib/appDialog';
 
+
+/** Zod validation schema for university create/edit form */
+const universityFormSchema = z.object({
+  name: z.string().min(1, 'University name is required').max(300, 'Name must be 300 characters or fewer'),
+  shortForm: z.string().min(1, 'Short form / abbreviation is required').max(50, 'Short form must be 50 characters or fewer'),
+  category: z.string().min(1, 'Category is required'),
+});
 
 type Tab = 'universities' | 'categories' | 'clusters' | 'import';
 type StatusFilter = 'all' | 'active' | 'inactive' | 'archived';
@@ -294,6 +302,7 @@ export default function UniversitiesPanel() {
   const [validatingImport, setValidatingImport] = useState(false);
   const [committingImport, setCommittingImport] = useState(false);
   const [refreshingImportStatus, setRefreshingImportStatus] = useState(false);
+  const [importMappingSearch, setImportMappingSearch] = useState('');
   const importFileRef = useRef<HTMLInputElement>(null);
 
   const pageAllSelected = universities.length > 0 && universities.every((u) => selectedIds.includes(u._id));
@@ -399,6 +408,52 @@ export default function UniversitiesPanel() {
       return acc;
     }, {}));
   }, [importDefaults, importInit?.sampleRows, importMapping, mappedImportFields]);
+
+  const importStep: 'upload' | 'mapping' | 'validated' | 'committed' = importCommit ? 'committed' : importValidation ? 'validated' : importInit ? 'mapping' : 'upload';
+  const importMappedCount = mappedImportFields.length;
+  const importTotalFields = IMPORT_FIELDS.length;
+  const importAutoMappedCount = useMemo(() => {
+    if (!importInit) return 0;
+    return Object.keys(importInit.suggestedMapping || {}).length;
+  }, [importInit]);
+
+  const filteredImportFields = useMemo(() => {
+    if (!importMappingSearch.trim()) return IMPORT_FIELDS;
+    const q = importMappingSearch.trim().toLowerCase();
+    return IMPORT_FIELDS.filter((f) => f.toLowerCase().includes(q) || (importMapping[f] || '').toLowerCase().includes(q));
+  }, [importMappingSearch, importMapping]);
+
+  const resetImport = () => {
+    setImportFile(null);
+    setImportInit(null);
+    setImportJobId('');
+    setImportMapping({});
+    setImportDefaults({});
+    setImportValidation(null);
+    setImportCommit(null);
+    setImportMode('update-existing');
+    setImportMappingSearch('');
+    if (importFileRef.current) importFileRef.current.value = '';
+  };
+
+  const autoMapAll = () => {
+    if (!importInit) return;
+    const guessed: Record<string, string> = {};
+    IMPORT_FIELDS.forEach((f) => {
+      const m = (importInit.headers || []).find((h) => h.trim().toLowerCase() === f.toLowerCase());
+      if (m) guessed[f] = m;
+    });
+    if (importInit.suggestedMapping) {
+      Object.entries(importInit.suggestedMapping).forEach(([k, v]) => { if (v) guessed[k] = v; });
+    }
+    setImportMapping((prev) => ({ ...prev, ...guessed }));
+    toast.success(`Auto-mapped ${Object.keys(guessed).length} fields`);
+  };
+
+  const clearAllMappings = () => {
+    setImportMapping({});
+    toast.success('All mappings cleared');
+  };
 
   const buildActiveFilterPayload = (): Record<string, unknown> => {
     const payload: Record<string, unknown> = { status: statusFilter, sortBy, sortOrder };
@@ -560,8 +615,18 @@ export default function UniversitiesPanel() {
   };
 
   const saveUniversity = async () => {
-    if (!form.name?.trim()) { toast.error('Name is required'); return; }
-    if (!form.shortForm?.trim()) { toast.error('Short form is required'); return; }
+    const validation = universityFormSchema.safeParse({
+      name: (form.name || '').trim(),
+      shortForm: (form.shortForm || '').trim(),
+      category: (form.category || '').trim(),
+    });
+    if (!validation.success) {
+      const zodError = (validation as any).error;
+      const issues: Array<{ message: string }> = zodError?.issues ?? [];
+      const firstError = issues[0];
+      toast.error(firstError?.message || 'Validation failed');
+      return;
+    }
     setSavingUniversity(true);
     try {
       const payload: Record<string, unknown> = {
@@ -593,7 +658,8 @@ export default function UniversitiesPanel() {
   const deleteOne = async (id: string) => {
     const confirmed = await showConfirmDialog({
       title: 'Delete university?',
-      message: 'This removes the university record and its admin-managed data from the current listing.',
+      message: 'This will remove the university record. Related data in other collections may be affected.',
+      description: 'Deleting this university may impact:\n• Student applications referencing this university\n• Exam questions linked to this university\n• Exams assigned to this university\n• Cluster memberships containing this university',
       confirmLabel: 'Delete university',
       cancelLabel: 'Keep record',
       tone: 'danger',
@@ -720,11 +786,13 @@ export default function UniversitiesPanel() {
     }
   };
 
+  const [exporting, setExporting] = useState(false);
   const doExport = async (format: 'csv' | 'xlsx') => {
     if (exportScope === 'selected' && selectedIds.length === 0) {
       toast.error('Select at least one university before exporting selected items');
       return;
     }
+    setExporting(true);
     try {
       const params: Record<string, string> = { format, sortBy, sortOrder, status: statusFilter };
       if (exportScope !== 'all') {
@@ -735,8 +803,14 @@ export default function UniversitiesPanel() {
       if (exportScope === 'selected' && selectedIds.length > 0) params.selectedIds = selectedIds.join(',');
       if (exportScope === 'all') params.status = 'all';
       const r = await adminExportUniversitiesSheet(params);
-      downloadFile(r, { filename: `universities_export.${format}` });
-    } catch { toast.error('Export failed'); }
+      const filename = downloadFile(r, { filename: `universities_export.${format}` });
+      toast.success(`Exported as ${filename}`);
+    } catch (error: unknown) {
+      const msg = (error instanceof Error && error.message === 'Sensitive action cancelled')
+        ? 'Export cancelled'
+        : readErrorMessage(error, 'Export failed — check permissions or try again');
+      toast.error(msg);
+    } finally { setExporting(false); }
   };
 
   const saveHomeCategories = async () => {
@@ -1268,8 +1342,8 @@ export default function UniversitiesPanel() {
                 <option value="filtered">Export Filtered</option>
                 <option value="all">Export All</option>
               </select>
-              <button type="button" onClick={() => void doExport('csv')} className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200"><Download className="w-4 h-4" /> CSV</button>
-              <button type="button" onClick={() => void doExport('xlsx')} className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200"><Download className="w-4 h-4" /> XLSX</button>
+              <button type="button" disabled={exporting} onClick={() => void doExport('csv')} className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200 disabled:opacity-40 transition-all">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} CSV</button>
+              <button type="button" disabled={exporting} onClick={() => void doExport('xlsx')} className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200 disabled:opacity-40 transition-all">{exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} XLSX</button>
               <p className="text-xs text-slate-400 ml-auto">Selected: {selectedIds.length} | Total: {totalCount}</p>
             </div>
           </div>
@@ -1696,54 +1770,138 @@ export default function UniversitiesPanel() {
 
       {tab === 'import' && (
         <section className="space-y-4">
-          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 space-y-4 shadow-xl shadow-indigo-900/20 ring-1 ring-white/[0.03]">
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-tight">CSV/XLSX Mapping Import</h3>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Upload and map external data sources</p>
+          {/* ── Step Indicator ── */}
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-4 shadow-xl shadow-indigo-900/20 ring-1 ring-white/[0.03]">
+            <div className="flex items-center gap-1 sm:gap-2">
+              {(['upload', 'mapping', 'validated', 'committed'] as const).map((step, idx) => {
+                const labels = ['Upload File', 'Map Columns', 'Validate', 'Commit'];
+                const icons = ['📁', '🔗', '✅', '🚀'];
+                const isActive = step === importStep;
+                const isPast = (['upload', 'mapping', 'validated', 'committed'] as const).indexOf(importStep) > idx;
+                return (
+                  <div key={step} className="flex items-center gap-1 sm:gap-2 flex-1">
+                    <div className={`flex items-center gap-1.5 rounded-xl px-2 sm:px-3 py-2 text-[11px] font-bold transition-all w-full justify-center ${isActive ? 'bg-indigo-500/20 border border-indigo-400/40 text-indigo-200 shadow-lg shadow-indigo-500/10' : isPast ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-slate-950/30 border border-slate-700/20 text-slate-500'}`}>
+                      <span>{isPast ? '✓' : icons[idx]}</span>
+                      <span className="hidden sm:inline">{labels[idx]}</span>
+                    </div>
+                    {idx < 3 && <div className={`hidden sm:block w-4 h-px flex-shrink-0 ${isPast ? 'bg-emerald-500/40' : 'bg-slate-700/30'}`} />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Step 1: Upload ── */}
+          <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 space-y-4 ring-1 ring-white/[0.03]">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">Step 1: Upload Data File</h3>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">CSV, XLSX, XLS supported — max 10MB</p>
+              </div>
+              {importJobId && (
+                <button type="button" onClick={resetImport} className="inline-flex items-center gap-2 rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-1.5 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20 transition-all">
+                  <X className="w-3.5 h-3.5" /> New Import
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3 bg-slate-950/40 rounded-xl p-4 border border-indigo-500/5 transition-all hover:border-indigo-500/20">
               <input ref={importFileRef} type="file" accept=".csv,.xlsx,.xls" onChange={(e: ChangeEvent<HTMLInputElement>) => setImportFile(e.target.files?.[0] || null)} className="hidden" />
               <button type="button" onClick={() => importFileRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-400 hover:bg-indigo-500/20 transition-all"><Upload className="w-4 h-4" /> Choose File</button>
               <button type="button" onClick={() => void downloadTemplate('csv')} className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition-all"><Download className="w-4 h-4" /> Demo CSV</button>
               <button type="button" onClick={() => void downloadTemplate('xlsx')} className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-4 py-2 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all"><Download className="w-4 h-4" /> Demo XLSX</button>
-              <span className="text-xs text-slate-300 font-medium">{importFile ? importFile.name : 'No file selected'}</span>
-              <button type="button" disabled={initializingImport} onClick={() => void initImport()} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-40 transition-all">{initializingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Initialize Job</button>
+              {importFile ? (
+                <span className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-3 py-1 text-xs text-indigo-200 font-medium">
+                  📄 {importFile.name}
+                  <span className="text-slate-500">({(importFile.size / 1024).toFixed(1)} KB)</span>
+                </span>
+              ) : <span className="text-xs text-slate-500 italic">No file selected</span>}
+              <button type="button" disabled={initializingImport || !importFile} onClick={() => void initImport()} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 disabled:opacity-40 transition-all">{initializingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Initialize Job</button>
             </div>
             {importJobId && (
               <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs text-indigo-300 flex items-center gap-3 font-medium animate-in fade-in slide-in-from-top-2">
                 <Activity className="w-4 h-4" />
-                <span>Active Job ID: <code className="bg-slate-950/50 px-2 py-0.5 rounded text-white">{importJobId}</code></span>
+                <span>Job: <code className="bg-slate-950/50 px-2 py-0.5 rounded text-white font-mono text-[10px]">{importJobId}</code></span>
+                <span className="text-slate-500">|</span>
+                <span>File: <strong className="text-white">{importInit?.sampleRows?.length || 0}</strong> rows</span>
+                <span className="text-slate-500">|</span>
+                <span>Headers: <strong className="text-white">{importInit?.headers?.length || 0}</strong> columns</span>
                 <button type="button" disabled={refreshingImportStatus} onClick={() => void refreshImport()} className="ml-auto inline-flex items-center gap-1 hover:text-white transition-colors">
                   {refreshingImportStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                  Refresh Status
+                  Refresh
                 </button>
               </div>
             )}
           </div>
 
           {importInit && (
-            <div className="rounded-2xl border border-white/10 bg-[#0f1d37] p-4 space-y-3">
-              <h4 className="text-sm font-bold text-white">Step 2: Column Mapping</h4>
-              <p className="text-xs text-slate-400">
-                Only mapped columns and explicit defaults will be imported. Unmapped file columns will be ignored.
-              </p>
-              <div className="overflow-x-auto rounded-xl border border-slate-700/30 bg-slate-950/40">
+            <div className="rounded-2xl border border-white/10 bg-[#0f1d37] p-5 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-white">Step 2: Column Mapping</h4>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Map your file columns to database fields. Only mapped columns will be imported.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${importMappedCount >= 3 ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300' : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'}`}>
+                    {importMappedCount}/{importTotalFields} mapped
+                  </span>
+                  <button type="button" onClick={autoMapAll} className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/20 bg-cyan-500/10 px-3 py-1.5 text-[11px] font-bold text-cyan-300 hover:bg-cyan-500/20 transition-all">
+                    <RefreshCw className="w-3 h-3" /> Auto-Map
+                  </button>
+                  <button type="button" onClick={clearAllMappings} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600/30 bg-slate-800/50 px-3 py-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-200 transition-all">
+                    <X className="w-3 h-3" /> Clear
+                  </button>
+                </div>
+              </div>
+
+              {importAutoMappedCount > 0 && importMappedCount === 0 && (
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-xs text-cyan-200 flex items-center gap-2">
+                  💡 <strong>{importAutoMappedCount}</strong> columns can be auto-mapped. Click &quot;Auto-Map&quot; to apply suggested mappings.
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-slate-500" />
+                <input
+                  value={importMappingSearch}
+                  onChange={(e) => setImportMappingSearch(e.target.value)}
+                  placeholder="Filter fields..."
+                  className="flex-1 rounded-lg border border-slate-700/40 bg-slate-950/50 px-3 py-1.5 text-xs text-white focus:border-indigo-400/60 outline-none transition-all"
+                />
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-700/30 bg-slate-950/40 max-h-[420px] overflow-y-auto">
                 <table className="min-w-[720px] w-full text-xs">
-                  <thead className="bg-slate-950/60 text-slate-400 border-b border-slate-700/30">
-                    <tr><th className="px-4 py-3 text-left font-bold uppercase tracking-wider">Target Field</th><th className="px-4 py-3 text-left font-bold uppercase tracking-wider">Source Column (from File)</th></tr>
+                  <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-700/30 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-bold uppercase tracking-wider w-[35%]">Target Field</th>
+                      <th className="px-4 py-3 text-left font-bold uppercase tracking-wider">Source Column (from File)</th>
+                      <th className="px-2 py-3 text-center font-bold uppercase tracking-wider w-16">Status</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/20">
-                    {IMPORT_FIELDS.map((field) => (
-                      <tr key={field} className="hover:bg-indigo-500/[0.02]">
-                        <td className="px-4 py-2.5 text-slate-200 font-medium">{field}</td>
-                        <td className="px-4 py-2.5">
-                          <select value={importMapping[field] || ''} onChange={(e) => setImportMapping((prev) => ({ ...prev, [field]: e.target.value }))} className="w-full rounded-lg border border-slate-700/40 bg-slate-900/65 px-3 py-1.5 text-white focus:border-indigo-500/40 outline-none transition-all">
-                            <option value="">-- unmapped --</option>
-                            {(importInit.headers || []).map((h) => <option key={`${field}-${h}`} value={h}>{h}</option>)}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredImportFields.map((field) => {
+                      const isMapped = Boolean(importMapping[field]);
+                      const isRequired = field === 'name' || field === 'category';
+                      return (
+                        <tr key={field} className={`transition-all ${isMapped ? 'bg-emerald-500/[0.03]' : isRequired ? 'bg-rose-500/[0.03]' : 'hover:bg-indigo-500/[0.02]'}`}>
+                          <td className="px-4 py-2.5">
+                            <span className="text-slate-200 font-medium">{field}</span>
+                            {isRequired && <span className="ml-1.5 text-[9px] font-bold text-rose-400 uppercase">required</span>}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <select value={importMapping[field] || ''} onChange={(e) => setImportMapping((prev) => ({ ...prev, [field]: e.target.value }))} className={`w-full rounded-lg border px-3 py-1.5 text-white focus:border-indigo-500/40 outline-none transition-all ${isMapped ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-slate-700/40 bg-slate-900/65'}`}>
+                              <option value="">-- unmapped --</option>
+                              {(importInit.headers || []).map((h) => <option key={`${field}-${h}`} value={h}>{h}</option>)}
+                            </select>
+                          </td>
+                          <td className="px-2 py-2.5 text-center">
+                            {isMapped ? <span className="text-emerald-400 text-sm">✓</span> : isRequired ? <span className="text-rose-400 text-sm">!</span> : <span className="text-slate-600">—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1753,7 +1911,7 @@ export default function UniversitiesPanel() {
                   <div>
                     <p className="text-sm font-bold text-white">Mapped Preview</p>
                     <p className="text-xs text-slate-400">
-                      Showing only the fields that will be written to the database from your current mapping/defaults.
+                      Fields that will be written to the database from your current mapping/defaults.
                     </p>
                   </div>
                   <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[11px] font-semibold text-indigo-200">
@@ -1763,111 +1921,176 @@ export default function UniversitiesPanel() {
 
                 {mappedImportFields.length === 0 ? (
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
-                    No fields are currently mapped. Map at least the required columns before validation.
+                    No fields mapped yet. Map at least <strong>name</strong> and <strong>category</strong> before validation.
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1.5">
                       {mappedImportFields.map((field) => (
-                        <span key={field} className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-[11px] font-semibold text-cyan-100">
-                          {field}
+                        <span key={field} className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-100">
+                          {field} → {importMapping[field] || '(default)'}
                         </span>
                       ))}
                     </div>
-                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                      {mappedImportPreviewRows.map((row, index) => (
-                        <article key={`mapped-preview-${index}`} className="rounded-xl border border-slate-700/30 bg-slate-900/65 p-4">
-                          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Sample Row {index + 1}</p>
-                          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {mappedImportFields.map((field) => (
-                              <div key={`${field}-${index}`} className="rounded-lg border border-indigo-500/5 bg-slate-950/45 px-3 py-2">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{field}</p>
-                                <p className="mt-1 break-words text-sm text-slate-100">{String(row[field] ?? '') || '-'}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
+                    {mappedImportPreviewRows.length > 0 && (
+                      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                        {mappedImportPreviewRows.slice(0, 3).map((row, index) => (
+                          <article key={`mapped-preview-${index}`} className="rounded-xl border border-slate-700/30 bg-slate-900/65 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-2">Sample Row {index + 1}</p>
+                            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                              {mappedImportFields.slice(0, 10).map((field) => (
+                                <div key={`${field}-${index}`} className="rounded-lg border border-indigo-500/5 bg-slate-950/45 px-2.5 py-1.5">
+                                  <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">{field}</p>
+                                  <p className="mt-0.5 break-words text-xs text-slate-100 truncate">{String(row[field] ?? '') || '—'}</p>
+                                </div>
+                              ))}
+                              {mappedImportFields.length > 10 && (
+                                <div className="rounded-lg border border-slate-700/20 bg-slate-950/30 px-2.5 py-1.5 text-[10px] text-slate-500 italic">
+                                  +{mappedImportFields.length - 10} more fields
+                                </div>
+                              )}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input value={String(importDefaults.category || '')} onChange={(e) => setImportDefaults((prev) => ({ ...prev, category: e.target.value }))} placeholder="Default category" className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
-                <select
-                  value={importMode}
-                  onChange={(e) => setImportMode(e.target.value as 'create-only' | 'update-existing')}
-                  className="rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
-                >
-                  <option value="update-existing">Mode: Create or Update Existing</option>
-                  <option value="create-only">Mode: Create Only (Skip Duplicates)</option>
-                </select>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Default Category</label>
+                  <input value={String(importDefaults.category || '')} onChange={(e) => setImportDefaults((prev) => ({ ...prev, category: e.target.value }))} placeholder="Applied when column is empty" className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Default Cluster</label>
+                  <input value={String(importDefaults.clusterGroup || '')} onChange={(e) => setImportDefaults((prev) => ({ ...prev, clusterGroup: e.target.value }))} placeholder="Applied when column is empty" className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Import Mode</label>
+                  <select
+                    value={importMode}
+                    onChange={(e) => setImportMode(e.target.value as 'create-only' | 'update-existing')}
+                    className="w-full rounded-xl border border-slate-700/40 bg-slate-950/50 px-4 py-2.5 text-sm text-white focus:border-indigo-400/60 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all"
+                  >
+                    <option value="update-existing">Create or Update Existing</option>
+                    <option value="create-only">Create Only (Skip Duplicates)</option>
+                  </select>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 pt-2">
-                <button type="button" disabled={validatingImport} onClick={() => void validateImport()} className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-400 hover:bg-indigo-500/20 transition-all">{validatingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Validate Mapping</button>
-                <button type="button" disabled={committingImport} onClick={() => void commitImport()} className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 transition-all">{committingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Commit Changes</button>
-                <button type="button" onClick={() => void downloadErrors()} className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all ml-auto"><Download className="w-4 h-4" /> Download Error Log</button>
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-700/20">
+                <button
+                  type="button"
+                  disabled={validatingImport || !importMapping.name || !importMapping.category}
+                  onClick={() => void validateImport()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-500/10 px-5 py-2.5 text-xs font-bold text-indigo-400 hover:bg-indigo-500/20 transition-all disabled:opacity-40"
+                >
+                  {validatingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />} Validate Mapping
+                </button>
+                <button
+                  type="button"
+                  disabled={committingImport || !importValidation}
+                  onClick={() => void commitImport()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-cyan-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/20 disabled:opacity-40 transition-all"
+                >
+                  {committingImport ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Commit Import
+                </button>
+                {(importValidation?.failedRowCount || importCommit?.failedRowCount) ? (
+                  <button type="button" onClick={() => void downloadErrors()} className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all ml-auto"><Download className="w-4 h-4" /> Error Log</button>
+                ) : null}
               </div>
             </div>
           )}
 
           {(importValidation || importCommit) && (
-            <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03] space-y-3 animate-in fade-in slide-in-from-bottom-2">
-              <h4 className="text-sm font-bold text-white tracking-tight">Validation / Commit Result</h4>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-700/30 bg-slate-900/50 backdrop-blur-sm p-5 ring-1 ring-white/[0.03] space-y-4 animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-white tracking-tight">
+                  {importCommit ? '🚀 Import Complete' : '✅ Validation Results'}
+                </h4>
+                {importCommit && (
+                  <button type="button" onClick={resetImport} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 transition-all">
+                    <Plus className="w-3.5 h-3.5" /> Start New Import
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Rows</p>
-                  <p className="mt-2 text-2xl font-black text-white">{importCommit?.commitSummary?.inserted || importValidation?.validationSummary?.validRows || 0}</p>
-                  <p className="text-xs text-slate-400">{importCommit ? 'Inserted rows' : 'Validated rows'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Total Rows</p>
+                  <p className="mt-2 text-2xl font-black text-white">{importValidation?.validationSummary?.totalRows || 0}</p>
+                  <p className="text-[10px] text-slate-500">in source file</p>
                 </div>
-                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Updated</p>
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">{importCommit ? 'Inserted' : 'Valid'}</p>
+                  <p className="mt-2 text-2xl font-black text-emerald-300">{importCommit?.commitSummary?.inserted || importValidation?.validationSummary?.validRows || 0}</p>
+                  <p className="text-[10px] text-slate-500">{importCommit ? 'new records' : 'ready to import'}</p>
+                </div>
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">Updated</p>
                   <p className="mt-2 text-2xl font-black text-cyan-300">{importCommit?.commitSummary?.updated || 0}</p>
-                  <p className="text-xs text-slate-400">{importCommit ? 'Existing rows updated' : 'Only available after commit'}</p>
+                  <p className="text-[10px] text-slate-500">{importCommit ? 'existing records' : 'after commit'}</p>
                 </div>
-                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Failed</p>
+                <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-rose-400">Failed</p>
                   <p className="mt-2 text-2xl font-black text-rose-300">{importCommit?.failedRowCount || importValidation?.failedRowCount || 0}</p>
-                  <p className="text-xs text-slate-400">Rows needing review</p>
+                  <p className="text-[10px] text-slate-500">need review</p>
                 </div>
               </div>
 
               {importCommit && (
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-                    Auto-created categories: <strong>{importCommit.createdCategories || importCommit.commitSummary?.createdCategories || 0}</strong>
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-sm text-emerald-100 flex items-center gap-2">
+                    <span className="text-lg">📂</span> Auto-created categories: <strong>{importCommit.createdCategories || importCommit.commitSummary?.createdCategories || 0}</strong>
                   </div>
-                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-sm text-cyan-100">
-                    Auto-created clusters: <strong>{importCommit.createdClusters || importCommit.commitSummary?.createdClusters || 0}</strong>
+                  <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 text-sm text-cyan-100 flex items-center gap-2">
+                    <span className="text-lg">🏷️</span> Auto-created clusters: <strong>{importCommit.createdClusters || importCommit.commitSummary?.createdClusters || 0}</strong>
                   </div>
                 </div>
               )}
 
               {(importCommit?.warnings?.length || importValidation?.warnings?.length) ? (
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100 space-y-1">
+                  <p className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">⚠️ Warnings</p>
                   {(importCommit?.warnings || importValidation?.warnings || []).map((warning) => (
-                    <p key={warning}>{warning}</p>
+                    <p key={warning} className="text-xs">{warning}</p>
                   ))}
                 </div>
               ) : null}
 
-              {importValidation?.duplicates && (
-                <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4 text-sm text-slate-200 space-y-2">
-                  <p>Duplicate rows in file: {importValidation.duplicates.inFile.length ? importValidation.duplicates.inFile.join(', ') : 'None'}</p>
-                  <p>Duplicates already in database: {importValidation.duplicates.inDatabase.length ? importValidation.duplicates.inDatabase.join(', ') : 'None'}</p>
+              {importValidation?.duplicates && (importValidation.duplicates.inFile.length > 0 || importValidation.duplicates.inDatabase.length > 0) && (
+                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 text-sm text-slate-200 space-y-2">
+                  <p className="text-xs font-bold uppercase tracking-wider text-violet-400 mb-2">🔄 Duplicates Detected</p>
+                  {importValidation.duplicates.inFile.length > 0 && (
+                    <p className="text-xs">In file (rows): <span className="text-violet-300 font-mono">{importValidation.duplicates.inFile.join(', ')}</span></p>
+                  )}
+                  {importValidation.duplicates.inDatabase.length > 0 && (
+                    <p className="text-xs">Already in database (rows): <span className="text-violet-300 font-mono">{importValidation.duplicates.inDatabase.join(', ')}</span></p>
+                  )}
                 </div>
               )}
 
               {(importCommit?.failedRows?.length || importValidation?.failedRows?.length) ? (
                 <div className="rounded-xl border border-slate-700/30 bg-slate-950/50 p-4">
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Failed Rows Preview</p>
-                  <div className="space-y-2">
-                    {(importCommit?.failedRows || importValidation?.failedRows || []).slice(0, 8).map((row) => (
-                      <div key={`${row.rowNumber}-${row.reason}`} className="rounded-lg border border-rose-500/10 bg-rose-500/5 px-3 py-2 text-sm text-rose-100">
-                        Row {row.rowNumber}: {row.reason}
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-400">Failed Rows</p>
+                    <button type="button" onClick={() => void downloadErrors()} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-400 hover:text-amber-300 transition-colors">
+                      <Download className="w-3 h-3" /> Download Full Log
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                    {(importCommit?.failedRows || importValidation?.failedRows || []).slice(0, 12).map((row) => (
+                      <div key={`${row.rowNumber}-${row.reason}`} className="rounded-lg border border-rose-500/10 bg-rose-500/5 px-3 py-2 text-xs text-rose-100 flex items-start gap-2">
+                        <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-bold text-rose-300 flex-shrink-0">Row {row.rowNumber}</span>
+                        <span>{row.reason}</span>
                       </div>
                     ))}
+                    {((importCommit?.failedRows?.length || importValidation?.failedRows?.length || 0) > 12) && (
+                      <p className="text-[11px] text-slate-500 italic text-center pt-1">
+                        +{(importCommit?.failedRows?.length || importValidation?.failedRows?.length || 0) - 12} more — download the full error log above
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : null}

@@ -65,6 +65,15 @@ router.use(authenticate);
 import { restrictPendingStudent } from '../middlewares/restrictPendingStudent';
 router.use(restrictPendingStudent);
 
+// Bug 1.16 fix: apply CSRF protection at router level for all state-changing methods
+import { csrfProtection } from '../middlewares/csrfGuard';
+router.use((req, res, next) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        return csrfProtection(req, res, next);
+    }
+    next();
+});
+
 import { uploadMiddleware } from '../controllers/mediaController';
 
 // Profile Routes

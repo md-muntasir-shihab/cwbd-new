@@ -2013,12 +2013,11 @@ export async function submitExam(req: AuthRequest, res: Response): Promise<void>
         });
 
         if (!finalized.ok) {
-            res.status(finalized.statusCode).json({
-                message: finalized.message,
+            ResponseBuilder.send(res, finalized.statusCode, ResponseBuilder.error('SUBMISSION_ERROR', finalized.message, {
                 latestRevision: finalized.latestRevision,
                 lockReason: finalized.lockReason,
                 violations: finalized.violations,
-            });
+            }));
             return;
         }
 
@@ -2666,7 +2665,7 @@ export async function getExamResult(req: AuthRequest, res: Response): Promise<vo
         const context = await loadExamAttemptResultContext({ studentId, examId });
 
         if (!context.ok) {
-            res.status(context.statusCode).json({ message: context.message });
+            ResponseBuilder.send(res, context.statusCode, ResponseBuilder.error('NOT_FOUND', context.message));
             return;
         }
 
@@ -2731,7 +2730,7 @@ export async function getDetailedExamResult(req: AuthRequest, res: Response): Pr
         const context = await loadExamAttemptResultContext({ studentId, examId });
 
         if (!context.ok) {
-            res.status(context.statusCode).json({ message: context.message });
+            ResponseBuilder.send(res, context.statusCode, ResponseBuilder.error('NOT_FOUND', context.message));
             return;
         }
 
@@ -2798,7 +2797,7 @@ export async function getExamAttemptResult(req: AuthRequest, res: Response): Pro
         const context = await loadExamAttemptResultContext({ studentId, examId, attemptId });
 
         if (!context.ok) {
-            res.status(context.statusCode).json({ message: context.message });
+            ResponseBuilder.send(res, context.statusCode, ResponseBuilder.error('NOT_FOUND', context.message));
             return;
         }
 
@@ -2837,7 +2836,7 @@ export async function getExamAttemptSolutions(req: AuthRequest, res: Response): 
         const context = await loadExamAttemptResultContext({ studentId, examId, attemptId });
 
         if (!context.ok) {
-            res.status(context.statusCode).json({ message: context.message });
+            ResponseBuilder.send(res, context.statusCode, ResponseBuilder.error('NOT_FOUND', context.message));
             return;
         }
 

@@ -458,17 +458,17 @@ function ClusterPreviewCard({ cluster }: { cluster: ApiClusterCardPreview }) {
                 <div className="grid grid-cols-2 gap-2">
                     {cluster.admissionWebsite ? (
                         <a href={cluster.admissionWebsite} target="_blank" rel="noopener noreferrer"
-                            className={`inline-flex min-h-[40px] items-center justify-center rounded-xl px-3 py-2 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg ${isHistorical ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-400/10 hover:shadow-slate-400/20' : 'bg-gradient-to-r from-cyan-500 to-indigo-500 shadow-cyan-500/15 hover:shadow-cyan-500/25'}`}>
+                            className={`inline-flex min-h-[44px] items-center justify-center rounded-xl px-3 py-2 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg ${isHistorical ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-400/10 hover:shadow-slate-400/20' : 'bg-gradient-to-r from-cyan-500 to-indigo-500 shadow-cyan-500/15 hover:shadow-cyan-500/25'}`}>
                             Apply Now
                         </a>
                     ) : (
                         <Link to={`/universities/cluster/${cluster.slug}`}
-                            className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
+                            className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
                             View Cluster
                         </Link>
                     )}
                     <Link to={`/universities/cluster/${cluster.slug}`}
-                        className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
                         Details
                     </Link>
                 </div>

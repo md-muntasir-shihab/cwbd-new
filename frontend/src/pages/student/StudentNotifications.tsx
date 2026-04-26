@@ -14,6 +14,7 @@ import {
     type StudentLiveAlertItem,
     type StudentNotificationKind,
 } from '../../services/api';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 type NotificationFilter = StudentNotificationKind | 'all';
 
@@ -108,6 +109,10 @@ export default function StudentNotifications() {
     const [filter, setFilter] = useState<NotificationFilter>('all');
     const [showReminders, setShowReminders] = useState(true);
     const [selectedNotification, setSelectedNotification] = useState<StudentHubNotificationItem | null>(null);
+
+    // Close notification detail panel on Escape key
+    const closeNotificationPanel = useCallback(() => setSelectedNotification(null), []);
+    useEscapeKey(closeNotificationPanel, selectedNotification !== null);
 
     const notificationsQuery = useQuery({
         queryKey: ['student-hub', 'notifications', filter],

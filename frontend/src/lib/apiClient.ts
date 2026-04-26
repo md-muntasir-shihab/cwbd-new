@@ -223,7 +223,7 @@ function normalizeUniversityCard(raw: ApiUniversity | ApiUniversityCardPreview):
         contactNumber: pickText(r.contactNumber),
         established: typeof r.established === 'number' ? r.established
             : typeof r.establishedYear === 'number' ? r.establishedYear
-            : null,
+                : null,
         address: pickText(r.address),
         email: pickText(r.email),
         website: pickText(r.website || r.websiteUrl),
@@ -239,7 +239,7 @@ function normalizeUniversityCard(raw: ApiUniversity | ApiUniversityCardPreview):
         businessExamDate,
         examCentersPreview: Array.isArray(r.examCentersPreview) ? r.examCentersPreview as string[]
             : Array.isArray(r.examCenters) ? (r.examCenters as { city: string }[]).map(c => c.city).slice(0, 6)
-            : [],
+                : [],
         shortDescription: pickText(r.shortDescription || r.description),
         logoUrl,
         logoFallbackText: buildLogoFallback(name, pickText(r.shortForm)),
@@ -258,11 +258,14 @@ function normalizeUniversityCard(raw: ApiUniversity | ApiUniversityCardPreview):
 export { normalizeUniversityCard };
 
 export async function fetchUniversityCategories(): Promise<UniversityCategoryDetail[]> {
-    const { data } = await api.get<UniversityCategorySummary[] | { categories?: UniversityCategorySummary[] }>('/university-categories');
+    const { data } = await api.get<UniversityCategorySummary[] | { categories?: UniversityCategorySummary[]; data?: UniversityCategorySummary[]; success?: boolean }>('/university-categories');
     const raw = Array.isArray(data) ? data
         : Array.isArray((data as { categories?: UniversityCategorySummary[] }).categories)
             ? (data as { categories: UniversityCategorySummary[] }).categories
-            : [];
+            // Handle ResponseBuilder envelope: { success, data: [...] }
+            : Array.isArray((data as { data?: UniversityCategorySummary[] }).data)
+                ? (data as { data: UniversityCategorySummary[] }).data
+                : [];
     return raw.map(c => ({
         categoryName: c.categoryName,
         categorySlug: c.categorySlug || toSlug(c.categoryName),

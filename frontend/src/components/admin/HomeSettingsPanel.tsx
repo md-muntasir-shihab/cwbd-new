@@ -974,6 +974,38 @@ export default function HomeSettingsPanel() {
         });
     };
 
+    if (settingsQuery.isError || defaultsQuery.isError) {
+        const errorMessage =
+            (settingsQuery.error as { response?: { data?: { message?: string } } })?.response?.data?.message
+            || (settingsQuery.error as Error)?.message
+            || (defaultsQuery.error as Error)?.message
+            || 'Failed to load Home Settings';
+        return (
+            <div className="space-y-6">
+                <div className="rounded-2xl border border-red-500/20 bg-slate-900/60 p-5">
+                    <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-5 w-5 text-red-400" />
+                        <div className="flex-1">
+                            <h2 className="text-lg font-bold text-white">Failed to Load Home Settings</h2>
+                            <p className="text-xs text-slate-400 mt-0.5">{errorMessage}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                settingsQuery.refetch();
+                                defaultsQuery.refetch();
+                            }}
+                            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition-colors"
+                        >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (settingsQuery.isLoading || !draft) {
         return (
             <div className="space-y-6">

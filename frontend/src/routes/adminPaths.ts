@@ -220,7 +220,7 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         matchPrefixes: [adminUi('question-bank')],
     },
 
-    // 7. Student Management (includes Pending Approvals)
+    // 7. Student Management
     {
         key: 'students',
         label: 'Student Management',
@@ -236,11 +236,6 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
             adminUi('notification-center'),
             adminUi('settings/student-settings'),
             adminUi('pending-approvals'),
-        ],
-        children: [
-            { key: 'studentsList', label: 'All Students', path: ADMIN_PATHS.studentMgmtList },
-            { key: 'pendingApprovals', label: 'Pending Approvals', path: ADMIN_PATHS.pendingApprovals },
-            { key: 'profileRequests', label: 'Profile Requests', path: ADMIN_PATHS.studentMgmtProfileRequests },
         ],
     },
 

@@ -2,7 +2,7 @@
  * ProvidersPanel — manage SMS and Email providers
  * (credentials are stored server-side only, never returned to frontend)
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     listProviders,
@@ -13,6 +13,7 @@ import {
     type NotificationProvider,
 } from '../../../api/adminNotificationCampaignApi';
 import { promptForSensitiveActionProof } from '../../../utils/sensitiveAction';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 
 interface Props {
     showToast: (m: string, t?: 'success' | 'error') => void;
@@ -55,6 +56,10 @@ export default function ProvidersPanel({ showToast }: Props) {
     const [editing, setEditing] = useState<string | null>(null);
     const [creating, setCreating] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+    // Close delete confirmation modal on Escape key
+    const closeDeleteConfirm = useCallback(() => setDeleteConfirm(null), []);
+    useEscapeKey(closeDeleteConfirm, deleteConfirm !== null);
     const isCustomProvider = form.provider === 'custom';
     const isTwilioProvider = form.provider === 'twilio';
     const isLocalBdSmsProvider = form.provider === 'local_bd_rest';
@@ -224,72 +229,72 @@ export default function ProvidersPanel({ showToast }: Props) {
                     {form.type === 'sms' && (
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div>
-                            <label className={labelCls}>
-                                {isCustomProvider ? 'Webhook URL' : isTwilioProvider ? 'Account SID' : 'API Endpoint / Base URL'}
-                            </label>
-                            <input
-                                value={isCustomProvider ? form.webhookUrl : isTwilioProvider ? form.twilioAccountSid : form.apiEndpoint}
-                                onChange={e => setForm(p => ({
-                                    ...p,
-                                    ...(isCustomProvider
-                                        ? { webhookUrl: e.target.value }
-                                        : isTwilioProvider
-                                            ? { twilioAccountSid: e.target.value }
-                                            : { apiEndpoint: e.target.value }),
-                                }))}
-                                className={fieldCls}
-                                placeholder={
-                                    isCustomProvider
-                                        ? 'http://127.0.0.1:5055/mock-sms'
-                                        : isTwilioProvider
-                                            ? 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-                                            : 'https://api.provider.com/sms'
-                                }
-                            />
-                        </div>
-                        <div>
-                            <label className={labelCls}>
-                                {isCustomProvider ? 'Webhook Auth / Secret (Optional)' : isTwilioProvider ? 'Auth Token' : 'API Key / Token'}
-                            </label>
-                            <input
-                                type="password"
-                                value={isCustomProvider ? '' : isTwilioProvider ? form.twilioAuthToken : form.apiKey}
-                                onChange={e => setForm(p => ({
-                                    ...p,
-                                    ...(isTwilioProvider
-                                        ? { twilioAuthToken: e.target.value }
-                                        : { apiKey: e.target.value }),
-                                }))}
-                                className={fieldCls}
-                                placeholder={
-                                    editing
-                                        ? '(leave blank to keep current)'
-                                        : isCustomProvider
-                                            ? 'Optional'
-                                            : isTwilioProvider
-                                                ? 'Auth token'
-                                                : 'API Key'
-                                }
-                                disabled={isCustomProvider}
-                            />
-                        </div>
-                        {!isCustomProvider && (
-                            <div>
-                                <label className={labelCls}>Sender ID / From Number</label>
+                                <label className={labelCls}>
+                                    {isCustomProvider ? 'Webhook URL' : isTwilioProvider ? 'Account SID' : 'API Endpoint / Base URL'}
+                                </label>
                                 <input
-                                    value={isTwilioProvider ? form.twilioFromNumber : form.senderConfig.smsSenderId}
+                                    value={isCustomProvider ? form.webhookUrl : isTwilioProvider ? form.twilioAccountSid : form.apiEndpoint}
+                                    onChange={e => setForm(p => ({
+                                        ...p,
+                                        ...(isCustomProvider
+                                            ? { webhookUrl: e.target.value }
+                                            : isTwilioProvider
+                                                ? { twilioAccountSid: e.target.value }
+                                                : { apiEndpoint: e.target.value }),
+                                    }))}
+                                    className={fieldCls}
+                                    placeholder={
+                                        isCustomProvider
+                                            ? 'http://127.0.0.1:5055/mock-sms'
+                                            : isTwilioProvider
+                                                ? 'ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+                                                : 'https://api.provider.com/sms'
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <label className={labelCls}>
+                                    {isCustomProvider ? 'Webhook Auth / Secret (Optional)' : isTwilioProvider ? 'Auth Token' : 'API Key / Token'}
+                                </label>
+                                <input
+                                    type="password"
+                                    value={isCustomProvider ? '' : isTwilioProvider ? form.twilioAuthToken : form.apiKey}
                                     onChange={e => setForm(p => ({
                                         ...p,
                                         ...(isTwilioProvider
-                                            ? { twilioFromNumber: e.target.value }
-                                            : { senderConfig: { ...p.senderConfig, smsSenderId: e.target.value } }),
+                                            ? { twilioAuthToken: e.target.value }
+                                            : { apiKey: e.target.value }),
                                     }))}
                                     className={fieldCls}
-                                    placeholder="+8801XXXXXXXXX or CAMPUSWAY"
+                                    placeholder={
+                                        editing
+                                            ? '(leave blank to keep current)'
+                                            : isCustomProvider
+                                                ? 'Optional'
+                                                : isTwilioProvider
+                                                    ? 'Auth token'
+                                                    : 'API Key'
+                                    }
+                                    disabled={isCustomProvider}
                                 />
                             </div>
-                        )}
-                    </div>
+                            {!isCustomProvider && (
+                                <div>
+                                    <label className={labelCls}>Sender ID / From Number</label>
+                                    <input
+                                        value={isTwilioProvider ? form.twilioFromNumber : form.senderConfig.smsSenderId}
+                                        onChange={e => setForm(p => ({
+                                            ...p,
+                                            ...(isTwilioProvider
+                                                ? { twilioFromNumber: e.target.value }
+                                                : { senderConfig: { ...p.senderConfig, smsSenderId: e.target.value } }),
+                                        }))}
+                                        className={fieldCls}
+                                        placeholder="+8801XXXXXXXXX or CAMPUSWAY"
+                                    />
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {/* Email Credentials */}

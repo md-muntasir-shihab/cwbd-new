@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import XLSX from 'xlsx';
 import slugify from 'slugify';
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 import University from '../models/University';
 import UniversityCategory from '../models/UniversityCategory';
 import UniversityCluster from '../models/UniversityCluster';
@@ -204,6 +207,24 @@ function parseAndFormatTextDate(raw: unknown): string {
         }
     }
     return rawStr;
+}
+
+// Bug 1.12 fix: Download and cache external logo images locally
+const logoUploadDir = path.join(__dirname, '../../public/uploads/logos');
+
+async function downloadAndCacheImage(url: string): Promise<string> {
+    if (!fs.existsSync(logoUploadDir)) {
+        fs.mkdirSync(logoUploadDir, { recursive: true });
+    }
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(url, { timeout: 15000 });
+    if (!response.ok) throw new Error(`Failed to download image: HTTP ${response.status}`);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const ext = path.extname(new URL(url).pathname).toLowerCase() || '.jpg';
+    const filename = `logo-${crypto.randomUUID()}${ext}`;
+    const filePath = path.join(logoUploadDir, filename);
+    await fs.promises.writeFile(filePath, buffer);
+    return `/uploads/logos/${filename}`;
 }
 
 function readImportRows(fileBuffer: Buffer, filename: string): Record<string, unknown>[] {
@@ -409,11 +430,47 @@ export async function adminValidateUniversityImport(req: Request, res: Response)
 
         const mapping = (req.body?.mapping || {}) as Record<string, string>;
         const defaults = (req.body?.defaults || {}) as Record<string, unknown>;
+
+        // Bug 1.1 fix: Compute unmapped columns and warn about them
+        const headers = (job.headers || []) as string[];
+        const mappedHeaders = new Set(Object.values(mapping));
+        const unmappedHeaders = headers.filter((h) => !mappedHeaders.has(h));
+        const unmappedColumnWarnings = unmappedHeaders.map((header) => {
+            // Try to suggest a field based on alias matching
+            const normalizedHeader = normalizeHeaderKey(header);
+            let suggestedField: string | undefined;
+            for (const field of TARGET_FIELDS) {
+                const candidates = [field, ...(FIELD_HEADER_ALIASES[field] || [])]
+                    .map((entry) => normalizeHeaderKey(entry))
+                    .filter(Boolean);
+                if (candidates.includes(normalizedHeader)) {
+                    suggestedField = field;
+                    break;
+                }
+            }
+            return { header, suggestedField, rowsAffected: (job.rawRows || []).length };
+        });
+
+        // If required fields (name, category) are unmapped and have no defaults, add validation errors
+        const requiredFields: TargetField[] = ['name', 'category'];
+        const unmappedRequiredErrors: Array<{ rowNumber: number; reason: string }> = [];
+        for (const field of requiredFields) {
+            if (!mapping[field] && defaults[field] === undefined) {
+                unmappedRequiredErrors.push({
+                    rowNumber: 0,
+                    reason: `Required field '${field}' is not mapped to any column and has no default value. Import cannot proceed.`,
+                });
+            }
+        }
+
         const { normalizedRows, failedRows, duplicateRows } = validateAndNormalizeRows(
             (job.rawRows || []) as Record<string, unknown>[],
             mapping,
             defaults,
         );
+
+        // Merge unmapped required field errors into failedRows
+        const allFailedRows = [...unmappedRequiredErrors, ...failedRows];
 
         const existingUniversities = await University.find({})
             .select('name shortForm slug')
@@ -437,26 +494,36 @@ export async function adminValidateUniversityImport(req: Request, res: Response)
         job.mapping = mapping;
         job.defaults = defaults;
         job.normalizedRows = normalizedRows;
-        job.failedRows = failedRows;
+        job.failedRows = allFailedRows;
         job.validationSummary = {
             totalRows: (job.rawRows || []).length,
             validRows: normalizedRows.length,
-            invalidRows: failedRows.length,
+            invalidRows: allFailedRows.length,
         };
         job.status = 'validated';
         await job.save();
 
-        ResponseBuilder.send(res, 200, ResponseBuilder.success({importJobId: String(job._id),
+        const warningMessages: string[] = [];
+        if (duplicateRows.length > 0 || dbDuplicates.length > 0) {
+            warningMessages.push('Duplicate university rows were detected in the file or existing database records.');
+        }
+        if (unmappedColumnWarnings.length > 0) {
+            warningMessages.push(`${unmappedColumnWarnings.length} column(s) in the file are not mapped to any target field.`);
+        }
+
+        ResponseBuilder.send(res, 200, ResponseBuilder.success({
+            importJobId: String(job._id),
             validationSummary: job.validationSummary,
-            failedRows: failedRows.slice(0, 200),
-            failedRowCount: failedRows.length,
-            warnings: duplicateRows.length > 0 || dbDuplicates.length > 0
-                ? ['Duplicate university rows were detected in the file or existing database records.']
-                : [],
+            failedRows: allFailedRows.slice(0, 200),
+            failedRowCount: allFailedRows.length,
+            unmappedColumns: unmappedHeaders,
+            unmappedColumnWarnings,
+            warnings: warningMessages,
             duplicates: {
                 inFile: duplicateRows,
                 inDatabase: Array.from(new Set(dbDuplicates)).filter(Boolean).sort((a, b) => a - b),
-            },}));
+            },
+        }));
     } catch (err) {
         console.error('adminValidateUniversityImport error:', err);
         ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Failed to validate import.'));
@@ -480,6 +547,7 @@ export async function adminCommitUniversityImport(req: Request, res: Response): 
         let updated = 0;
         const failedRows = [...(job.failedRows || [])];
         const warnings = new Set<string>();
+        const slugResolutions: Array<{ rowNumber: number; originalSlug: string; resolvedSlug: string }> = [];
 
         const categoryNames = Array.from(new Set(
             rows.map((row) => String(row.category || '').trim()).filter(Boolean),
@@ -578,6 +646,21 @@ export async function adminCommitUniversityImport(req: Request, res: Response): 
                 );
                 if (requestedSlug && slug !== requestedSlug) {
                     warnings.add(`Some imported slugs were adjusted to keep them unique. Example: ${requestedSlug} -> ${slug}`);
+                    slugResolutions.push({
+                        rowNumber: Number(normalized.rowNumber || 0),
+                        originalSlug: requestedSlug,
+                        resolvedSlug: slug,
+                    });
+                }
+
+                // Bug 1.12 fix: Download and cache external logo URLs
+                let logoUrl = String(normalized.logoUrl || '').trim();
+                if (logoUrl.startsWith('http://') || logoUrl.startsWith('https://')) {
+                    try {
+                        logoUrl = await downloadAndCacheImage(logoUrl);
+                    } catch (downloadErr) {
+                        warnings.add(`Failed to cache external logo for row ${Number(normalized.rowNumber || 0)}: ${downloadErr instanceof Error ? downloadErr.message : 'Unknown error'}. Keeping external URL.`);
+                    }
                 }
 
                 const payload = {
@@ -615,7 +698,7 @@ export async function adminCommitUniversityImport(req: Request, res: Response): 
                     seatsArtsHum: String(normalized.seatsArtsHum || 'N/A').trim() || 'N/A',
                     businessSeats: String(normalized.seatsBusiness || 'N/A').trim() || 'N/A',
                     seatsBusiness: String(normalized.seatsBusiness || 'N/A').trim() || 'N/A',
-                    logoUrl: String(normalized.logoUrl || '').trim(),
+                    logoUrl,
                     isActive: Boolean(normalized.isActive !== false),
                     featured: Boolean(normalized.featured),
                     featuredOrder: Number(normalized.featuredOrder || 0) || 0,
@@ -774,17 +857,20 @@ export async function adminCommitUniversityImport(req: Request, res: Response): 
             meta: { source: 'university_import', inserted, updated, failed: failedRows.length },
         });
 
-        ResponseBuilder.send(res, 200, ResponseBuilder.success({importJobId: String(job._id),
+        ResponseBuilder.send(res, 200, ResponseBuilder.success({
+            importJobId: String(job._id),
             commitSummary: job.commitSummary,
             createdCategories: createdCategoryNames.size,
             createdClusters: createdClusterNames.size,
             failedRows: failedRows.slice(0, 200),
             failedRowCount: failedRows.length,
-            warnings: Array.from(warnings)}, 'Import completed (${mode}). inserted=${inserted}, updated=${updated}, failed=${failedRows.length}'));
+            slugResolutions,
+            warnings: Array.from(warnings)
+        }, `Import completed (${mode}). inserted=${inserted}, updated=${updated}, failed=${failedRows.length}`));
     } catch (err) {
         console.error('adminCommitUniversityImport error:', err);
         const detail = err instanceof Error ? err.message : 'Unknown error';
-        ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Failed to commit import. ${detail}'));
+        ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', `Failed to commit import. ${detail}`));
     }
 }
 
@@ -815,10 +901,35 @@ export async function adminDownloadUniversityImportTemplate(req: Request, res: R
             examDateBusiness: '2026-07-12',
             examCenters: 'Dhaka - BUET Campus | Chattogram - CUET Campus',
         };
+        // Bug 1.6 fix: Add format hints row
+        const formatHintsRow: Record<string, string> = {
+            category: 'text (required)',
+            clusterGroup: 'text',
+            name: 'text (required)',
+            shortForm: 'text (auto-generated if empty)',
+            shortDescription: 'text',
+            description: 'text',
+            establishedYear: 'number (e.g. 1995)',
+            address: 'text',
+            contactNumber: 'text (e.g. 01700000000)',
+            email: 'email (e.g. info@example.edu)',
+            websiteUrl: 'URL (e.g. https://example.edu)',
+            admissionUrl: 'URL (e.g. https://admission.example.edu)',
+            totalSeats: 'number',
+            seatsScienceEng: 'number',
+            seatsArtsHum: 'number',
+            seatsBusiness: 'number',
+            applicationStartDate: 'YYYY-MM-DD',
+            applicationEndDate: 'YYYY-MM-DD',
+            examDateScience: 'YYYY-MM-DD',
+            examDateArts: 'YYYY-MM-DD',
+            examDateBusiness: 'YYYY-MM-DD',
+            examCenters: 'pipe-separated (e.g. City - Venue | City - Venue)',
+        };
         const blankRow: Record<string, string> = TEMPLATE_HEADERS.reduce((acc, key) => ({ ...acc, [key]: '' }), {});
 
         if (format === 'csv') {
-            const rows = [sampleRow, blankRow];
+            const rows = [sampleRow, formatHintsRow, blankRow];
             const lines = rows.map((row) => TEMPLATE_HEADERS.map((header) => csvEscape(row[header])).join(','));
             const csv = `${TEMPLATE_HEADERS.join(',')}\n${lines.join('\n')}`;
             res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -827,9 +938,19 @@ export async function adminDownloadUniversityImportTemplate(req: Request, res: R
             return;
         }
 
-        const worksheet = XLSX.utils.json_to_sheet([sampleRow, blankRow], { header: TEMPLATE_HEADERS });
+        const worksheet = XLSX.utils.json_to_sheet([sampleRow, formatHintsRow, blankRow], { header: TEMPLATE_HEADERS });
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+
+        // Bug 1.6 fix: Add README sheet with field descriptions for XLSX
+        const readmeData = TEMPLATE_HEADERS.map((field) => ({
+            Field: field,
+            Description: formatHintsRow[field] || 'text',
+            Required: ['name', 'category'].includes(field) ? 'Yes' : 'No',
+        }));
+        const readmeSheet = XLSX.utils.json_to_sheet(readmeData);
+        XLSX.utils.book_append_sheet(workbook, readmeSheet, 'README');
+
         const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=template.xlsx');
@@ -844,7 +965,8 @@ export async function adminGetUniversityImportJob(req: Request, res: Response): 
     try {
         const job = await UniversityImportJob.findById(req.params.jobId).lean();
         if (!job) { ResponseBuilder.send(res, 404, ResponseBuilder.error('NOT_FOUND', 'Import job not found.')); return; }
-        ResponseBuilder.send(res, 200, ResponseBuilder.success({importJobId: String(job._id),
+        ResponseBuilder.send(res, 200, ResponseBuilder.success({
+            importJobId: String(job._id),
             status: job.status,
             sourceFileName: job.sourceFileName,
             headers: job.headers,
@@ -856,7 +978,8 @@ export async function adminGetUniversityImportJob(req: Request, res: Response): 
             failedRows: (job.failedRows || []).slice(0, 200),
             failedRowCount: (job.failedRows || []).length,
             createdAt: job.createdAt,
-            updatedAt: job.updatedAt,}));
+            updatedAt: job.updatedAt,
+        }));
     } catch (err) {
         console.error('adminGetUniversityImportJob error:', err);
         ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Failed to get import status.'));

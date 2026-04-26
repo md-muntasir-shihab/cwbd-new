@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
@@ -20,6 +20,7 @@ import {
   type DeliveryLog, type NotificationTemplate, type NotificationSettings, type CampaignDashboardSummary,
 } from '../../../api/adminNotificationCampaignApi';
 import { getStudentGroups } from '../../../api/adminStudentApi';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 
 type Tab = 'dashboard' | 'campaigns' | 'new' | 'audiences' | 'contact' | 'templates' | 'providers' | 'triggers' | 'notifications' | 'logs' | 'settings';
 
@@ -624,6 +625,11 @@ function TemplatesPanel({ showToast }: { showToast: (m: string, t?: 'success' | 
   const [editing, setEditing] = useState<NotificationTemplate | null>(null);
   const [creating, setCreating] = useState(false);
   const [previewTpl, setPreviewTpl] = useState<NotificationTemplate | null>(null);
+
+  // Close template preview modal on Escape key
+  const closePreviewTpl = useCallback(() => setPreviewTpl(null), []);
+  useEscapeKey(closePreviewTpl, previewTpl !== null);
+
   const [form, setForm] = useState({ templateKey: '', name: '', channel: 'sms', subject: '', body: '', htmlBody: '', bodyFormat: 'plain' as 'plain' | 'html', category: 'campaign' });
 
   const saveMut = useMutation({
@@ -922,6 +928,7 @@ function SettingsPanel({ showToast }: { showToast: (m: string, t?: 'success' | '
 
 /* ─── Enhanced Campaign Detail Modal ──────────────── */
 function CampaignDetailModal({ id, onClose }: { id: string; onClose: () => void }) {
+  useEscapeKey(onClose, true);
   const { data, isLoading } = useQuery({ queryKey: ['campaign', id], queryFn: () => getCampaign(id) });
   const campaign = (data ?? null) as CampaignDetail | null;
 

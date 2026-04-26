@@ -83,7 +83,7 @@ export default function StudentDashboard() {
         // Check tracking logic: prevent multiple showings for the same exam result today
         const todayStr = new Date().toISOString().split('T')[0];
         const trackingKey = 'dashboard_celebration_tracking';
-        
+
         let trackingData: Record<string, unknown> = {};
         try {
             trackingData = JSON.parse(localStorage.getItem(trackingKey) || '{}');
@@ -91,16 +91,15 @@ export default function StudentDashboard() {
             if (trackingData.date !== todayStr) {
                 trackingData = { date: todayStr, showsToday: 0, examsCelebrated: [] };
             }
-        } catch (e) {
+        } catch {
             trackingData = { date: todayStr, showsToday: 0, examsCelebrated: [] };
-            console.error(e);
         }
 
         const examsCelebrated = (trackingData.examsCelebrated as string[]) || [];
 
         // Already celebrated this specific result?
         if (examsCelebrated.includes(String(resultId))) return;
-        
+
         // Exceeded daily limit?
         const showsToday = (trackingData.showsToday as number) || 0;
         if (rules.maxShowsPerDay > 0 && showsToday >= rules.maxShowsPerDay) return;
@@ -108,7 +107,7 @@ export default function StudentDashboard() {
         // Pick random message
         const messages = rules.messageTemplates?.length ? rules.messageTemplates : ["Great job! You passed the exam!"];
         const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-        
+
         // Update tracking
         trackingData.showsToday = showsToday + 1;
         examsCelebrated.push(String(resultId));
@@ -159,10 +158,10 @@ export default function StudentDashboard() {
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsProfileOpen(false)} />
                     <div className="relative w-full max-w-4xl z-10 animate-in fade-in zoom-in-95 duration-200">
                         <div onClick={(e) => e.stopPropagation()}>
-                            <StudentEntryProfileCard 
-                                header={data.header} 
-                                support={data.support} 
-                                onClose={() => setIsProfileOpen(false)} 
+                            <StudentEntryProfileCard
+                                header={data.header}
+                                support={data.support}
+                                onClose={() => setIsProfileOpen(false)}
                             />
                         </div>
                     </div>

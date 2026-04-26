@@ -167,13 +167,35 @@ export async function runBackup(type: BackupType = 'full'): Promise<BackupResult
     const backupDir = getBackupDir();
     await fs.mkdir(backupDir, { recursive: true });
 
-    const snapshot = await buildBackupSnapshot(type);
-    const serialized = JSON.stringify(snapshot);
-    const digest = computeChecksum(serialized);
-    const fileName = safeBaseName(`campusway-backup-${type}-${Date.now()}.json`);
-    const filePath = path.join(backupDir, fileName);
+    let snapshot;
+    let serialized: string;
+    let digest: string;
+    let filePath: string;
 
-    await fs.writeFile(filePath, serialized, 'utf8');
+    try {
+        snapshot = await buildBackupSnapshot(type);
+        serialized = JSON.stringify(snapshot);
+        digest = computeChecksum(serialized);
+        const fileName = safeBaseName(`campusway-backup-${type}-${Date.now()}.json`);
+        filePath = path.join(backupDir, fileName);
+
+        await fs.writeFile(filePath, serialized, 'utf8');
+    } catch (writeError) {
+        // Check for disk space errors (Bug 1.32)
+        const errCode = (writeError as NodeJS.ErrnoException).code;
+        const errMsg = writeError instanceof Error ? writeError.message : String(writeError);
+        const isDiskSpaceError = errCode === 'ENOSPC' || errCode === 'ENOMEM' || errMsg.includes('ENOSPC') || errMsg.includes('ENOMEM');
+
+        if (isDiskSpaceError) {
+            console.error(`[BACKUP] CRITICAL: Backup failed due to insufficient disk space — ${errMsg}`);
+            console.error(JSON.stringify({ event: 'backup_failure', reason: 'disk_space', severity: 'P0', error: errMsg }));
+            // Skip retention cleanup on failure — do not delete older backups
+        } else {
+            console.error(`[BACKUP] Backup write failed: ${errMsg}`);
+        }
+
+        throw writeError;
+    }
 
     // Integrity verification
     const integrity = verifyBackupIntegrity(serialized, snapshot);

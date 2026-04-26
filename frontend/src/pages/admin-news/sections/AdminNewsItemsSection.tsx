@@ -685,6 +685,18 @@ export default function AdminNewsItemsSection({
 
     async function onUploadCover(file?: File | null) {
         if (!file) return;
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        if (!allowedTypes.includes(file.type) && !file.type.startsWith('image/')) {
+            toast.error('Invalid file type. Please upload an image (JPEG, PNG, GIF, WebP, or SVG).');
+            return;
+        }
+        // Validate file size (max 5MB)
+        const maxSizeBytes = 5 * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+            toast.error(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.`);
+            return;
+        }
         setUploadingCover(true);
         try {
             const result = await adminNewsV2UploadMedia(file, { altText: editing?.title || 'news-cover' });

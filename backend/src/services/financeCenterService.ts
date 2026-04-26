@@ -433,11 +433,8 @@ export async function logFinanceAudit(opts: {
     });
 }
 
-// ── Seed default COA if empty ───────────────────────────
+// ── Seed default COA — upsert to handle partial seeding ─
 export async function seedDefaultChartOfAccounts(): Promise<void> {
-    const count = await ChartOfAccounts.countDocuments();
-    if (count > 0) return;
-
     const defaults = [
         { code: 'REV_SUBSCRIPTION', name: 'Subscription Revenue', type: 'income' as const, isSystem: true },
         { code: 'REV_EXAM', name: 'Exam Fee Revenue', type: 'income' as const, isSystem: true },
@@ -452,8 +449,18 @@ export async function seedDefaultChartOfAccounts(): Promise<void> {
         { code: 'EXP_OPERATIONS', name: 'Operations', type: 'expense' as const, isSystem: true },
         { code: 'EXP_MISC', name: 'Miscellaneous', type: 'expense' as const, isSystem: true },
     ];
-    await ChartOfAccounts.insertMany(defaults.map((d) => ({ ...d, isActive: true })));
-    console.log('[finance] Seeded default Chart of Accounts');
+
+    const ops = defaults.map((d) => ({
+        updateOne: {
+            filter: { code: d.code },
+            update: { $setOnInsert: { ...d, isActive: true } },
+            upsert: true,
+        },
+    }));
+    const result = await ChartOfAccounts.bulkWrite(ops);
+    if (result.upsertedCount > 0) {
+        console.log(`[finance] Seeded ${result.upsertedCount} Chart of Accounts entries`);
+    }
 }
 
 // ── Ensure single finance settings doc ──────────────────

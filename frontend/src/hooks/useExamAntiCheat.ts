@@ -47,9 +47,12 @@ export interface UseExamAntiCheatOptions {
     onForceSubmit: () => void;
 }
 
+export type AntiCheatMode = 'full' | 'degraded';
+
 export interface UseExamAntiCheatReturn {
     isOnline: boolean;
     queuedSignals: number;
+    antiCheatMode: AntiCheatMode;
 }
 
 const MAX_QUEUE_SIZE = 50;
@@ -77,6 +80,7 @@ export function useExamAntiCheat(options: UseExamAntiCheatOptions): UseExamAntiC
 
     const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
     const [queuedSignals, setQueuedSignals] = useState<number>(0);
+    const [antiCheatMode, setAntiCheatMode] = useState<AntiCheatMode>('full');
 
     // Refs to avoid stale closures in event listeners
     const queueRef = useRef<QueuedSignal[]>([]);
@@ -236,6 +240,19 @@ export function useExamAntiCheat(options: UseExamAntiCheatOptions): UseExamAntiC
     useEffect(() => {
         if (!policy.requireFullscreen) return;
 
+        // Check if fullscreen API is supported before requesting
+        const fullscreenEnabled =
+            document.fullscreenEnabled ??
+            (document as Document & { webkitFullscreenEnabled?: boolean }).webkitFullscreenEnabled ??
+            (document as Document & { mozFullScreenEnabled?: boolean }).mozFullScreenEnabled ??
+            false;
+
+        if (!fullscreenEnabled) {
+            // Graceful degradation: fullscreen not supported
+            setAntiCheatMode('degraded');
+            return;
+        }
+
         const el = document.documentElement;
         const requestFs =
             el.requestFullscreen ??
@@ -244,8 +261,11 @@ export function useExamAntiCheat(options: UseExamAntiCheatOptions): UseExamAntiC
 
         if (typeof requestFs === 'function') {
             requestFs.call(el).catch(() => {
-                // Browser may block fullscreen without user gesture — silently ignore
+                // Browser may block fullscreen without user gesture — degrade gracefully
+                setAntiCheatMode('degraded');
             });
+        } else {
+            setAntiCheatMode('degraded');
         }
     }, [policy.requireFullscreen]);
 
@@ -328,5 +348,5 @@ export function useExamAntiCheat(options: UseExamAntiCheatOptions): UseExamAntiC
         };
     }, [sendSignal]);
 
-    return { isOnline, queuedSignals };
+    return { isOnline, queuedSignals, antiCheatMode };
 }

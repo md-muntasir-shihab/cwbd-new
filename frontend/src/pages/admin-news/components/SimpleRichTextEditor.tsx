@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Bold, Italic, Link2, List, ListOrdered, Underline } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface Props {
     value: string;
@@ -23,8 +24,9 @@ export default function SimpleRichTextEditor({
     useEffect(() => {
         const el = editorRef.current;
         if (!el) return;
-        if (el.innerHTML !== value) {
-            el.innerHTML = value || '';
+        const sanitized = DOMPurify.sanitize(value || '', { USE_PROFILES: { html: true } });
+        if (el.innerHTML !== sanitized) {
+            el.innerHTML = sanitized;
         }
     }, [value]);
 
@@ -110,7 +112,7 @@ export default function SimpleRichTextEditor({
                 ref={editorRef}
                 contentEditable
                 suppressContentEditableWarning
-                onInput={(e) => onChange((e.target as HTMLDivElement).innerHTML)}
+                onInput={(e) => onChange(DOMPurify.sanitize((e.target as HTMLDivElement).innerHTML, { USE_PROFILES: { html: true } }))}
                 className="rich-editor-content min-h-[240px] bg-white p-3 text-sm text-slate-900 outline-none dark:bg-slate-900/60 dark:text-slate-100"
                 data-placeholder={placeholder}
                 style={{ whiteSpace: 'pre-wrap' }}

@@ -13,9 +13,17 @@ type Props = {
     compact?: boolean;
 };
 
+function formatCurrencyLabel(label: string): string {
+    const trimmed = label.trim();
+    if (!trimmed) return '';
+    // Add trailing space for alphabetic currency codes (e.g. "BDT" → "BDT "), skip for symbols (e.g. "৳")
+    if (/^[A-Za-z]+$/.test(trimmed)) return `${trimmed} `;
+    return trimmed;
+}
+
 function formatPrice(plan: SubscriptionPlanPublic, currencyLabel: string): string {
     if (plan.isFree || plan.priceBDT <= 0) return 'Free';
-    return `${currencyLabel}${Number(plan.priceBDT || 0).toLocaleString()}`;
+    return `${formatCurrencyLabel(currencyLabel)}${Number(plan.priceBDT || 0).toLocaleString()}`;
 }
 
 export default function PlanCard({
@@ -89,7 +97,7 @@ export default function PlanCard({
                         </div>
                         {plan.oldPrice ? (
                             <p className="mt-1 text-xs font-medium text-slate-500 line-through">
-                                {currencyLabel}{Number(plan.oldPrice).toLocaleString()}
+                                {formatCurrencyLabel(currencyLabel)}{Number(plan.oldPrice).toLocaleString()}
                             </p>
                         ) : null}
                         <div className="mt-3 flex flex-wrap gap-2">

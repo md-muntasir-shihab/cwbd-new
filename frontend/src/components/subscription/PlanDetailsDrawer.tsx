@@ -167,7 +167,7 @@ export default function PlanDetailsDrawer({
                                                     </div>
                                                     {plan.oldPrice ? (
                                                         <p className="mt-1 text-xs text-white/45 line-through">
-                                                            {plan.currency || 'BDT'}{Number(plan.oldPrice).toLocaleString()}
+                                                            {/^[A-Za-z]+$/.test((plan.currency || 'BDT').trim()) ? `${(plan.currency || 'BDT').trim()} ` : (plan.currency || 'BDT').trim()}{Number(plan.oldPrice).toLocaleString()}
                                                         </p>
                                                     ) : null}
                                                 </div>

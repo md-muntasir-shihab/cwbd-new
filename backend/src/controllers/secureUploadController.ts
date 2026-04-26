@@ -60,9 +60,15 @@ function canAccessUpload(
         visibility: string;
         ownerUserId?: unknown;
         accessRoles?: string[];
+        deletedAt?: Date | null;
     },
     user?: Request['user'],
 ): boolean {
+    // Bug 1.10 fix: Deny access if upload has been revoked (deletedAt set), unless superadmin
+    if (upload.deletedAt) {
+        const normalizedRole = String(user?.role || '').trim().toLowerCase();
+        return normalizedRole === 'superadmin';
+    }
     if (upload.visibility === 'public') return true;
     if (!user?._id) return false;
 
@@ -99,9 +105,10 @@ export async function serveSecureUpload(req: Request, res: Response, next: NextF
         await attachUserFromRefreshCookie(req);
 
         if (!canAccessUpload(upload, req.user)) {
-            res.status(req.user ? 403 : 401).json({
-                message: req.user ? 'You do not have permission to access this file.' : 'Authentication required',
-            });
+            const status = req.user ? 403 : 401;
+            const code = req.user ? 'AUTHORIZATION_ERROR' : 'AUTHENTICATION_ERROR';
+            const message = req.user ? 'You do not have permission to access this file.' : 'Authentication required';
+            ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
             return;
         }
 

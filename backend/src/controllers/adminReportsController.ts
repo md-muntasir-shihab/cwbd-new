@@ -288,7 +288,7 @@ export async function adminExportExamInsights(req: AuthRequest, res: Response): 
         await adminGetExamInsights(req, mockRes);
 
         if (capture.status && capture.status >= 400) {
-            res.status(capture.status).json(capture.payload || { message: 'Failed to generate insights' });
+            ResponseBuilder.send(res, capture.status, capture.payload || ResponseBuilder.error('SERVER_ERROR', 'Failed to generate insights'));
             return;
         }
         const data = capture.payload;

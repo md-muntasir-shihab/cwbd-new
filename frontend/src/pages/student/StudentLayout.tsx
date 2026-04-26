@@ -259,7 +259,7 @@ export default function StudentLayout() {
                             <Link
                                 key={`mobile-${item.path}`}
                                 to={item.path}
-                                className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 transition-all duration-300 ${active
+                                className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 min-h-[44px] transition-all duration-300 ${active
                                     ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                                     }`}
@@ -276,7 +276,7 @@ export default function StudentLayout() {
                     <button
                         type="button"
                         onClick={() => setDrawerOpen(true)}
-                        className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 transition-all duration-300 ${moreActive || drawerOpen
+                        className={`flex min-w-0 flex-1 flex-col items-center justify-center rounded-2xl px-1 py-2.5 min-h-[44px] transition-all duration-300 ${moreActive || drawerOpen
                             ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                             : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                             }`}

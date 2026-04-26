@@ -316,32 +316,40 @@ export async function adminExportPayments(req: AuthRequest, res: Response): Prom
         const format = String(query.format || 'xlsx').toLowerCase();
         const filter = buildPaymentFilter(query);
 
-        const rowsRaw = await ManualPayment.find(filter)
-            .populate('studentId', 'username email full_name')
-            .populate('examId', 'title subject')
-            .sort({ paidAt: -1, date: -1, createdAt: -1 })
-            .lean();
-        const rows = rowsRaw.map((item) => toCanonicalPayment(item));
+        const csvHeader = [
+            'paymentId',
+            'userId',
+            'name',
+            'examId',
+            'amount',
+            'currency',
+            'method',
+            'status',
+            'transactionId',
+            'reference',
+            'proofFileUrl',
+            'verifiedByAdminId',
+            'createdAt',
+            'paidAt',
+        ];
 
         if (format === 'csv') {
-            const header = [
-                'paymentId',
-                'userId',
-                'name',
-                'examId',
-                'amount',
-                'currency',
-                'method',
-                'status',
-                'transactionId',
-                'reference',
-                'proofFileUrl',
-                'verifiedByAdminId',
-                'createdAt',
-                'paidAt',
-            ];
-            const lines = [header.join(',')];
-            for (const row of rows) {
+            // Bug 1.4 fix: Use cursor-based streaming for CSV export
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="payments_export_${Date.now()}.csv"`);
+            res.setHeader('Transfer-Encoding', 'chunked');
+
+            // Write CSV header row
+            res.write(csvHeader.join(',') + '\n');
+
+            const cursor = ManualPayment.find(filter)
+                .populate('studentId', 'username email full_name')
+                .populate('examId', 'title subject')
+                .sort({ paidAt: -1, date: -1, createdAt: -1 })
+                .cursor();
+
+            for await (const item of cursor) {
+                const row = toCanonicalPayment(item.toObject ? item.toObject() : item);
                 const student = (row.student as Record<string, unknown>) || {};
                 const values = [
                     String((row as any)._id || ''),
@@ -359,13 +367,20 @@ export async function adminExportPayments(req: AuthRequest, res: Response): Prom
                     row.createdAt ? new Date(String(row.createdAt)).toISOString() : '',
                     row.paidAt ? new Date(String(row.paidAt)).toISOString() : '',
                 ];
-                lines.push(values.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
+                res.write(values.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n');
             }
-            res.setHeader('Content-Type', 'text/csv');
-            res.setHeader('Content-Disposition', `attachment; filename="payments_export_${Date.now()}.csv"`);
-            res.send(lines.join('\n'));
+
+            res.end();
             return;
         }
+
+        // XLSX format: still needs in-memory for ExcelJS workbook construction
+        const rowsRaw = await ManualPayment.find(filter)
+            .populate('studentId', 'username email full_name')
+            .populate('examId', 'title subject')
+            .sort({ paidAt: -1, date: -1, createdAt: -1 })
+            .lean();
+        const rows = rowsRaw.map((item) => toCanonicalPayment(item));
 
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Payments');

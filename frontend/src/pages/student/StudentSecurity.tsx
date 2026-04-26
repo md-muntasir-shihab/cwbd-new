@@ -195,11 +195,11 @@ export default function StudentSecurity() {
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Security Overview</p>
                         <h1 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Security Center</h1>
-                        <p className="mt-1 max-w-2xl text-sm text-slate-600">
+                        <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
                             Review verification status, manage your sessions, and protect your account with an authenticator app.
                         </p>
                     </div>
-                    <div className="grid gap-2 text-xs text-slate-600 sm:grid-cols-3">
+                    <div className="grid gap-2 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-3">
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/40">
                             <div className="flex items-center gap-2 font-medium text-slate-800 dark:text-slate-200"><MailCheck className="h-4 w-4" /> Email</div>
                             <p className="mt-1">{user?.emailVerified ? 'Verified' : 'Verification pending'}</p>
@@ -222,11 +222,11 @@ export default function StudentSecurity() {
                         <KeyRound className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Change Password</h2>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">Update your password and revoke older sessions automatically.</p>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Update your password and revoke older sessions automatically.</p>
                     <div className="mt-4 grid gap-3">
-                        <input className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400" type="password" placeholder="Current password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm((current) => ({ ...current, currentPassword: e.target.value }))} />
-                        <input className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400" type="password" placeholder="New password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm((current) => ({ ...current, newPassword: e.target.value }))} />
-                        <input className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400" type="password" placeholder="Confirm new password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm((current) => ({ ...current, confirmPassword: e.target.value }))} />
+                        <input className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500" type="password" placeholder="Current password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm((current) => ({ ...current, currentPassword: e.target.value }))} />
+                        <input className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500" type="password" placeholder="New password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm((current) => ({ ...current, newPassword: e.target.value }))} />
+                        <input className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500" type="password" placeholder="Confirm new password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm((current) => ({ ...current, confirmPassword: e.target.value }))} />
                         <button onClick={submitPasswordChange} disabled={passwordSaving} className="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">
                             {passwordSaving ? 'Updating...' : 'Update password'}
                         </button>
@@ -238,11 +238,11 @@ export default function StudentSecurity() {
                         <Smartphone className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Authenticator App</h2>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                         Use a time-based authenticator app and keep the backup codes in a safe offline place.
                     </p>
                     <div className="mt-4 space-y-3">
-                        <input className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400" type="password" placeholder="Current password" value={twoFactorPassword} onChange={(e) => setTwoFactorPassword(e.target.value)} />
+                        <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500" type="password" placeholder="Current password" value={twoFactorPassword} onChange={(e) => setTwoFactorPassword(e.target.value)} />
                         {!user?.twoFactorEnabled ? (
                             <button onClick={startAuthenticatorSetup} disabled={setupLoading} className="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60">
                                 {setupLoading ? 'Preparing...' : 'Start authenticator setup'}
@@ -310,9 +310,9 @@ export default function StudentSecurity() {
 
                             {/* Verify code input */}
                             {!user?.twoFactorEnabled ? (
-                                <div className="space-y-3 pt-3 border-t border-slate-200">
+                                <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                                     <p className="text-sm font-medium text-slate-900 dark:text-white">Verify Setup</p>
-                                    <input className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-slate-400 text-center tracking-[0.3em] font-mono" type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit code" value={setupCode} onChange={(e) => setSetupCode(e.target.value.replace(/\D/g, ''))} />
+                                    <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900/50 dark:text-white dark:placeholder-slate-500 text-center tracking-[0.3em] font-mono" type="text" inputMode="numeric" maxLength={6} placeholder="Enter 6-digit code" value={setupCode} onChange={(e) => setSetupCode(e.target.value.replace(/\D/g, ''))} />
                                     <button onClick={completeAuthenticatorSetup} disabled={verifyingSetup || setupCode.length < 6} className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">
                                         {verifyingSetup ? 'Verifying...' : 'Confirm & Enable 2FA'}
                                     </button>
@@ -327,20 +327,20 @@ export default function StudentSecurity() {
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Sessions & Devices</h2>
-                        <p className="mt-1 text-sm text-slate-600">Review your active sessions and revoke anything you do not recognize.</p>
+                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Review your active sessions and revoke anything you do not recognize.</p>
                     </div>
-                    <button onClick={logoutEverywhere} className="inline-flex items-center justify-center rounded-2xl border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50">
+                    <button onClick={logoutEverywhere} className="inline-flex items-center justify-center rounded-2xl border border-rose-200 dark:border-rose-800 px-4 py-2.5 text-sm font-medium text-rose-600 dark:text-rose-400 transition hover:bg-rose-50 dark:hover:bg-rose-900/30">
                         Logout all devices
                     </button>
                 </div>
 
                 <div className="mt-4 space-y-3">
                     {loadingSessions ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">Loading sessions...</div>
+                        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 px-4 py-8 text-center text-sm text-slate-500">Loading sessions...</div>
                     ) : sessions.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">No active sessions found.</div>
+                        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 px-4 py-8 text-center text-sm text-slate-500">No active sessions found.</div>
                     ) : sessions.map((session) => (
-                        <div key={session.sessionId} className="flex flex-col gap-3 rounded-2xl border border-slate-200 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                        <div key={session.sessionId} className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-4 md:flex-row md:items-center md:justify-between">
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">
                                     <Laptop2 className="h-4 w-4 text-slate-500" />

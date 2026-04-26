@@ -12,6 +12,7 @@ import { getStudentsList, getStudentMetrics, getStudentGroups, suspendStudent, a
 import { adminBulkStudentAction } from '../../../services/api';
 import { adminUi } from '../../../lib/appRoutes';
 import type { AdminStudentUnifiedPayload } from '../../../types/studentManagement';
+import { useEscapeKey } from '../../../hooks/useEscapeKey';
 
 type Student = {
   _id: string; full_name: string; email: string; phone_number?: string;
@@ -241,18 +242,26 @@ export default function StudentManagementListPage() {
           <div className="flex items-center gap-3 rounded-2xl border border-indigo-500/30 bg-indigo-950/95 px-5 py-3 shadow-elevated backdrop-blur-md">
             <span className="text-sm font-semibold text-white">{selected.length} selected</span>
             <div className="h-4 w-px bg-white/20" />
-            <button onClick={() => handleBulkAction('suspend')} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-500/25 transition" disabled={bulkMut.isPending}>
-              <UserX size={13} /> Suspend
-            </button>
-            <button onClick={() => handleBulkAction('activate')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/25 transition" disabled={bulkMut.isPending}>
-              <UserCheck size={13} /> Activate
-            </button>
-            <button onClick={() => handleBulkAction('send_notification')} className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/25 transition" disabled={bulkMut.isPending}>
-              <Mail size={13} /> Notify
-            </button>
-            <button onClick={() => handleBulkAction('export')} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/20 transition" disabled={bulkMut.isPending}>
-              <Download size={13} /> Export
-            </button>
+            {bulkMut.isPending ? (
+              <span className="inline-flex items-center gap-2 text-xs font-medium text-white/80">
+                <RefreshCcw size={13} className="animate-spin" /> Processing bulk action...
+              </span>
+            ) : (
+              <>
+                <button onClick={() => handleBulkAction('suspend')} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/15 px-3 py-1.5 text-xs font-medium text-rose-300 hover:bg-rose-500/25 transition">
+                  <UserX size={13} /> Suspend
+                </button>
+                <button onClick={() => handleBulkAction('activate')} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/25 transition">
+                  <UserCheck size={13} /> Activate
+                </button>
+                <button onClick={() => handleBulkAction('send_notification')} className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-500/25 transition">
+                  <Mail size={13} /> Notify
+                </button>
+                <button onClick={() => handleBulkAction('export')} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/20 transition">
+                  <Download size={13} /> Export
+                </button>
+              </>
+            )}
             <button onClick={() => setSelected([])} className="ml-auto rounded-lg p-1.5 text-white/50 hover:text-white hover:bg-white/10 transition" aria-label="Clear selection">
               <X size={14} />
             </button>
@@ -454,6 +463,7 @@ function StudentQuickViewDrawer({ student, onClose, onNavigate, onSuspend, onAct
   onSuspend: (id: string) => void;
   onActivate: (id: string) => void;
 }) {
+  useEscapeKey(onClose, true);
   const { data: unified, isLoading } = useQuery<AdminStudentUnifiedPayload>({
     queryKey: ['student-unified', student._id],
     queryFn: () => getStudentUnified(student._id),

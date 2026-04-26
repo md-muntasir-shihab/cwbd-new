@@ -101,15 +101,15 @@ export default function DeadlineCard({ university: uni }: DeadlineCardProps) {
             <div className="mt-auto grid grid-cols-2 gap-2 border-t border-slate-100/80 p-4 pt-3 dark:border-slate-800/60">
                 {applyUrl ? (
                     <a href={applyUrl} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/15 transition-all hover:shadow-lg hover:shadow-cyan-500/25">
+                        className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/15 transition-all hover:shadow-lg hover:shadow-cyan-500/25">
                         <ExternalLink className="h-3.5 w-3.5" /> Apply Now
                     </a>
                 ) : (
-                    <Link to={detailsUrl} className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/15 transition-all hover:shadow-lg">
+                    <Link to={detailsUrl} className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-cyan-500/15 transition-all hover:shadow-lg">
                         Apply Now
                     </Link>
                 )}
-                <Link to={detailsUrl} className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
+                <Link to={detailsUrl} className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-200/80 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700/60 dark:text-slate-200 dark:hover:bg-slate-800">
                     Details
                 </Link>
             </div>

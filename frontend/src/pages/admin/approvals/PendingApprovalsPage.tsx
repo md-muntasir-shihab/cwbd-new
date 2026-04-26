@@ -51,18 +51,41 @@ export default function PendingApprovalsPage() {
 
     // Listen for SSE approval-queue-updated events and invalidate cache (Requirement 10.7)
     useEffect(() => {
+        let cancelled = false;
         let source: EventSource | null = null;
-        try {
-            source = new EventSource(getAdminLiveStreamUrl(), { withCredentials: true });
-            source.addEventListener('approval-queue-updated', () => {
-                queryClient.invalidateQueries({ queryKey: approvalKeys.pendingApprovals() });
-                queryClient.invalidateQueries({ queryKey: approvalKeys.profileRequests() });
-            });
-        } catch {
-            // SSE connection failure is non-critical
-        }
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+        let backoffMs = 1000;
+
+        const connect = () => {
+            if (cancelled) return;
+            try {
+                source = new EventSource(getAdminLiveStreamUrl(), { withCredentials: true });
+                source.addEventListener('approval-queue-updated', () => {
+                    queryClient.invalidateQueries({ queryKey: approvalKeys.pendingApprovals() });
+                    queryClient.invalidateQueries({ queryKey: approvalKeys.profileRequests() });
+                });
+                source.onopen = () => { backoffMs = 1000; };
+                source.onerror = () => {
+                    source?.close();
+                    if (cancelled) return;
+                    reconnectTimer = setTimeout(connect, backoffMs);
+                    backoffMs = Math.min(backoffMs * 2, 30000);
+                };
+            } catch {
+                // SSE connection failure is non-critical — retry with backoff
+                if (!cancelled) {
+                    reconnectTimer = setTimeout(connect, backoffMs);
+                    backoffMs = Math.min(backoffMs * 2, 30000);
+                }
+            }
+        };
+
+        connect();
+
         return () => {
+            cancelled = true;
             source?.close();
+            if (reconnectTimer) clearTimeout(reconnectTimer);
         };
     }, [queryClient]);
 

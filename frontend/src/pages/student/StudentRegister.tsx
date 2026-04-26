@@ -1,8 +1,62 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../../services/api';
+
+/* ── Password strength helpers ─────────────────────────────────────────────── */
+
+type StrengthLevel = 'weak' | 'fair' | 'good' | 'strong';
+
+function computePasswordStrength(password: string): { level: StrengthLevel; score: number; label: string } {
+    if (!password) return { level: 'weak', score: 0, label: '' };
+    let score = 0;
+    if (password.length >= 6) score++;
+    if (password.length >= 10) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 1) return { level: 'weak', score: 1, label: 'Weak' };
+    if (score <= 2) return { level: 'fair', score: 2, label: 'Fair' };
+    if (score <= 3) return { level: 'good', score: 3, label: 'Good' };
+    return { level: 'strong', score: 4, label: 'Strong' };
+}
+
+const STRENGTH_COLORS: Record<StrengthLevel, string> = {
+    weak: 'bg-red-500',
+    fair: 'bg-amber-500',
+    good: 'bg-blue-500',
+    strong: 'bg-emerald-500',
+};
+
+const STRENGTH_TEXT_COLORS: Record<StrengthLevel, string> = {
+    weak: 'text-red-600 dark:text-red-400',
+    fair: 'text-amber-600 dark:text-amber-400',
+    good: 'text-blue-600 dark:text-blue-400',
+    strong: 'text-emerald-600 dark:text-emerald-400',
+};
+
+/* ── Inline validation ─────────────────────────────────────────────────────── */
+
+type FieldErrors = Partial<Record<'fullName' | 'username' | 'email' | 'password', string>>;
+
+function validateForm(data: { fullName: string; username: string; email: string; password: string }): FieldErrors {
+    const errors: FieldErrors = {};
+    if (!data.fullName.trim()) errors.fullName = 'Full name is required';
+    if (!data.username.trim()) errors.username = 'Username is required';
+    else if (data.username.trim().length > 200) errors.username = 'Username is too long';
+    if (!data.email.trim()) errors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) errors.email = 'Invalid email address';
+    if (!data.password) errors.password = 'Password is required';
+    else if (data.password.length > 500) errors.password = 'Password is too long';
+    return errors;
+}
+
+const INPUT_CLASS =
+    'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500';
+const INPUT_ERROR_CLASS =
+    'w-full rounded-xl border border-red-400 bg-red-50/40 px-4 py-3 font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 dark:border-red-600 dark:bg-red-950/20 dark:text-slate-100 dark:placeholder:text-slate-500';
 
 export default function StudentRegister() {
     const [formData, setFormData] = useState({
@@ -11,15 +65,46 @@ export default function StudentRegister() {
         password: '',
         fullName: '',
     });
+    const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const [serverError, setServerError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [touched, setTouched] = useState<Set<string>>(new Set());
     const navigate = useNavigate();
 
+    const passwordStrength = useMemo(() => computePasswordStrength(formData.password), [formData.password]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        // Clear field error on change
+        if (fieldErrors[name as keyof FieldErrors]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name } = e.target;
+        setTouched((prev) => new Set(prev).add(name));
+        // Validate single field on blur
+        const errors = validateForm(formData);
+        if (errors[name as keyof FieldErrors]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: errors[name as keyof FieldErrors] }));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setServerError('');
+
+        // Client-side validation
+        const errors = validateForm(formData);
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            setTouched(new Set(['fullName', 'username', 'email', 'password']));
+            return;
+        }
+
+        setFieldErrors({});
         setLoading(true);
         try {
             const res = await api.post('/auth/register', {
@@ -29,11 +114,15 @@ export default function StudentRegister() {
             toast.success(res.data.message || 'Registration successful! Please check your email.');
             navigate('/login');
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Registration failed');
+            const message = err.response?.data?.message || 'Registration failed';
+            setServerError(message);
         } finally {
             setLoading(false);
         }
     };
+
+    const showFieldError = (field: keyof FieldErrors) =>
+        touched.has(field) && fieldErrors[field] ? fieldErrors[field] : null;
 
     return (
         <div className="min-h-screen flex bg-white text-slate-900 dark:bg-[#061226] dark:text-slate-100">
@@ -60,54 +149,109 @@ export default function StudentRegister() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4 pb-20 sm:pb-0">
+                    {serverError && (
+                        <div className="mb-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700 dark:bg-red-950/40 dark:text-red-300">
+                            {serverError}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4 pb-20 sm:pb-0" noValidate>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Full Name</label>
+                            <label htmlFor="reg-fullName" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Full Name</label>
                             <input
+                                id="reg-fullName"
                                 type="text"
                                 name="fullName"
-                                required
                                 value={formData.fullName}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                onBlur={handleBlur}
+                                className={showFieldError('fullName') ? INPUT_ERROR_CLASS : INPUT_CLASS}
                                 placeholder="John Doe"
+                                autoComplete="name"
+                                aria-invalid={!!showFieldError('fullName')}
+                                aria-describedby={showFieldError('fullName') ? 'err-fullName' : undefined}
                             />
+                            {showFieldError('fullName') && (
+                                <p id="err-fullName" className="mt-1 text-xs text-red-600 dark:text-red-400">{showFieldError('fullName')}</p>
+                            )}
                         </div>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Username</label>
+                            <label htmlFor="reg-username" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Username</label>
                             <input
+                                id="reg-username"
                                 type="text"
                                 name="username"
-                                required
                                 value={formData.username}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                onBlur={handleBlur}
+                                className={showFieldError('username') ? INPUT_ERROR_CLASS : INPUT_CLASS}
                                 placeholder="johndoe123"
+                                autoComplete="username"
+                                aria-invalid={!!showFieldError('username')}
+                                aria-describedby={showFieldError('username') ? 'err-username' : undefined}
                             />
+                            {showFieldError('username') && (
+                                <p id="err-username" className="mt-1 text-xs text-red-600 dark:text-red-400">{showFieldError('username')}</p>
+                            )}
                         </div>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Email address</label>
+                            <label htmlFor="reg-email" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Email address</label>
                             <input
+                                id="reg-email"
                                 type="email"
                                 name="email"
-                                required
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                onBlur={handleBlur}
+                                className={showFieldError('email') ? INPUT_ERROR_CLASS : INPUT_CLASS}
                                 placeholder="john@example.com"
+                                autoComplete="email"
+                                aria-invalid={!!showFieldError('email')}
+                                aria-describedby={showFieldError('email') ? 'err-email' : undefined}
                             />
+                            {showFieldError('email') && (
+                                <p id="err-email" className="mt-1 text-xs text-red-600 dark:text-red-400">{showFieldError('email')}</p>
+                            )}
                         </div>
                         <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
+                            <label htmlFor="reg-password" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Password</label>
                             <input
+                                id="reg-password"
                                 type="password"
                                 name="password"
-                                required
                                 value={formData.password}
                                 onChange={handleChange}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-medium text-slate-900 transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500"
+                                onBlur={handleBlur}
+                                className={showFieldError('password') ? INPUT_ERROR_CLASS : INPUT_CLASS}
                                 placeholder="********"
+                                autoComplete="new-password"
+                                aria-invalid={!!showFieldError('password')}
+                                aria-describedby={showFieldError('password') ? 'err-password' : 'password-strength'}
                             />
+                            {showFieldError('password') && (
+                                <p id="err-password" className="mt-1 text-xs text-red-600 dark:text-red-400">{showFieldError('password')}</p>
+                            )}
+                            {/* Password strength indicator */}
+                            {formData.password.length > 0 && (
+                                <div id="password-strength" className="mt-2 space-y-1" aria-live="polite">
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4].map((segment) => (
+                                            <div
+                                                key={segment}
+                                                className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ${segment <= passwordStrength.score
+                                                        ? STRENGTH_COLORS[passwordStrength.level]
+                                                        : 'bg-slate-200 dark:bg-slate-700'
+                                                    }`}
+                                            />
+                                        ))}
+                                    </div>
+                                    {passwordStrength.label && (
+                                        <p className={`text-xs font-medium ${STRENGTH_TEXT_COLORS[passwordStrength.level]}`}>
+                                            {passwordStrength.label}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="sticky bottom-0 bg-white/95 dark:bg-[#061226]/95 backdrop-blur py-3 px-4 -mx-4 sm:static sm:bg-transparent sm:dark:bg-transparent sm:backdrop-blur-none sm:py-0 sm:px-0 sm:mx-0">

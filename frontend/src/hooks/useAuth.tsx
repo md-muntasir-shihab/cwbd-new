@@ -224,6 +224,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 ? 'admin'
                                 : 'student';
                         markAuthSessionHint(portal);
+                        // Ensure CSRF cookie is set for state-changing requests
+                        api.get('/auth/csrf-token').catch(() => undefined);
                     }
                 } catch {
                     if (!cancelled) clearAuthState();
@@ -430,6 +432,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 : 'student');
         queryClient.invalidateQueries({ queryKey: ['home'] }).catch(() => undefined);
         queryClient.invalidateQueries({ queryKey: ['home-settings'] }).catch(() => undefined);
+        // Fetch CSRF token so state-changing requests include the double-submit cookie
+        api.get('/auth/csrf-token').catch(() => undefined);
     }, [queryClient]);
 
     const login = useCallback(async (

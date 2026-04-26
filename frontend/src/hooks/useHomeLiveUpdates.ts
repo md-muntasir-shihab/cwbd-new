@@ -10,6 +10,7 @@ export default function useHomeLiveUpdates(enabled = true): void {
     const queryClient = useQueryClient();
     const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const reconnectAttemptRef = useRef(0);
 
     useEffect(() => {
         if (IS_MOCK_MODE) return;
@@ -84,15 +85,23 @@ export default function useHomeLiveUpdates(enabled = true): void {
             source.addEventListener('ping', invalidate);
             source.onopen = () => {
                 clearReconnect();
+                reconnectAttemptRef.current = 0; // Reset on successful connection
             };
 
             source.onerror = () => {
                 if (disposed) return;
                 if (!reconnectTimerRef.current) {
+                    // Exponential backoff with jitter: Math.min(1000 * 2^attempt, 30000) + random(0, 1000)
+                    const attempt = reconnectAttemptRef.current;
+                    const baseDelay = Math.min(1000 * Math.pow(2, attempt), 30000);
+                    const jitter = Math.floor(Math.random() * 1000);
+                    const delay = baseDelay + jitter;
+                    reconnectAttemptRef.current = attempt + 1;
+
                     reconnectTimerRef.current = setTimeout(() => {
                         reconnectTimerRef.current = null;
                         connect();
-                    }, 2000);
+                    }, delay);
                 }
             };
         };

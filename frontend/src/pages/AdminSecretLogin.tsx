@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import AuthBrandHeader from '../components/auth/AuthBrandHeader';
 import ThemeSwitchPro from '../components/ui/ThemeSwitchPro';
 
-const ADMIN_ROLES = new Set(['superadmin', 'admin', 'moderator', 'editor', 'viewer']);
+const ADMIN_ROLES = new Set(['superadmin', 'admin', 'moderator', 'editor', 'viewer', 'support_agent', 'finance_agent']);
 
 export default function AdminSecretLoginPage() {
     const navigate = useNavigate();

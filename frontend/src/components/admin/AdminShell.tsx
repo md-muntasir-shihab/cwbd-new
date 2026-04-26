@@ -9,6 +9,7 @@ import LanguageToggle from './LanguageToggle';
 import { ADMIN_MENU_ITEMS, ADMIN_PATHS, isAdminPathActive, type AdminMenuItem } from '../../routes/adminPaths';
 import { adminGetActionableAlerts, adminGetAdminUiLayout, adminMarkActionableAlertsRead } from '../../services/api';
 import { usePendingApprovals } from '../../hooks/useApprovalQueries';
+import FocusTrap from '../common/FocusTrap';
 
 
 type AdminShellProps = {
@@ -114,11 +115,20 @@ export default function AdminShell({ title, description, children }: AdminShellP
     }, [adminUiLayoutQuery.data?.layout?.sidebarOrder, visibleMenuItems]);
 
     const breadcrumb = useMemo(() => {
-        if (location.pathname === '/__cw_admin__/settings') return 'Admin / Settings';
-        if (location.pathname.startsWith('/__cw_admin__/settings/')) return `Admin / Settings / ${title}`;
-        if (location.pathname.startsWith('/__cw_admin__/reports')) return 'Admin / Reports';
-        if (location.pathname.startsWith('/__cw_admin__/finance')) return `Admin / Finance / ${title}`;
-        if (location.pathname.startsWith('/__cw_admin__/news')) return `Admin / News / ${title}`;
+        const p = location.pathname;
+        if (p === '/__cw_admin__/settings') return 'Admin / Settings';
+        if (p.startsWith('/__cw_admin__/settings/')) return `Admin / Settings / ${title}`;
+        if (p.startsWith('/__cw_admin__/reports')) return 'Admin / Reports';
+        if (p.startsWith('/__cw_admin__/finance')) return `Admin / Finance / ${title}`;
+        if (p.startsWith('/__cw_admin__/news')) return `Admin / News / ${title}`;
+        if (p.startsWith('/__cw_admin__/team')) return `Admin / Team / ${title}`;
+        if (p.startsWith('/__cw_admin__/student-management')) return `Admin / Students / ${title}`;
+        if (p.startsWith('/__cw_admin__/campaigns')) return `Admin / Campaigns / ${title}`;
+        if (p.startsWith('/__cw_admin__/support-center')) return `Admin / Support / ${title}`;
+        if (p.startsWith('/__cw_admin__/exams')) return `Admin / Exams / ${title}`;
+        if (p.startsWith('/__cw_admin__/universities')) return `Admin / Universities / ${title}`;
+        if (p.startsWith('/__cw_admin__/subscriptions')) return `Admin / Subscriptions / ${title}`;
+        if (p.startsWith('/__cw_admin__/question-bank')) return `Admin / Question Bank / ${title}`;
         return `Admin / ${title}`;
     }, [location.pathname, title]);
 
@@ -321,6 +331,7 @@ export default function AdminShell({ title, description, children }: AdminShellP
                     <div
                         className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
                         onClick={() => setDrawerOpen(false)}
+                        aria-hidden="true"
                     />
                 )}
 

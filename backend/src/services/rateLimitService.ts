@@ -50,6 +50,8 @@ interface MemoryEntry {
 
 const memoryStore = new Map<string, MemoryEntry>();
 let memoryFallbackWarned = false;
+let lastFallbackLogTime = 0;
+const FALLBACK_LOG_THROTTLE_MS = 60_000;
 
 /** Periodic cleanup of expired in-memory entries (every 60 s) */
 const CLEANUP_INTERVAL_MS = 60_000;
@@ -125,22 +127,26 @@ async function checkRedis(
 function checkMemory(key: string, config: RateLimitConfig): RateLimitResult {
     ensureCleanupTimer();
 
-    if (!memoryFallbackWarned) {
+    // Log on every request, throttled to once per 60s (Bug 1.29)
+    const now = Date.now();
+    if (now - lastFallbackLogTime >= FALLBACK_LOG_THROTTLE_MS) {
         console.warn(
-            '[RateLimitService] Redis unavailable — falling back to in-memory rate limiting',
+            '[RateLimitService] Redis unavailable — falling back to in-memory rate limiting (conservative mode)',
         );
-        memoryFallbackWarned = true;
+        lastFallbackLogTime = now;
     }
 
-    const now = Date.now();
+    // Reduce maxRequests by 50% in fallback mode (Bug 1.29)
+    const effectiveMax = Math.ceil(config.maxRequests * 0.5);
+
     const entry = memoryStore.get(key);
 
     if (entry && entry.resetAt > now) {
         entry.count += 1;
-        const remaining = Math.max(0, config.maxRequests - entry.count);
+        const remaining = Math.max(0, effectiveMax - entry.count);
         return {
-            allowed: entry.count <= config.maxRequests,
-            limit: config.maxRequests,
+            allowed: entry.count <= effectiveMax,
+            limit: effectiveMax,
             remaining,
             resetAt: new Date(entry.resetAt),
         };
@@ -151,8 +157,8 @@ function checkMemory(key: string, config: RateLimitConfig): RateLimitResult {
     memoryStore.set(key, { count: 1, resetAt });
     return {
         allowed: true,
-        limit: config.maxRequests,
-        remaining: config.maxRequests - 1,
+        limit: effectiveMax,
+        remaining: effectiveMax - 1,
         resetAt: new Date(resetAt),
     };
 }
@@ -166,10 +172,10 @@ export class RateLimitService {
      * Check (and consume) a rate-limit token for the given key + config.
      * Tries Redis first; falls back to in-memory on failure.
      */
-    async check(key: string, config: RateLimitConfig): Promise<RateLimitResult> {
+    async check(key: string, config: RateLimitConfig): Promise<RateLimitResult & { isFallback?: boolean }> {
         const redisResult = await checkRedis(key, config);
-        if (redisResult) return redisResult;
-        return checkMemory(key, config);
+        if (redisResult) return { ...redisResult, isFallback: false };
+        return { ...checkMemory(key, config), isFallback: true };
     }
 }
 
@@ -240,6 +246,11 @@ export function rateLimitMiddleware(
             res.setHeader('X-RateLimit-Limit', result.limit);
             res.setHeader('X-RateLimit-Remaining', result.remaining);
             res.setHeader('X-RateLimit-Reset', result.resetAt.toISOString());
+
+            // Set fallback header when using in-memory rate limiting (Bug 1.29)
+            if (result.isFallback) {
+                res.setHeader('X-RateLimit-Fallback', 'memory');
+            }
 
             if (!result.allowed) {
                 const retryAfterSec = Math.ceil(

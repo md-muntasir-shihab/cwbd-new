@@ -76,7 +76,7 @@ export default function SubscriptionPlanCheckoutPage() {
     }
 
     return (
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 pb-24 sm:pb-8">
             <Link to="/subscription-plans" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white">
                 <ArrowLeft className="h-4 w-4" />
                 Back to subscription plans
@@ -157,6 +157,27 @@ export default function SubscriptionPlanCheckoutPage() {
                         </button>
                     </div>
                 </section>
+            </div>
+
+            {/* Sticky price footer on mobile (≤414px) — Bug 1.27 */}
+            <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] backdrop-blur sm:hidden dark:border-slate-800 dark:bg-slate-950/95">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</p>
+                        <p className="text-lg font-black text-slate-950 dark:text-white">
+                            {plan.isFree || plan.priceBDT <= 0 ? 'Free' : `${plan.currency || 'BDT'} ${Number(plan.priceBDT || 0).toLocaleString()}`}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handlePrimaryAction}
+                        disabled={requestPaymentMutation.isPending}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+                    >
+                        {requestPaymentMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                        {plan.ctaLabel || 'Continue'}
+                    </button>
+                </div>
             </div>
 
             <PlanDetailsDrawer

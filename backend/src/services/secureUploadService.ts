@@ -108,6 +108,18 @@ export async function registerSecureUpload(input: RegisterSecureUploadInput): Pr
     });
 }
 
+/**
+ * Bug 1.10 fix: Revoke all uploads for a user by setting deletedAt.
+ * Called during account deactivation/deletion to prevent orphaned file access.
+ */
+export async function revokeUploadsForUser(userId: string): Promise<number> {
+    const result = await SecureUpload.updateMany(
+        { ownerUserId: toObjectId(userId), deletedAt: null },
+        { $set: { deletedAt: new Date() } },
+    );
+    return result.modifiedCount;
+}
+
 export async function ensureSecureUploadUrl(input: EnsureSecureUploadUrlInput): Promise<string> {
     const rawUrl = String(input.url || '').trim();
     if (!rawUrl) return '';

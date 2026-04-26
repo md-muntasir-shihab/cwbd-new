@@ -1249,7 +1249,7 @@ export async function adminForceSubmit(req: AuthRequest, res: Response): Promise
         });
 
         if (submitResult.statusCode >= 400) {
-            res.status(submitResult.statusCode).json(submitResult.body);
+            ResponseBuilder.send(res, submitResult.statusCode, submitResult.body as any);
             return;
         }
 
@@ -1286,18 +1286,90 @@ export async function adminGetExamResults(req: AuthRequest, res: Response): Prom
     }
 }
 
+// ── In-memory publish job store (for async result publication) ──
+const publishJobs = new Map<string, { status: 'processing' | 'completed' | 'failed'; processed: number; total: number; error?: string }>();
+
 export async function adminPublishResult(req: AuthRequest, res: Response): Promise<void> {
     try {
-        const exam = await Exam.findByIdAndUpdate(
-            req.params.id,
-            { resultPublishDate: new Date() },
-            { new: true }
-        );
+        const examId = req.params.id;
+        const exam = await Exam.findById(examId);
         if (!exam) { ResponseBuilder.send(res, 404, ResponseBuilder.error('NOT_FOUND', 'Exam not found')); return; }
-        ResponseBuilder.send(res, 200, ResponseBuilder.success({ exam }, 'Result published immediately.'));
+
+        // Count total results to publish
+        const totalResults = await ExamResult.countDocuments({ examId: exam._id });
+
+        // For small result sets, process synchronously
+        if (totalResults <= 50) {
+            exam.resultPublishDate = new Date();
+            await exam.save();
+            ResponseBuilder.send(res, 200, ResponseBuilder.success({ exam }, 'Result published immediately.'));
+            return;
+        }
+
+        // For large result sets, process asynchronously
+        const jobId = `publish-${examId}-${Date.now()}`;
+        publishJobs.set(jobId, { status: 'processing', processed: 0, total: totalResults });
+
+        // Return 202 Accepted immediately
+        res.status(202).json({
+            success: true,
+            jobId,
+            status: 'processing',
+            total: totalResults,
+            message: 'Result publication started. Poll for status.',
+        });
+
+        // Process in background batches of 50
+        const BATCH_SIZE = 50;
+        const resultIds = await ExamResult.find({ examId: exam._id }).select('_id').lean();
+        let processed = 0;
+
+        try {
+            for (let i = 0; i < resultIds.length; i += BATCH_SIZE) {
+                const batch = resultIds.slice(i, i + BATCH_SIZE);
+                await ExamResult.updateMany(
+                    { _id: { $in: batch.map(r => r._id) } },
+                    { $set: { publishedAt: new Date() } },
+                );
+                processed += batch.length;
+                publishJobs.set(jobId, { status: 'processing', processed, total: totalResults });
+
+                // Broadcast progress via admin SSE
+                broadcastAdminLiveEvent({
+                    type: 'result-publish-progress',
+                    meta: { examId, jobId, processed, total: totalResults },
+                });
+            }
+
+            exam.resultPublishDate = new Date();
+            await exam.save();
+            publishJobs.set(jobId, { status: 'completed', processed, total: totalResults });
+
+            broadcastAdminLiveEvent({
+                type: 'result-publish-complete',
+                meta: { examId, jobId, processed, total: totalResults },
+            });
+        } catch (err) {
+            const errMsg = err instanceof Error ? err.message : 'Unknown error';
+            publishJobs.set(jobId, { status: 'failed', processed, total: totalResults, error: errMsg });
+        }
     } catch (err) {
         ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Server error'));
     }
+}
+
+export async function adminGetPublishStatus(req: AuthRequest, res: Response): Promise<void> {
+    const jobId = req.query.jobId as string;
+    if (!jobId) {
+        ResponseBuilder.send(res, 400, ResponseBuilder.error('VALIDATION_ERROR', 'jobId query parameter required'));
+        return;
+    }
+    const job = publishJobs.get(jobId);
+    if (!job) {
+        ResponseBuilder.send(res, 404, ResponseBuilder.error('NOT_FOUND', 'Job not found'));
+        return;
+    }
+    res.status(200).json({ success: true, ...job });
 }
 
 export async function adminEvaluateResult(req: AuthRequest, res: Response): Promise<void> {
@@ -1458,36 +1530,70 @@ export async function adminImportQuestionsFromExcel(req: AuthRequest, res: Respo
         const existingCount = await Question.countDocuments({ exam: examId });
         let currentOrder = existingCount + 1;
 
-        const toInsert = questionsList.map(q => ({
-            exam: new mongoose.Types.ObjectId(examId as string),
-            question: q.question,
-            optionA: q.options?.A || q.optionA || '',
-            optionB: q.options?.B || q.optionB || '',
-            optionC: q.options?.C || q.optionC || '',
-            optionD: q.options?.D || q.optionD || '',
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation || q.explanation_text || '',
-            marks: Number(q.marks) || 1,
-            subject: q.subject || '',
-            chapter: q.chapter || '',
-            difficulty: ['easy', 'medium', 'hard'].includes(q.difficulty) ? q.difficulty : 'medium',
-            category: ['Science', 'Arts', 'Commerce', 'Mixed'].includes(q.category) ? q.category : 'Mixed',
-            tags: Array.isArray(q.tags) ? q.tags : (typeof q.tags === 'string' ? q.tags.split(',').map((t: string) => t.trim()) : []),
-            active: true,
-            order: currentOrder++
-        }));
+        // Bug 1.5 fix: Process rows individually with try/catch for row-level errors
+        const toInsert: any[] = [];
+        const failedRows: Array<{ rowNumber: number; field: string; error: string }> = [];
 
-        await Question.insertMany(toInsert);
-        await Exam.findByIdAndUpdate(examId, { $inc: { totalQuestions: toInsert.length } });
+        questionsList.forEach((q: any, index: number) => {
+            const rowNumber = index + 2; // 1-indexed + header row
+            try {
+                // Parse options if they come as a JSON string
+                let options = q.options;
+                if (typeof options === 'string') {
+                    options = JSON.parse(options);
+                }
+
+                // Parse tags if they come as a JSON string
+                let tags = q.tags;
+                if (typeof tags === 'string') {
+                    try {
+                        tags = JSON.parse(tags);
+                    } catch {
+                        tags = tags.split(',').map((t: string) => t.trim());
+                    }
+                }
+
+                toInsert.push({
+                    exam: new mongoose.Types.ObjectId(examId as string),
+                    question: q.question,
+                    optionA: options?.A || q.optionA || '',
+                    optionB: options?.B || q.optionB || '',
+                    optionC: options?.C || q.optionC || '',
+                    optionD: options?.D || q.optionD || '',
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation || q.explanation_text || '',
+                    marks: Number(q.marks) || 1,
+                    subject: q.subject || '',
+                    chapter: q.chapter || '',
+                    difficulty: ['easy', 'medium', 'hard'].includes(q.difficulty) ? q.difficulty : 'medium',
+                    category: ['Science', 'Arts', 'Commerce', 'Mixed'].includes(q.category) ? q.category : 'Mixed',
+                    tags: Array.isArray(tags) ? tags : [],
+                    active: true,
+                    order: currentOrder++
+                });
+            } catch (parseError: unknown) {
+                const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parse error';
+                const field = typeof q.options === 'string' ? 'options' : 'unknown';
+                failedRows.push({ rowNumber, field, error: errorMessage });
+            }
+        });
+
+        if (toInsert.length > 0) {
+            await Question.insertMany(toInsert);
+            await Exam.findByIdAndUpdate(examId, { $inc: { totalQuestions: toInsert.length } });
+        }
 
         ResponseBuilder.send(res, 201, ResponseBuilder.created({
             imported: toInsert.length,
             duplicatesSkipped: 0,
-            duplicateRows: []
-        }, `Import complete. ${toInsert.length} questions added.`));
+            duplicateRows: [],
+            failedRows,
+            failedRowCount: failedRows.length,
+        }, `Import complete. ${toInsert.length} questions added.${failedRows.length > 0 ? ` ${failedRows.length} rows failed.` : ''}`));
     } catch (err) {
         console.error('[adminImportQuestionsFromExcel]', err);
-        ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Server error during import.'));
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        ResponseBuilder.send(res, 500, ResponseBuilder.error('IMPORT_ERROR', `Failed to process question import. ${detail}`));
     }
 }
 
@@ -2091,7 +2197,8 @@ export async function adminImportExamResults(req: AuthRequest, res: Response): P
         }, 'Exam results imported successfully.'));
     } catch (err) {
         console.error('[adminImportExamResults]', err);
-        ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Server error during import.'));
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        ResponseBuilder.send(res, 500, ResponseBuilder.error('IMPORT_ERROR', `Failed to import exam results. ${detail}`));
     }
 }
 
@@ -2631,7 +2738,9 @@ export async function adminExportExamReport(req: AuthRequest, res: Response): Pr
     } catch (err) {
         console.error('[adminExportExamReport]', err);
         const message = err instanceof Error && err.message === 'Exam not found' ? 'Exam not found' : 'Server error';
-        res.status(message === 'Exam not found' ? 404 : 500).json({ message });
+        const statusCode = message === 'Exam not found' ? 404 : 500;
+        const code = message === 'Exam not found' ? 'NOT_FOUND' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, statusCode, ResponseBuilder.error(code, message));
     }
 }
 
@@ -3076,7 +3185,7 @@ export async function adminBulkImportUniversities(req: AuthRequest, res: Respons
         await adminInitUniversityImport(req, initRes);
         if (initResult.statusCode >= 400) {
             const payload = asRecordObject(initResult.body) || { message: 'Failed to initialize import.' };
-            res.status(initResult.statusCode || 500).json(payload);
+            ResponseBuilder.send(res, initResult.statusCode || 500, payload as any);
             return;
         }
 
@@ -3119,7 +3228,7 @@ export async function adminBulkImportUniversities(req: AuthRequest, res: Respons
         await adminValidateUniversityImport(validateReq, validateRes);
         if (validateResult.statusCode >= 400) {
             const payload = asRecordObject(validateResult.body) || { message: 'Failed to validate import data.' };
-            res.status(validateResult.statusCode || 500).json(payload);
+            ResponseBuilder.send(res, validateResult.statusCode || 500, payload as any);
             return;
         }
         const validateBody = asRecordObject(validateResult.body) || {};
@@ -3147,7 +3256,7 @@ export async function adminBulkImportUniversities(req: AuthRequest, res: Respons
         await adminCommitUniversityImport(commitReq, commitRes);
         if (commitResult.statusCode >= 400) {
             const payload = asRecordObject(commitResult.body) || { message: 'Failed to commit import.' };
-            res.status(commitResult.statusCode || 500).json(payload);
+            ResponseBuilder.send(res, commitResult.statusCode || 500, payload as any);
             return;
         }
 
@@ -3178,7 +3287,8 @@ export async function adminBulkImportUniversities(req: AuthRequest, res: Respons
         return;
     } catch (err) {
         console.error('[adminBulkImportUniversities]', err);
-        ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', 'Server error during import.'));
+        const detail = err instanceof Error ? err.message : 'Unknown error';
+        ResponseBuilder.send(res, 500, ResponseBuilder.error('IMPORT_ERROR', `Failed to bulk import universities. ${detail}`));
     }
 }
 
@@ -3278,7 +3388,7 @@ export async function adminLiveAttemptAction(req: AuthRequest, res: Response): P
                 submissionType: 'forced',
             });
             if (submitResult.statusCode >= 400) {
-                res.status(submitResult.statusCode).json(submitResult.body);
+                ResponseBuilder.send(res, submitResult.statusCode, submitResult.body as any);
                 return;
             }
             broadcastExamAttemptEventByMeta({ examId, studentId }, 'forced-submit', { source: 'admin', actorId });

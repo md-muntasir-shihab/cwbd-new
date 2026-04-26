@@ -107,6 +107,10 @@ export default function BannerPanel() {
             toast.error('Banner image is required');
             return;
         }
+        if (form.startDate && form.endDate && new Date(form.startDate) >= new Date(form.endDate)) {
+            toast.error('End date must be after start date');
+            return;
+        }
         setSaving(true);
         try {
             const payload = {

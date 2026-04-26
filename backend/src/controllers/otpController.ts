@@ -33,10 +33,12 @@ export const requestOtpHandler = async (req: AuthRequest, res: ExpressResponse) 
         const result = await requestOtp(input);
 
         if (!result.success) {
-            return res.status(result.httpStatus || 500).json({
-                message: result.error,
-                ...(result.cooldownRemaining != null && { cooldownRemaining: result.cooldownRemaining }),
-            });
+            const code = result.httpStatus === 429 ? 'RATE_LIMIT_EXCEEDED' : 'SERVER_ERROR';
+            return ResponseBuilder.send(
+                res,
+                result.httpStatus || 500,
+                ResponseBuilder.error(code, result.error || 'OTP request failed', result.cooldownRemaining != null ? { cooldownRemaining: result.cooldownRemaining } : undefined),
+            );
         }
 
         return ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Verification code sent successfully.'));
@@ -74,7 +76,8 @@ export const verifyOtpHandler = async (req: AuthRequest, res: ExpressResponse) =
         const result = await verifyOtp(input);
 
         if (!result.success) {
-            return res.status(result.httpStatus || 500).json({ message: result.error });
+            const code = result.httpStatus === 429 ? 'RATE_LIMIT_EXCEEDED' : 'SERVER_ERROR';
+            return ResponseBuilder.send(res, result.httpStatus || 500, ResponseBuilder.error(code, result.error || 'OTP verification failed'));
         }
 
         return ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Contact verified successfully.'));
@@ -123,10 +126,12 @@ export const resendOtpHandler = async (req: AuthRequest, res: ExpressResponse) =
         const result = await requestOtp(input);
 
         if (!result.success) {
-            return res.status(result.httpStatus || 500).json({
-                message: result.error,
-                ...(result.cooldownRemaining != null && { cooldownRemaining: result.cooldownRemaining }),
-            });
+            const code = result.httpStatus === 429 ? 'RATE_LIMIT_EXCEEDED' : 'SERVER_ERROR';
+            return ResponseBuilder.send(
+                res,
+                result.httpStatus || 500,
+                ResponseBuilder.error(code, result.error || 'OTP request failed', result.cooldownRemaining != null ? { cooldownRemaining: result.cooldownRemaining } : undefined),
+            );
         }
 
         return ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Verification code resent successfully.'));

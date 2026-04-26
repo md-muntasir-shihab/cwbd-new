@@ -263,7 +263,7 @@ export default function UniversityDetailsPage() {
     const socialLinks = (uni.socialLinks || []).filter(l => l.url);
     const faqs = (uni.faqs || []).filter(f => f.q && f.a);
     const notices = (uni.notices || []).filter(n => n.title);
-    const applicationSteps = (uni.applicationSteps || []).sort((a, b) => a.order - b.order);
+    const applicationSteps = (uni.applicationSteps || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const relatedUniversities = (uni.relatedUniversities || []).filter(r => r.slug);
     const units = (uni.units || []).filter(u => u.name);
     const hasEligibility = Boolean(uni.minGpa || uni.requiredBackground || uni.ageLimit || uni.specialQuota);
@@ -630,7 +630,7 @@ export default function UniversityDetailsPage() {
                                 <Link key={i} to={`/universities/${rel.slug}`}
                                     className="flex items-center gap-3 rounded-xl bg-slate-50/80 p-3.5 ring-1 ring-slate-100 transition hover:ring-primary-200 hover:bg-primary-50/30 dark:bg-slate-800/40 dark:ring-slate-800 dark:hover:ring-primary-800 dark:hover:bg-primary-950/20">
                                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-slate-100 text-sm font-black text-primary-600 dark:bg-slate-800 dark:ring-slate-700 dark:text-primary-400">
-                                        {rel.shortForm?.slice(0, 3) || rel.name.charAt(0)}
+                                        {rel.shortForm?.slice(0, 3) || (rel.name || '').charAt(0) || '?'}
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{rel.name}</p>

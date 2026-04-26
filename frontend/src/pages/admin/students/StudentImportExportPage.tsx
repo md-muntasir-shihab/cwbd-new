@@ -111,15 +111,32 @@ export default function StudentImportExportPage() {
               </button>
             </div>
             {importResult && (
-              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                {(() => {
-                  const result = importResult as Record<string, unknown>;
-                  const created = Number(result.created ?? 0);
-                  const updated = Number(result.updated ?? 0);
-                  const skipped = Number(result.skipped ?? 0);
-                  const errors = Array.isArray(result.errors) ? result.errors.length : 0;
-                  return `Import complete: ${created} created, ${updated} updated, ${skipped} skipped, ${errors} failed`;
-                })()}
+              <div className="space-y-2">
+                <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                  {(() => {
+                    const result = importResult as Record<string, unknown>;
+                    const created = Number(result.created ?? 0);
+                    const updated = Number(result.updated ?? 0);
+                    const skipped = Number(result.skipped ?? 0);
+                    const errors = Array.isArray(result.errors) ? result.errors.length : 0;
+                    return `Import complete: ${created} created, ${updated} updated, ${skipped} skipped, ${errors} failed`;
+                  })()}
+                </div>
+                {Array.isArray((importResult as Record<string, unknown>).errors) && ((importResult as Record<string, unknown>).errors as Array<Record<string, unknown>>).length > 0 && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                    <p className="mb-2 text-xs font-semibold text-red-700 dark:text-red-400">Row-level errors:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {((importResult as Record<string, unknown>).errors as Array<Record<string, unknown>>).slice(0, 50).map((err, i) => (
+                        <p key={i} className="text-xs text-red-600 dark:text-red-400">
+                          {err.row != null ? `Row ${err.row}: ` : ''}{String(err.field ? `[${err.field}] ` : '')}{String(err.message || err.error || JSON.stringify(err))}
+                        </p>
+                      ))}
+                      {((importResult as Record<string, unknown>).errors as Array<Record<string, unknown>>).length > 50 && (
+                        <p className="text-xs text-red-500 font-medium">...and {((importResult as Record<string, unknown>).errors as Array<Record<string, unknown>>).length - 50} more errors</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {importMutation.isError && (

@@ -71,6 +71,7 @@ function validateAndNormalizeRows(
 ): ValidationResult {
     const normalizedRows: Record<string, unknown>[] = [];
     const failedRows: Array<{ rowNumber: number; reason: string; payload?: Record<string, unknown> }> = [];
+    const emailSeen = new Set<string>();
 
     rows.forEach((row, index) => {
         const rowNumber = index + 2;
@@ -91,7 +92,14 @@ function validateAndNormalizeRows(
             return;
         }
 
-        // Add more validations as needed...
+        // Bug 1.3 fix: Detect intra-file duplicate emails
+        if (email) {
+            if (emailSeen.has(email)) {
+                failedRows.push({ rowNumber, reason: `Duplicate email within import file (row ${rowNumber})`, payload: row });
+                return;
+            }
+            emailSeen.add(email);
+        }
 
         normalizedRows.push({
             full_name,

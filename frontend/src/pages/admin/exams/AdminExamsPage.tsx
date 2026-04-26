@@ -901,8 +901,7 @@ export function AdminExamsPage() {
             setDetectedImportColumns(preview.columns);
             setSampleImportRows(preview.rows);
             setMappingSelections(autoDetectExternalMapping(preview.columns));
-        } catch (error) {
-            console.error('[AdminExamsPage external import preview]', error);
+        } catch {
             setDetectedImportColumns([]);
             setSampleImportRows([]);
             setMappingSelections({});
@@ -942,8 +941,7 @@ export function AdminExamsPage() {
             setImportWizardColumns(preview.columns);
             setImportWizardRows(preview.rows);
             setImportWizardMappingSelections(autoDetectExamCenterMapping(preview.columns));
-        } catch (error) {
-            console.error('[AdminExamsPage exam-center import preview]', error);
+        } catch {
             setImportWizardColumns([]);
             setImportWizardRows([]);
             setImportWizardMappingSelections({});
@@ -2022,6 +2020,7 @@ export function AdminExamsPage() {
 
                 <div className="admin-panel-bg rounded-xl p-5 space-y-4">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-text-muted">Schedule & Access</h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 -mt-2">Enter times in UTC. Your browser local time is not automatically converted.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {renderFormField('Window Start (UTC)', 'examWindowStartUTC', 'datetime-local')}
                         {renderFormField('Window End (UTC)', 'examWindowEndUTC', 'datetime-local')}
@@ -2096,30 +2095,30 @@ export function AdminExamsPage() {
                             </div>
                             {groupSearch.trim() && (
                                 <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-card-border bg-white dark:bg-slate-800 divide-y divide-card-border/50">
-                                    {((Array.isArray((groupsQuery.data as any)?.items) ? (groupsQuery.data as any).items : Array.isArray(groupsQuery.data) ? groupsQuery.data : []) as Array<Record<string, unknown>> : [])
+                                    {((Array.isArray((groupsQuery.data as any)?.items) ? (groupsQuery.data as any).items : Array.isArray(groupsQuery.data) ? groupsQuery.data : []) as Array<Record<string, unknown>>)
                                         .filter((g) => {
                                             const selected = Array.isArray(formData.targetGroupIds) ? formData.targetGroupIds as string[] : [];
-                                    return !selected.includes(String(g._id)) && String(g.name || '').toLowerCase().includes(groupSearch.toLowerCase());
+                                            return !selected.includes(String(g._id)) && String(g.name || '').toLowerCase().includes(groupSearch.toLowerCase());
                                         })
-                                    .slice(0, 8)
+                                        .slice(0, 8)
                                         .map((g) => {
                                             const color = String(g.color || '#6366f1');
-                                    return (
-                                    <button
-                                        key={String(g._id)}
-                                        type="button"
-                                        onClick={() => {
-                                            const existing = Array.isArray(formData.targetGroupIds) ? formData.targetGroupIds as string[] : [];
-                                            setField('targetGroupIds', [...existing, String(g._id)]);
-                                            setGroupSearch('');
-                                        }}
-                                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-left"
-                                    >
-                                        <Users className="h-3.5 w-3.5 flex-shrink-0" style={{ color }} />
-                                        <span className="truncate text-text dark:text-dark-text">{String(g.name)}</span>
-                                        <span className="ml-auto text-xs text-text-muted">{String(g.type || '')}</span>
-                                    </button>
-                                    );
+                                            return (
+                                                <button
+                                                    key={String(g._id)}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const existing = Array.isArray(formData.targetGroupIds) ? formData.targetGroupIds as string[] : [];
+                                                        setField('targetGroupIds', [...existing, String(g._id)]);
+                                                        setGroupSearch('');
+                                                    }}
+                                                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 text-left"
+                                                >
+                                                    <Users className="h-3.5 w-3.5 flex-shrink-0" style={{ color }} />
+                                                    <span className="truncate text-text dark:text-dark-text">{String(g.name)}</span>
+                                                    <span className="ml-auto text-xs text-text-muted">{String(g.type || '')}</span>
+                                                </button>
+                                            );
                                         })}
                                 </div>
                             )}

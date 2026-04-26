@@ -376,7 +376,10 @@ export async function refreshAccessToken(): Promise<string | null> {
         .post<{ token?: string }>(resolveApiUrl('/auth/refresh'), {}, {
             timeout: 10000,
             withCredentials: true,
-            headers: { 'X-Browser-Fingerprint': ensureBrowserFingerprint() },
+            headers: {
+                'X-Browser-Fingerprint': ensureBrowserFingerprint(),
+                ...(readCsrfCookie() ? { 'X-CSRF-Token': readCsrfCookie() } : {}),
+            },
         })
         .then((res) => {
             const nextToken = String(res.data?.token || '').trim();
@@ -397,12 +400,37 @@ export async function refreshAccessToken(): Promise<string | null> {
     return refreshInFlight;
 }
 
-// Attach JWT token to every request
+// ── CSRF auto-fetch guard ──
+// Ensures the _csrf cookie exists before the first mutating request.
+// Uses a module-level promise so concurrent requests share the same fetch.
+let csrfFetchInFlight: Promise<void> | null = null;
+
+async function ensureCsrfCookie(): Promise<void> {
+    if (readCsrfCookie()) return;
+    if (csrfFetchInFlight) return csrfFetchInFlight;
+    csrfFetchInFlight = axios
+        .get(resolveApiUrl('/auth/csrf-token'), { withCredentials: true, timeout: 5000 })
+        .then(() => undefined)
+        .catch(() => undefined)
+        .finally(() => { csrfFetchInFlight = null; });
+    return csrfFetchInFlight;
+}
+
+// Attach JWT token and CSRF token to every request
 api.interceptors.request.use(
     async (config) => {
         const token = readAccessToken();
         if (token) config.headers.Authorization = `Bearer ${token}`;
         config.headers['X-Browser-Fingerprint'] = ensureBrowserFingerprint();
+        // Attach CSRF token for state-changing requests
+        const method = (config.method || '').toUpperCase();
+        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+            await ensureCsrfCookie();
+            const csrfToken = readCsrfCookie();
+            if (csrfToken) {
+                config.headers['X-CSRF-Token'] = csrfToken;
+            }
+        }
         if (shouldAttachAppCheckHeader(config.method, config.url)) {
             const appCheckToken = await getFirebaseAppCheckToken();
             if (appCheckToken) {
@@ -414,9 +442,32 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Handle 401 globally
+// Unwrap ResponseBuilder envelope: { success, data, message?, meta? } → data (with message/meta preserved)
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const body = response.data;
+        if (body && typeof body === 'object' && body.success === true && 'data' in body) {
+            let inner = body.data;
+
+            if (Array.isArray(inner) && body.meta && typeof body.meta === 'object') {
+                // Paginated response: wrap array + meta into { items, page, limit, total, pages }
+                const meta = body.meta as { page?: number; limit?: number; total?: number };
+                const total = Number(meta.total || 0);
+                const limit = Number(meta.limit || 1);
+                inner = { items: inner, ...meta, pages: Math.max(1, Math.ceil(total / limit)) };
+            } else if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+                inner = { ...inner };
+            } else if (inner == null || typeof inner !== 'object') {
+                inner = {};
+            }
+
+            if (body.message) {
+                (inner as Record<string, unknown>).message = body.message;
+            }
+            response.data = inner;
+        }
+        return response;
+    },
     async (error) => {
         const status = error.response?.status;
         const code = error.response?.data?.code;

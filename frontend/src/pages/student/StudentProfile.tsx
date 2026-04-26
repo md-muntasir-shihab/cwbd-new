@@ -58,14 +58,24 @@ export default function StudentProfile() {
             const res = await getStudentProfile();
             setProfile(res.data);
             const celebration = res.data?.celebration;
-            if (celebration?.eligible) {
+            if (celebration?.eligible && celebration.topPercentage > 0) {
                 const todayKey = new Date().toISOString().slice(0, 10);
-                const storageKey = `campusway-celebration-${todayKey}`;
-                const shownCount = Number(localStorage.getItem(storageKey) || 0);
+                const trackingKey = 'dashboard_celebration_tracking';
+                let trackingData: Record<string, unknown> = {};
+                try {
+                    trackingData = JSON.parse(localStorage.getItem(trackingKey) || '{}');
+                    if (trackingData.date !== todayKey) {
+                        trackingData = { date: todayKey, showsToday: 0, examsCelebrated: [] };
+                    }
+                } catch {
+                    trackingData = { date: todayKey, showsToday: 0, examsCelebrated: [] };
+                }
+                const showsToday = Number(trackingData.showsToday || 0);
                 const maxShows = Number(celebration.maxShowsPerDay || 1);
-                if (shownCount < maxShows) {
+                if (showsToday < maxShows) {
+                    trackingData.showsToday = showsToday + 1;
+                    localStorage.setItem(trackingKey, JSON.stringify(trackingData));
                     setShowCelebration(true);
-                    localStorage.setItem(storageKey, String(shownCount + 1));
                 }
             }
             if (res.data) {
@@ -180,8 +190,7 @@ export default function StudentProfile() {
             if (type === 'profile_photo') {
                 try {
                     fileToUpload = await compressImage(file, 0.15); // 150KB max
-                } catch (err) {
-                    console.error('Image compression failed:', err);
+                } catch {
                     // fallback to original file if compression fails
                 }
             }

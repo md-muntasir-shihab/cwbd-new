@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Clock3, Download, Flag, SkipForward, XCircle } from "lucide-react";
 import { downloadPdfEndpoint, examPdfUrls } from "../../api/examApi";
 import { useExamSolutions, usePdfAvailability } from "../../hooks/useExamQueries";
+import MathText from "../../components/exam/MathText";
 import type { OptionKey, RunnerCache } from "../../types/exam";
 
 type FilterKey = "All" | "Wrong" | "Correct" | "Skipped" | "Marked";
@@ -232,9 +233,9 @@ export const ExamSolutionsPage = () => {
                             className={`card-flat border-l-4 ${borderColor} p-4 sm:p-5`}
                         >
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-sm font-semibold text-text dark:text-dark-text">
-                                    Q{index + 1}. {item.questionText}
-                                </p>
+                                <div className="text-sm font-semibold text-text dark:text-dark-text prose prose-sm max-w-none dark:prose-invert">
+                                    <MathText>{`Q${index + 1}. ${item.questionText}`}</MathText>
+                                </div>
                                 {isCorrect ? (
                                     <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
                                 ) : isSkipped ? (
@@ -267,7 +268,9 @@ export const ExamSolutionsPage = () => {
                             {item.explanationText ? (
                                 <div className="mt-3 rounded-xl border border-card-border bg-surface2/30 p-3 dark:bg-dark-surface/30">
                                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-text-muted dark:text-dark-text/55">Explanation</p>
-                                    <p className="text-sm leading-relaxed text-text-muted dark:text-dark-text/75">{item.explanationText}</p>
+                                    <div className="text-sm leading-relaxed text-text-muted dark:text-dark-text/75 prose prose-sm max-w-none dark:prose-invert">
+                                        <MathText>{item.explanationText}</MathText>
+                                    </div>
                                 </div>
                             ) : null}
 

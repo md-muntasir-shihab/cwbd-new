@@ -151,11 +151,11 @@ export default function ReportsPanel(_props: ReportsPanelProps = {}) {
                     </article>
                     <article className="card-flat p-4 md:col-span-2 xl:col-span-2">
                         <p className="text-xs uppercase tracking-widest cw-muted">Top News Sources</p>
-                        {summary.topNewsSources.length === 0 ? (
+                        {!Array.isArray(summary.topNewsSources) || summary.topNewsSources.length === 0 ? (
                             <p className="mt-2 text-sm cw-muted">No sources in this range.</p>
                         ) : (
                             <ul className="mt-2 space-y-1">
-                                {summary.topNewsSources.slice(0, 5).map((row) => (
+                                {(summary.topNewsSources || []).slice(0, 5).map((row) => (
                                     <li key={`${row.source}-${row.count}`} className="flex items-center justify-between rounded-lg border cw-border px-3 py-2 text-sm">
                                         <span className="cw-text">{row.source}</span>
                                         <span className="font-semibold cw-text">{row.count}</span>
