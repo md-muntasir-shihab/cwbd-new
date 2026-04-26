@@ -463,7 +463,7 @@ export default function Profile() {
 
     return (
         <div className="flex flex-col font-sans">
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
+            <main className="flex-1 w-full mx-auto px-5 sm:px-8 lg:px-12 xl:px-16 py-8 mt-20">
                 <div className="space-y-6">
                     {renderHeader()}
                     {renderLockBanner()}

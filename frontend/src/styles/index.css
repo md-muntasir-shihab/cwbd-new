@@ -541,7 +541,8 @@
 
   /* â”€â”€ Layout containers â”€â”€ */
   .section-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full mx-auto px-5 sm:px-8 md:px-10 lg:px-16 xl:px-24 2xl:px-32;
+    max-width: 100%;
   }
 
   .page-hero {

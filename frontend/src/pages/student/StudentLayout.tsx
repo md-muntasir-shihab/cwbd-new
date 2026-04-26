@@ -175,7 +175,7 @@ export default function StudentLayout() {
         <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex flex-col font-sans">
             <GlobalAlertGate />
 
-            <div className="flex-1 mx-auto w-full max-w-7xl px-4 md:px-6 py-5 md:py-8 flex gap-6 xl:gap-8">
+            <div className="flex-1 mx-auto w-full px-5 md:px-8 lg:px-12 xl:px-16 py-5 md:py-8 flex gap-6 xl:gap-8">
                 <aside className="hidden lg:block w-[260px] shrink-0">
                     <div className="sticky top-[88px] rounded-3xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] p-4">
                         <StudentNavigation pathname={location.pathname} unreadNotifCount={unreadNotifCount} />

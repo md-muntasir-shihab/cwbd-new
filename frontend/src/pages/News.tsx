@@ -300,7 +300,7 @@ export default function NewsPage() {
             <div className="min-h-screen bg-background dark:bg-[#081322]">
 
 
-                <div className={`mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-6 sm:px-6 lg:px-8 ${layoutMode === 'rss_reader' ? 'lg:grid-cols-[260px_1fr_320px]' : ''}`}>
+                <div className={`mx-auto grid w-full grid-cols-1 gap-4 px-5 py-6 sm:px-8 md:px-10 lg:px-16 xl:px-24 2xl:px-32 ${layoutMode === 'rss_reader' ? 'lg:grid-cols-[260px_1fr_320px]' : ''}`}>
                     <aside className={`${showSourceSidebar ? 'hidden lg:block' : 'hidden'} space-y-4`}>
                         <FilterPanel
                             search={search}

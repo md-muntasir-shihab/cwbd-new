@@ -1510,7 +1510,7 @@ export default function HomeModern() {
                     secondaryCTA={hero.secondaryCTA}
                 />
             )}
-            <div className="max-w-7xl mx-auto space-y-10 md:space-y-14 pt-6 pb-20">
+            <div className="section-container space-y-10 md:space-y-14 pt-6 pb-20">
                 {sectionOrder.map(section => {
                     const renderer = sectionRenderers[section.id];
                     if (!renderer) return null;

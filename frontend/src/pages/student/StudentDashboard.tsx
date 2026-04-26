@@ -31,7 +31,7 @@ function isSectionVisible(sections: Record<string, DashboardSectionConfig> | und
 
 function LoadingSkeleton() {
     return (
-        <div className="space-y-4 max-w-7xl mx-auto animate-pulse">
+        <div className="space-y-4 w-full mx-auto animate-pulse">
             <div className="h-32 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900" />
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -125,7 +125,7 @@ export default function StudentDashboard() {
 
     if (isError || !data) {
         return (
-            <div className="max-w-7xl mx-auto">
+            <div className="w-full mx-auto">
                 <div className="rounded-2xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-5 text-red-700 dark:text-red-200 text-sm">
                     Failed to load dashboard data. Please try again later.
                 </div>
@@ -136,7 +136,7 @@ export default function StudentDashboard() {
     const { sections, config } = data;
 
     return (
-        <div className="space-y-5 max-w-7xl mx-auto px-1 sm:px-0 relative">
+        <div className="space-y-5 w-full mx-auto px-1 sm:px-0 relative">
             <SEO title="Dashboard" description="Your personalized student dashboard on CampusWay. Track exams, results, progress and more." />
             {isFetching && (
                 <div className="absolute top-2 right-2 z-10">

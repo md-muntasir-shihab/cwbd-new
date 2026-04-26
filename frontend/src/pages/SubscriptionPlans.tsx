@@ -123,7 +123,7 @@ export default function SubscriptionPlansPage() {
                 />
             )}
             <div className="bg-[radial-gradient(circle_at_top,_rgba(236,72,153,0.12),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.16),_transparent_34%)] py-8 sm:py-10">
-                <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto flex w-full flex-col gap-8 px-5 sm:px-8 md:px-10 lg:px-16 xl:px-24 2xl:px-32">
 
                     <section className="rounded-[2rem] border border-slate-200/80 bg-white/92 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-slate-800 dark:bg-slate-950/86">
                         <div className="grid gap-3 lg:grid-cols-[auto,1fr]">
