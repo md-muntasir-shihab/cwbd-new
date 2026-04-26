@@ -1335,20 +1335,14 @@ export async function adminPublishResult(req: AuthRequest, res: Response): Promi
                 publishJobs.set(jobId, { status: 'processing', processed, total: totalResults });
 
                 // Broadcast progress via admin SSE
-                broadcastAdminLiveEvent({
-                    type: 'result-publish-progress',
-                    meta: { examId, jobId, processed, total: totalResults },
-                });
+                broadcastAdminLiveEvent('result-publish-progress', { examId, jobId, processed, total: totalResults });
             }
 
             exam.resultPublishDate = new Date();
             await exam.save();
             publishJobs.set(jobId, { status: 'completed', processed, total: totalResults });
 
-            broadcastAdminLiveEvent({
-                type: 'result-publish-complete',
-                meta: { examId, jobId, processed, total: totalResults },
-            });
+            broadcastAdminLiveEvent('result-publish-complete', { examId, jobId, processed, total: totalResults });
         } catch (err) {
             const errMsg = err instanceof Error ? err.message : 'Unknown error';
             publishJobs.set(jobId, { status: 'failed', processed, total: totalResults, error: errMsg });

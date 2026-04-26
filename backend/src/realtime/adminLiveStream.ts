@@ -10,6 +10,8 @@ export type AdminLiveEventName =
     | 'autosave'
     | 'exam-metrics-updated'
     | 'approval-queue-updated'
+    | 'result-publish-progress'
+    | 'result-publish-complete'
     | 'ping';
 
 const clients = new Set<Response>();
