@@ -127,7 +127,12 @@ export function useUniversityDetail(slug: string | undefined) {
 export function usePublicHomeSettings() {
   return useQuery<HomeSettingsConfig>({
     queryKey: ['home-settings-public'],
-    queryFn: async () => (await getPublicHomeSettings()).data.homeSettings,
+    queryFn: async () => {
+      const res = await getPublicHomeSettings();
+      const payload = res.data as any;
+      // Handle ResponseBuilder envelope: { success, data: { homeSettings } }
+      return payload?.data?.homeSettings || payload?.homeSettings || payload;
+    },
     staleTime: 60_000,
     refetchInterval: 90_000,
   });
@@ -136,7 +141,12 @@ export function usePublicHomeSettings() {
 export function usePublicUniversityBrowseSettings() {
   return useQuery<PublicUniversityBrowseSettings>({
     queryKey: ['university-browse-settings-public'],
-    queryFn: async () => (await getPublicUniversityBrowseSettings()).data.settings,
+    queryFn: async () => {
+      const res = await getPublicUniversityBrowseSettings();
+      const payload = res.data as any;
+      // Handle ResponseBuilder envelope: { success, data: { settings } }
+      return payload?.data?.settings || payload?.settings || payload;
+    },
     staleTime: 60_000,
     refetchInterval: 90_000,
   });

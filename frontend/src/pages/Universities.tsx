@@ -10,10 +10,19 @@ export default function UniversitiesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [heroSearch, setHeroSearch] = useState(searchParams.get('q') || '');
 
-    // Sync hero search to URL params with debounce
+    // Sync URL → hero search (one-way: URL is source of truth)
+    useEffect(() => {
+        const urlQ = searchParams.get('q') || '';
+        if (urlQ !== heroSearch) setHeroSearch(urlQ);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams]);
+
+    // Sync hero search → URL with debounce
     useEffect(() => {
         const timer = setTimeout(() => {
             const q = heroSearch.trim();
+            const currentQ = searchParams.get('q') || '';
+            if (q === currentQ) return;
             setSearchParams((prev) => {
                 if (q) prev.set('q', q);
                 else prev.delete('q');
@@ -21,7 +30,7 @@ export default function UniversitiesPage() {
             }, { replace: true });
         }, 350);
         return () => clearTimeout(timer);
-    }, [heroSearch, setSearchParams]);
+    }, [heroSearch, setSearchParams, searchParams]);
 
     return (
         <>
