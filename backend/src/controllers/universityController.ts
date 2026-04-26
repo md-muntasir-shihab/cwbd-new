@@ -10,6 +10,7 @@ import UniversityCluster from '../models/UniversityCluster';
 import { ALLOWED_CATEGORIES, ensureUniversitySettings } from '../models/UniversitySettings';
 import { broadcastStudentDashboardEvent } from '../realtime/studentDashboardStream';
 import { broadcastHomeStreamEvent } from '../realtime/homeStream';
+import { delByPattern } from '../services/cacheService';
 import {
     backfillUniversityTaxonomyIfNeeded,
     normalizeExamCenters,
@@ -961,6 +962,7 @@ export async function adminDeleteUniversity(req: Request, res: Response): Promis
         }
         await reconcileUniversityClusterAssignments(actorId || null);
         await pruneOrphanedTaxonomy();
+        await delByPattern('cw:*universit*');
         broadcastStudentDashboardEvent({ type: 'featured_university_updated', meta: { action: 'delete', universityId: req.params.id, mode } });
         broadcastHomeStreamEvent({ type: 'home-updated', meta: { source: 'university', action: 'delete', universityId: req.params.id, mode } });
         ResponseBuilder.send(res, 200, ResponseBuilder.success({ message: mode === 'soft' ? 'University archived successfully' : 'University deleted successfully' }));
@@ -1006,6 +1008,13 @@ export async function adminBulkDeleteUniversities(req: Request, res: Response): 
         }
         await reconcileUniversityClusterAssignments(actorId || null);
         await pruneOrphanedTaxonomy();
+        // Invalidate all university-related cache entries
+        await Promise.all([
+            delByPattern('cw:*universit*'),
+            delByPattern('cw:*cluster*'),
+            delByPattern('cw:*categor*'),
+            delByPattern('cw:*home*'),
+        ]);
         broadcastStudentDashboardEvent({ type: 'featured_university_updated', meta: { action: 'bulk_delete', mode, affected } });
         broadcastHomeStreamEvent({ type: 'home-updated', meta: { source: 'university', action: 'bulk_delete', mode, affected } });
         ResponseBuilder.send(res, 200, ResponseBuilder.success({
