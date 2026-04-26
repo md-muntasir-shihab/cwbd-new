@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Search, X } from 'lucide-react';
 import type { UniversityCardSort } from '../../services/api';
 import type { UniversityCategoryDetail } from '../../lib/apiClient';
 import CategoryChipRow from './CategoryChipRow';
@@ -25,6 +25,8 @@ export default function UniversityFilterBar({
     categories,
     activeCategory,
     onCategoryChange,
+    search,
+    setSearch,
     sort,
     setSort,
     clusters,
@@ -47,9 +49,24 @@ export default function UniversityFilterBar({
                 />
             )}
 
-            {/* Desktop inline filters — cluster + sort only */}
+            {/* Desktop inline filters — search + cluster + sort */}
             <div className={`hidden md:flex gap-3 items-end ${!hideCategoryTabs ? 'mt-3' : ''}`}>
-                <div className="flex-1" />
+                <div className="flex-1 min-w-[200px] max-w-sm relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted dark:text-dark-text/40 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search universities..."
+                        aria-label="Search universities"
+                        className="w-full rounded-xl border border-card-border dark:border-dark-border bg-surface dark:bg-slate-950/50 py-2 pl-9 pr-8 text-sm text-text dark:text-dark-text outline-none transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                    />
+                    {search && (
+                        <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-text-muted hover:text-text dark:text-dark-text/40 dark:hover:text-dark-text transition-colors" aria-label="Clear search">
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
                 {showClusterFilter && clusters.length > 0 && (
                     <div className="w-52">
                         <label className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted dark:text-dark-text/50 mb-1 block">
@@ -82,8 +99,24 @@ export default function UniversityFilterBar({
                 </div>
             </div>
 
-            {/* Mobile filters — sort + filter button only */}
+            {/* Mobile filters — search + sort + filter button */}
             <div className={`${!hideCategoryTabs ? 'mt-2.5' : ''} md:hidden`}>
+                <div className="relative mb-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted dark:text-dark-text/40 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search universities..."
+                        aria-label="Search universities"
+                        className="w-full rounded-xl border border-card-border dark:border-dark-border bg-surface dark:bg-slate-950/50 py-2 pl-9 pr-8 text-sm text-text dark:text-dark-text outline-none transition-all focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
+                    />
+                    {search && (
+                        <button type="button" onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-text-muted" aria-label="Clear search">
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
                     <div className="min-w-0">
                         <label className="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-text-muted dark:text-dark-text/50">
