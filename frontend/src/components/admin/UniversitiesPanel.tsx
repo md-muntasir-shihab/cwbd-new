@@ -491,14 +491,14 @@ export default function UniversitiesPanel() {
 
     const firstPage = await adminGetUniversities(baseParams);
     const fp = firstPage.data as any;
-    const firstItems = fp.universities || (Array.isArray(fp.data) ? fp.data : []);
-    const totalPages = Number(fp.pagination?.pages || fp.meta?.pages || Math.ceil((fp.pagination?.total || fp.meta?.total || firstItems.length) / 500) || 1);
+    const firstItems = fp.universities || fp.items || (Array.isArray(fp.data) ? fp.data : Array.isArray(fp) ? fp : []);
+    const totalPages = Number(fp.pagination?.pages || fp.meta?.pages || fp.pages || Math.ceil((fp.pagination?.total || fp.meta?.total || fp.total || firstItems.length) / 500) || 1);
     const ids = new Set<string>(firstItems.map((u: ApiUniversity) => String(u._id || '')).filter(Boolean));
 
     for (let pageNo = 2; pageNo <= totalPages; pageNo += 1) {
       const pageResponse = await adminGetUniversities({ ...baseParams, page: pageNo });
       const pp = pageResponse.data as any;
-      const pageItems = pp.universities || (Array.isArray(pp.data) ? pp.data : []);
+      const pageItems = pp.universities || pp.items || (Array.isArray(pp.data) ? pp.data : Array.isArray(pp) ? pp : []);
       pageItems
         .map((u: ApiUniversity) => String(u._id || ''))
         .filter(Boolean)
@@ -534,9 +534,9 @@ export default function UniversitiesPanel() {
       if (clusterFilter) params.clusterId = clusterFilter;
       const r = await adminGetUniversities(params);
       const payload = r.data as any;
-      // Handle both { universities, pagination } and ResponseBuilder { data: [...], meta: {...} }
-      const items = payload.universities || (Array.isArray(payload.data) ? payload.data : []);
-      const pagination = payload.pagination || payload.meta || {};
+      // Interceptor unwraps envelope: { items, page, total, pages } or legacy { universities, pagination }
+      const items = payload.universities || payload.items || (Array.isArray(payload.data) ? payload.data : Array.isArray(payload) ? payload : []);
+      const pagination = payload.pagination || payload.meta || payload;
       setUniversities(items);
       setTotalCount(Number(pagination.total || items.length || 0));
       setTotalPages(Number(pagination.pages || Math.ceil((pagination.total || items.length) / 25) || 1));
@@ -567,7 +567,7 @@ export default function UniversitiesPanel() {
   };
 
   const loadClusters = async () => { try { const r = await adminGetUniversityClusters(); setClusters(r.data.clusters || []); } catch { setClusters([]); } };
-  const loadCandidates = async () => { try { const r = await adminGetUniversities({ page: 1, limit: 500, status: 'all', sortBy: 'name', sortOrder: 'asc' }); const p = r.data as any; setAllCandidates(p.universities || (Array.isArray(p.data) ? p.data : [])); } catch { setAllCandidates([]); } };
+  const loadCandidates = async () => { try { const r = await adminGetUniversities({ page: 1, limit: 500, status: 'all', sortBy: 'name', sortOrder: 'asc' }); const p = r.data as any; setAllCandidates(p.universities || p.items || (Array.isArray(p.data) ? p.data : Array.isArray(p) ? p : [])); } catch { setAllCandidates([]); } };
   const loadHomeFeaturedUniversities = async () => {
     try {
       const response = await adminGetHomeSettings();
