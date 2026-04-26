@@ -3302,6 +3302,11 @@ export const getPublicResourceSettings = () =>
 export const getPublicSettings = () => api.get<ApiWebsiteSettings>('/settings/public');
 export const getPublicSocialLinks = () =>
     api.get<{ items: PublicSocialLinkItem[] }>('/social-links/public');
+
+/* ── Public — Testimonials & Partners ── */
+export const getPublicTestimonials = () => api.get('/testimonials');
+export const getPublicPartners = () => api.get('/partners');
+
 export const getPublicHomeSettings = () =>
     api.get<{ homeSettings: HomeSettingsConfig; updatedAt?: string }>('/home-settings/public');
 export interface PublicUniversityBrowseSettings {

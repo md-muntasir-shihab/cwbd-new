@@ -16,6 +16,8 @@ import HomeSkeleton from '../components/home/SectionSkeleton';
 import useHomeLiveUpdates from '../hooks/useHomeLiveUpdates';
 import EmptySection from '../components/home/EmptySection';
 import SectionErrorBoundary from '../components/home/SectionErrorBoundary';
+import TestimonialsSection from '../components/home/TestimonialsSection';
+import PartnersSection from '../components/home/PartnersSection';
 import DeadlineCard from '../components/home/cards/DeadlineCard';
 import UpcomingExamCard from '../components/home/cards/UpcomingExamCard';
 import CampaignBannerCard from '../components/home/cards/CampaignBannerCard';
@@ -569,6 +571,8 @@ const DEFAULT_ORDER: SectionOrderItem[] = [
     { id: 'home_features', title: 'Home Features CMS Block', order: 14 },
     { id: 'home_testimonials', title: 'Home Testimonials CMS Block', order: 15 },
     { id: 'home_cta', title: 'Home CTA CMS Block', order: 16 },
+    { id: 'testimonials', title: 'Student Testimonials', order: 17 },
+    { id: 'partners', title: 'Partners & Sponsors', order: 18 },
 ];
 
 /* ================================================================== */
@@ -1462,6 +1466,8 @@ export default function HomeModern() {
         home_features: renderHomeFeatures,
         home_testimonials: renderHomeTestimonials,
         home_cta: renderHomeCta,
+        testimonials: () => <TestimonialsSection />,
+        partners: () => <PartnersSection />,
     };
 
     /* ================================================================ */
