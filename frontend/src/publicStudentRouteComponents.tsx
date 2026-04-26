@@ -25,6 +25,7 @@ export const ExamSolutionsPage = lazyNamed(() => import('./pages/exams/ExamSolut
 export const ResourcesPage = lazy(() => import('./pages/Resources'));
 export const ResourceDetail = lazy(() => import('./pages/ResourceDetail'));
 export const ContactPage = lazy(() => import('./pages/Contact'));
+export const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
 export const HelpCenterPage = lazy(() => import('./pages/HelpCenter'));
 export const HelpArticlePage = lazy(() => import('./pages/HelpArticle'));
 export const SubscriptionPlansPage = lazy(() => import('./pages/SubscriptionPlans'));
