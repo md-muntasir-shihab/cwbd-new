@@ -144,6 +144,7 @@ export const ADMIN_PATHS = {
     pendingApprovals: adminUi('pending-approvals'),
     legalPages: adminUi('legal-pages'),
     founderDetails: adminUi('founder-details'),
+    testimonials: adminUi('testimonials'),
 } as const;
 
 export type AdminMenuItem = {

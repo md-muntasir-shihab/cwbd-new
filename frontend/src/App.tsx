@@ -75,6 +75,7 @@ import {
     ExamPreviewPage,
     AdminLegalPagesPage,
     AdminFounderDetailsPage,
+    AdminTestimonialsPage,
     FinanceAuditLogPage,
     FinanceBudgetsPage,
     FinanceDashboardPage,
@@ -535,6 +536,7 @@ export default function App() {
                                         <Route path={adminUi('settings/student-settings')} element={<AdminStudentSettingsPage />} />
                                         <Route path={ADMIN_PATHS.legalPages} element={<AdminLegalPagesPage />} />
                                         <Route path={ADMIN_PATHS.founderDetails} element={<AdminFounderDetailsPage />} />
+                                        <Route path={ADMIN_PATHS.testimonials} element={<AdminTestimonialsPage />} />
                                         {Object.entries(LEGACY_ADMIN_PATH_REDIRECTS).map(([legacyPath, targetPath]) => (
                                             <Route key={legacyPath} path={legacyPath} element={<Navigate to={targetPath} replace />} />
                                         ))}

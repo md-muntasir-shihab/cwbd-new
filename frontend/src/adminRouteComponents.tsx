@@ -64,3 +64,4 @@ export const ExamFormPage = lazy(() => import('./pages/admin/exams/ExamFormPage'
 export const ExamPreviewPage = lazy(() => import('./pages/admin/exams/ExamPreviewPage'));
 export const AdminLegalPagesPage = lazy(() => import('./pages/admin/AdminLegalPages'));
 export const AdminFounderDetailsPage = lazy(() => import('./pages/admin/AdminFounderDetails'));
+export const AdminTestimonialsPage = lazy(() => import('./pages/admin/TestimonialsManagementPage'));

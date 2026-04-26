@@ -3307,6 +3307,22 @@ export const getPublicSocialLinks = () =>
 export const getPublicTestimonials = () => api.get('/testimonials');
 export const getPublicPartners = () => api.get('/partners');
 
+/* ── Admin — Testimonials ── */
+export const adminGetTestimonials = (params: Record<string, string> = {}) => api.get(`/${ADMIN_PATH}/testimonials`, { params });
+export const adminCreateTestimonial = (data: Record<string, unknown>) => api.post(`/${ADMIN_PATH}/testimonials`, data);
+export const adminUpdateTestimonial = (id: string, data: Record<string, unknown>) => api.put(`/${ADMIN_PATH}/testimonials/${id}`, data);
+export const adminDeleteTestimonial = (id: string) => api.delete(`/${ADMIN_PATH}/testimonials/${id}`);
+export const adminApproveTestimonial = (id: string) => api.post(`/${ADMIN_PATH}/testimonials/${id}/approve`);
+export const adminRejectTestimonial = (id: string, reason: string) => api.post(`/${ADMIN_PATH}/testimonials/${id}/reject`, { reason });
+export const adminToggleFeatureTestimonial = (id: string) => api.post(`/${ADMIN_PATH}/testimonials/${id}/feature`);
+export const adminReorderTestimonials = (ids: string[]) => api.post(`/${ADMIN_PATH}/testimonials/reorder`, { ids });
+
+/* ── Admin — Partners ── */
+export const adminGetPartners = (params: Record<string, string> = {}) => api.get(`/${ADMIN_PATH}/partners`, { params });
+export const adminCreatePartner = (data: Record<string, unknown>) => api.post(`/${ADMIN_PATH}/partners`, data);
+export const adminUpdatePartner = (id: string, data: Record<string, unknown>) => api.put(`/${ADMIN_PATH}/partners/${id}`, data);
+export const adminDeletePartner = (id: string) => api.delete(`/${ADMIN_PATH}/partners/${id}`);
+
 export const getPublicHomeSettings = () =>
     api.get<{ homeSettings: HomeSettingsConfig; updatedAt?: string }>('/home-settings/public');
 export interface PublicUniversityBrowseSettings {
