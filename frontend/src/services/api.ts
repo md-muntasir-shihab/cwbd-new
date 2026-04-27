@@ -401,16 +401,21 @@ export async function refreshAccessToken(): Promise<string | null> {
 }
 
 // ── CSRF auto-fetch guard ──
-// Ensures the _csrf cookie exists before the first mutating request.
-// Uses a module-level promise so concurrent requests share the same fetch.
+// In cross-origin setups the _csrf cookie may not be readable from document.cookie
+// (SameSite=None cookies are sent by the browser but not exposed to JS on some browsers).
+// So we store the token in memory from the response body as a fallback.
 let csrfFetchInFlight: Promise<void> | null = null;
+let csrfTokenInMemory: string = '';
 
 async function ensureCsrfCookie(): Promise<void> {
-    if (readCsrfCookie()) return;
+    if (csrfTokenInMemory || readCsrfCookie()) return;
     if (csrfFetchInFlight) return csrfFetchInFlight;
     csrfFetchInFlight = axios
         .get(resolveApiUrl('/auth/csrf-token'), { withCredentials: true, timeout: 5000 })
-        .then(() => undefined)
+        .then((res) => {
+            const token = res.data?.csrfToken || res.data?.data?.csrfToken || '';
+            if (token) csrfTokenInMemory = token;
+        })
         .catch(() => undefined)
         .finally(() => { csrfFetchInFlight = null; });
     return csrfFetchInFlight;
@@ -4766,6 +4771,8 @@ export interface AdminAntiCheatPolicy {
 }
 
 function readCsrfCookie(): string {
+    // Try memory first (cross-origin fallback), then cookie
+    if (csrfTokenInMemory) return csrfTokenInMemory;
     if (typeof document === 'undefined') return '';
     const match = document.cookie.match(/(?:^|;\s*)_csrf=([^;]*)/);
     return match ? decodeURIComponent(match[1]) : '';
