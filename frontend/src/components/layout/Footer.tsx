@@ -321,13 +321,19 @@ export default function Footer() {
                                 <ul className="space-y-2">
                                     {footerContactInfo.map((item, index) => {
                                         const Icon = contactIconByType[item.key];
+                                        const href = item.key === 'phone' ? `tel:${item.value.replace(/\s+/g, '')}` : item.key === 'email' ? `mailto:${item.value}` : undefined;
+                                        const inner = (
+                                            <>
+                                                <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-200/80" />
+                                                <span className="min-w-0 break-words">{item.value}</span>
+                                            </>
+                                        );
                                         return (
                                             <li
                                                 key={`${item.key}-${index}`}
                                                 className="flex items-start gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-[13px] leading-5 text-white/72"
                                             >
-                                                <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-200/80" />
-                                                <span className="min-w-0 break-words">{item.value}</span>
+                                                {href ? <a href={href} className="flex items-start gap-2.5 min-w-0 transition hover:text-cyan-200">{inner}</a> : inner}
                                             </li>
                                         );
                                     })}
@@ -390,9 +396,14 @@ export default function Footer() {
                             <div className="col-span-2 lg:col-span-1">
                                 <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white">Contact</h4>
                                 <ul className="space-y-2 text-sm text-white/60">
-                                    {footerContactInfo.length > 0 ? footerContactInfo.map((item, index) => (
-                                        <li key={`${item.key}-${index}`}>{item.value}</li>
-                                    )) : (
+                                    {footerContactInfo.length > 0 ? footerContactInfo.map((item, index) => {
+                                        const href = item.key === 'phone' ? `tel:${item.value.replace(/\s+/g, '')}` : item.key === 'email' ? `mailto:${item.value}` : undefined;
+                                        return (
+                                            <li key={`${item.key}-${index}`}>
+                                                {href ? <a href={href} className="transition hover:text-cyan-200">{item.value}</a> : item.value}
+                                            </li>
+                                        );
+                                    }) : (
                                         <li>Use the contact form for support.</li>
                                     )}
                                 </ul>
