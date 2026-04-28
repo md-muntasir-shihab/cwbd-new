@@ -5,71 +5,172 @@ import LegalPage from '../models/LegalPage';
 
 dotenv.config();
 
+const PRIVACY_HTML = `<h2>প্রাইভেসি পলিসি (Privacy Policy)</h2>
+
+<p>CampusWay ("আমরা", "আমাদের", বা "প্ল্যাটফর্ম")-তে আপনাকে স্বাগতম। আপনার ব্যক্তিগত তথ্যের গোপনীয়তা এবং নিরাপত্তা বজায় রাখা আমাদের অন্যতম প্রধান লক্ষ্য। আপনি যখন আমাদের ওয়েবসাইট, মোবাইল অ্যাপ্লিকেশন এবং অন্যান্য সেবা ব্যবহার করেন, তখন আমরা কীভাবে আপনার তথ্য সংগ্রহ, ব্যবহার এবং সুরক্ষিত রাখি, তা এই প্রাইভেসি পলিসিতে বিস্তারিতভাবে উল্লেখ করা হয়েছে।</p>
+
+<p>আমাদের প্ল্যাটফর্ম ব্যবহার করার মাধ্যমে আপনি এই প্রাইভেসি পলিসির শর্তাবলীর প্রতি আপনার সম্মতি জ্ঞাপন করছেন।</p>
+
+<h3>১. আমরা কী ধরনের তথ্য সংগ্রহ করি?</h3>
+<p>আপনাকে নিরবচ্ছিন্ন ও উন্নত সেবা প্রদানের উদ্দেশ্যে আমরা মূলত চার ধরনের তথ্য সংগ্রহ করে থাকি:</p>
+<ul>
+<li><strong>ব্যক্তিগত তথ্য (Personal Data):</strong> অ্যাকাউন্ট তৈরি বা প্রোফাইল আপডেট করার সময় আপনার নাম, মোবাইল নম্বর, ইমেইল অ্যাড্রেস, পাসওয়ার্ড এবং ছবি।</li>
+<li><strong>শিক্ষাগত তথ্য (Academic Data):</strong> আপনার বর্তমান শিক্ষাপ্রতিষ্ঠান, পরীক্ষার ফলাফল (যেমন: SSC/HSC), ভর্তি প্রস্তুতির লক্ষ্য, মক টেস্ট বা মডেল টেস্টের স্কোর এবং পড়াশোনা সংক্রান্ত অন্যান্য তথ্য।</li>
+<li><strong>আর্থিক তথ্য (Financial Data):</strong> প্রোফাইল আপগ্রেড বা পেইড সাবস্ক্রিপশন কেনার জন্য পেমেন্ট সংক্রান্ত তথ্য। (উল্লেখ্য, আমরা সরাসরি কোনো ক্রেডিট/ডেবিট কার্ড বা পিন নম্বর সেভ করি না। এই কাজগুলো অনুমোদিত ও নিরাপদ থার্ড-পার্টি পেমেন্ট গেটওয়ের মাধ্যমে সম্পন্ন হয়)।</li>
+<li><strong>প্রযুক্তিগত তথ্য (Technical Data):</strong> আপনি যখন আমাদের সাইট ভিজিট করেন, তখন স্বয়ংক্রিয়ভাবে আপনার আইপি (IP) অ্যাড্রেস, ব্রাউজারের ধরন, ডিভাইসের তথ্য, অপারেটিং সিস্টেম এবং লগ ডেটা সংগ্রহ করা হতে পারে।</li>
+</ul>
+
+<h3>২. আমরা কীভাবে আপনার তথ্য ব্যবহার করি?</h3>
+<p>সংগৃহীত তথ্যগুলো আমরা নিম্নলিখিত উদ্দেশ্যগুলোতে ব্যবহার করে থাকি:</p>
+<ul>
+<li>আপনার অ্যাকাউন্ট তৈরি ও পরিচালনা করতে এবং কাস্টমার সাপোর্ট দিতে।</li>
+<li>মক টেস্ট, ভর্তি পরীক্ষার রুটিন, নিউজ এবং রিসোর্সগুলো আপনার প্রয়োজন অনুসারে কাস্টমাইজ করতে।</li>
+<li>আপনার পারফরম্যান্স অ্যানালাইসিস বা প্রোগ্রেস ট্র্যাকিং রিপোর্ট তৈরি করতে।</li>
+<li>গুরুত্বপূর্ণ আপডেট, নোটিফিকেশন, অফার এবং প্ল্যাটফর্মের নতুন সার্ভিস সম্পর্কে আপনাকে ইমেইল বা এসএমএস-এর মাধ্যমে জানাতে।</li>
+<li>ওয়েবসাইটের পারফরম্যান্স ও সিকিউরিটি উন্নত করতে এবং যেকোনো ধরণের জালিয়াতি বা অননুমোদিত অ্যাক্সেস রোধ করতে।</li>
+</ul>
+
+<h3>৩. তথ্য শেয়ারিং এবং থার্ড-পার্টি সার্ভিস</h3>
+<p>আমরা ব্যবহারকারীদের ব্যক্তিগত তথ্য কখনো তৃতীয় কোনো পক্ষের কাছে বিক্রি করি না। তবে সার্ভিস প্রদানের সুবিধার্থে কিছু নির্দিষ্ট ক্ষেত্রে আমরা তথ্য শেয়ার করতে পারি:</p>
+<ul>
+<li><strong>সার্ভিস প্রোভাইডার:</strong> হোস্টিং, ক্লাউড স্টোরেজ, এসএমএস গেটওয়ে, এসএসএল (SSL) এবং পেমেন্ট প্রসেসিং পার্টনারদের সাথে (শুধুমাত্র তাদের সার্ভিস পরিচালনার জন্য যতটুকু তথ্য প্রয়োজন)।</li>
+<li><strong>আইনি বাধ্যবাধকতা:</strong> সরকারি আইন বা নীতিমালার কারণে আইন প্রয়োগকারী সংস্থা যদি কোনো তথ্য দাবি করে বা কোনো জালিয়াতি তদন্তের প্রয়োজন হয়।</li>
+</ul>
+
+<h3>৪. কুকিজ (Cookies) পলিসি</h3>
+<p>ব্যবহারকারীর অভিজ্ঞতা (User Experience) উন্নত করতে এবং প্ল্যাটফর্মে আপনার লগইন সেশন মনে রাখতে আমরা কুকিজ ব্যবহার করি। আপনি চাইলে আপনার ব্রাউজার সেটিংস থেকে কুকিজ বন্ধ করতে পারেন, তবে এর ফলে ওয়েবসাইটের কিছু ফিচার সঠিকভাবে কাজ না-ও করতে পারে।</p>
+
+<h3>৫. ডেটা সুরক্ষা (Data Security)</h3>
+<p>আপনার তথ্যের সর্বোচ্চ নিরাপত্তা নিশ্চিত করতে আমরা ইন্ডাস্ট্রির স্ট্যান্ডার্ড এনক্রিপশন (Encryption) এবং সিকিউরিটি প্রোটোকল ব্যবহার করি। আমাদের প্ল্যাটফর্মে তথ্য আদান-প্রদান অত্যন্ত সুরক্ষিত। তবে ইন্টারনেট বা ইলেকট্রনিক স্টোরেজের কোনো পদ্ধতিই ১০০% সুরক্ষিত নয়, তাই আমরা সম্পূর্ণ ত্রুটিমুক্ত নিরাপত্তার নিশ্চয়তা দিতে পারি না।</p>
+
+<h3>৬. আপনার অধিকার (Your Rights)</h3>
+<p>আমাদের প্ল্যাটফর্মের একজন ব্যবহারকারী হিসেবে আপনার কিছু বিশেষ অধিকার সংরক্ষিত রয়েছে:</p>
+<ul>
+<li>আপনি যে কোনো সময় আপনার প্রোফাইলের তথ্য দেখতে এবং আপডেট করতে পারবেন।</li>
+<li>আপনি চাইলে আমাদের ডেটাবেস থেকে আপনার অ্যাকাউন্ট এবং সাথে সংশ্লিষ্ট সকল তথ্য মুছে ফেলার (Data Deletion) অনুরোধ করতে পারবেন।</li>
+<li>প্রমোশনাল ইমেইল বা এসএমএস রিসিভ করা থেকে আনসাবস্ক্রাইব করতে পারবেন।</li>
+</ul>
+
+<h3>৭. চাইল্ড প্রাইভেসি (Children's Privacy)</h3>
+<p>আমাদের সার্ভিসগুলো মূলত শিক্ষার্থী এবং ভর্তিচ্ছুদের জন্য ডিজাইন করা হয়েছে। যদি ১৩ বছরের কম বয়সী কেউ আমাদের প্ল্যাটফর্ম ব্যবহার করতে চায়, তবে তার অভিভাবকের সম্মতি ও প্রত্যক্ষ তত্ত্বাবধান আবশ্যক। আমরা জেনেশুনে ১৩ বছরের কম বয়সী শিশুদের ব্যক্তিগত তথ্য সংগ্রহ করি না।</p>
+
+<h3>৮. Google সার্ভিস ও অ্যানালিটিক্স</h3>
+<p>আমাদের প্ল্যাটফর্ম Google Firebase Authentication, Google Analytics এবং Google reCAPTCHA/App Check ব্যবহার করে। এই সার্ভিসগুলো ব্যবহারের মাধ্যমে Google তাদের নিজস্ব প্রাইভেসি পলিসি অনুযায়ী কিছু তথ্য সংগ্রহ করতে পারে। বিস্তারিত জানতে <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a> দেখুন।</p>
+<p>আমরা Google Analytics ব্যবহার করি ওয়েবসাইটের ট্রাফিক বিশ্লেষণ, ব্যবহারকারীর আচরণ বোঝা এবং সেবার মান উন্নয়নের জন্য। এই ডেটা সাধারণত অ্যানোনিমাইজড (anonymized) থাকে এবং ব্যক্তিগতভাবে আপনাকে চিহ্নিত করতে ব্যবহৃত হয় না।</p>
+
+<h3>৯. বাংলাদেশের ডিজিটাল নিরাপত্তা আইন অনুসারে</h3>
+<p>এই প্রাইভেসি পলিসি গণপ্রজাতন্ত্রী বাংলাদেশের <strong>ডিজিটাল নিরাপত্তা আইন, ২০১৮</strong> এবং <strong>তথ্য ও যোগাযোগ প্রযুক্তি আইন, ২০০৬ (সংশোধিত ২০১৩)</strong> এর আলোকে প্রণীত। আমরা ব্যবহারকারীদের ব্যক্তিগত তথ্যের সুরক্ষায় বাংলাদেশের প্রচলিত আইনি কাঠামো মেনে চলি।</p>
+
+<h3>১০. ডেটা রিটেনশন (Data Retention)</h3>
+<p>আপনার অ্যাকাউন্ট সক্রিয় থাকা পর্যন্ত আমরা আপনার তথ্য সংরক্ষণ করি। অ্যাকাউন্ট ডিলিট করার অনুরোধ পাওয়ার পর ৩০ দিনের মধ্যে আপনার সকল ব্যক্তিগত তথ্য আমাদের সিস্টেম থেকে স্থায়ীভাবে মুছে ফেলা হবে, যদি না আইনি বাধ্যবাধকতার কারণে কিছু তথ্য সংরক্ষণ করতে হয়।</p>
+
+<h3>১১. প্রাইভেসি পলিসি পরিবর্তন</h3>
+<p>আমরা আমাদের সেবার মান উন্নয়ন ও আইনি প্রয়োজনীয়তার উপর ভিত্তি করে যেকোনো সময় এই প্রাইভেসি পলিসি পরিবর্তন বা আপডেট করার অধিকার রাখি। কোনো উল্লেখযোগ্য পরিবর্তন হলে তা ওয়েবসাইটের নোটিফিকেশন বা ইমেইলের মাধ্যমে জানানো হবে।</p>
+
+<h3>১২. যোগাযোগ</h3>
+<p>এই প্রাইভেসি পলিসি সম্পর্কে কোনো প্রশ্ন বা উদ্বেগ থাকলে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন প্ল্যাটফর্মের কন্টাক্ট পেজের মাধ্যমে।</p>`;
+
+
+const TERMS_HTML = `<h2>শর্তাবলী (Terms &amp; Conditions)</h2>
+
+<p>CampusWay প্ল্যাটফর্ম ব্যবহার করার আগে অনুগ্রহ করে নিচের শর্তাবলী মনোযোগ সহকারে পড়ুন। প্ল্যাটফর্ম ব্যবহার করার মাধ্যমে আপনি এই শর্তাবলীর প্রতি সম্মতি জ্ঞাপন করছেন।</p>
+
+<h3>১. অ্যাকাউন্ট রেজিস্ট্রেশন এবং ব্যবহারকারীর দায়িত্ব</h3>
+<ul>
+<li>CampusWay-এর পেইড ফিচার, মক টেস্ট বা পরীক্ষার সেকশন অ্যাক্সেস করার জন্য আপনাকে একটি অ্যাকাউন্ট তৈরি করতে হবে।</li>
+<li>রেজিস্ট্রেশনের সময় আপনাকে অবশ্যই সম্পূর্ণ সঠিক ও হালনাগাদ তথ্য প্রদান করতে হবে।</li>
+<li>আপনার অ্যাকাউন্টের পাসওয়ার্ড ও লগইন ক্রেডেনশিয়াল (Login Credential) গোপন রাখার সম্পূর্ণ দায়িত্ব আপনার। আপনার অ্যাকাউন্টের মাধ্যমে সংঘটিত যেকোনো কার্যকলাপের জন্য আপনি ব্যক্তিগতভাবে দায়ী থাকবেন।</li>
+<li>একটি অ্যাকাউন্ট শুধুমাত্র একজন ব্যবহারকারী ব্যবহার করতে পারবেন। অ্যাকাউন্টের তথ্য অন্য কারো সাথে শেয়ার করা বা বিক্রি করা কঠোরভাবে নিষিদ্ধ। এমন কিছু ধরা পড়লে বিনা নোটিশে অ্যাকাউন্ট বাতিল করা হতে পারে।</li>
+</ul>
+
+<h3>২. আমাদের সার্ভিস এবং কনটেন্ট</h3>
+<p>CampusWay শিক্ষার্থীদের বিশ্ববিদ্যালয় ভর্তি, পরীক্ষার প্রস্তুতি এবং বিভিন্ন শিক্ষামূলক তথ্য প্রদান করে। আমাদের মক টেস্ট, নিউজ, রিসোর্স এবং কোর্সগুলো বিশেষজ্ঞদের দ্বারা তৈরি, তবে এগুলো কোনো নির্দিষ্ট বিশ্ববিদ্যালয়ে ভর্তির ১০০% নিশ্চয়তা দেয় না।</p>
+<p>আমরা যেকোনো সময় পূর্ব ঘোষণা ছাড়াই ওয়েবসাইটের যেকোনো কনটেন্ট, লেআউট বা সার্ভিস পরিবর্তন, পরিবর্ধন বা সাময়িকভাবে বন্ধ করার অধিকার রাখি।</p>
+
+<h3>৩. পেমেন্ট, সাবস্ক্রিপশন এবং রিফান্ড পলিসি</h3>
+<ul>
+<li>CampusWay-এর প্রিমিয়াম কোর্স, মক টেস্ট বা সাবস্ক্রিপশন প্ল্যানের জন্য আপনাকে নির্ধারিত ফি প্রদান করতে হবে।</li>
+<li>সমস্ত পেমেন্ট অনুমোদিত ও সুরক্ষিত পেমেন্ট গেটওয়ের (যেমন: বিকাশ, নগদ, কার্ড) মাধ্যমে সম্পন্ন করা হবে।</li>
+<li><strong>রিফান্ড পলিসি:</strong> ডিজিটাল প্রোডাক্ট ও সার্ভিস হওয়ার কারণে পেমেন্ট সম্পন্ন হওয়ার পর সাধারণ অবস্থায় কোনো ফি অফেরতযোগ্য (Non-refundable)। তবে কোনো কারিগরি ত্রুটির কারণে সার্ভিস অ্যাক্সেস করতে না পারলে ৩-৭ কার্যদিবসের মধ্যে অভিযোগ করলে তা তদন্ত সাপেক্ষে রিফান্ড বা বিকল্প ব্যবস্থা গ্রহণ করা হবে।</li>
+</ul>
+
+<h3>৪. ইন্টেলেকচুয়াল প্রপার্টি (Intellectual Property)</h3>
+<p>CampusWay প্ল্যাটফর্মের সকল কনটেন্ট— যেমন টেক্সট, গ্রাফিক্স, লোগো, অডিও, ভিডিও, মক টেস্টের প্রশ্নপত্র, পিডিএফ রিসোর্স এবং সফটওয়্যার কোড— আমাদের নিজস্ব বা লাইসেন্সকৃত সম্পদ এবং এটি বাংলাদেশের কপিরাইট আইন দ্বারা সুরক্ষিত।</p>
+<p>পূর্বানুমতি ব্যতীত আমাদের প্ল্যাটফর্মের কোনো কনটেন্ট, প্রশ্নপত্র বা ভিডিও ডাউনলোড করে অন্য কোনো ওয়েবসাইট, সোশ্যাল মিডিয়া বা অফলাইনে প্রচার, বিতরণ বা বাণিজ্যিক উদ্দেশ্যে ব্যবহার করা সম্পূর্ণ বেআইনি এবং শাস্তিযোগ্য অপরাধ।</p>
+
+<h3>৫. ব্যবহারকারীর আচরণ ও বিধি-নিষেধ</h3>
+<p>প্ল্যাটফর্ম ব্যবহার করার ক্ষেত্রে আপনি সম্মতি দিচ্ছেন যে, আপনি নিম্নলিখিত কাজগুলো করবেন না:</p>
+<ul>
+<li>প্ল্যাটফর্মে কোনো অবৈধ, উসকানিমূলক, আপত্তিকর বা অন্যদের জন্য ক্ষতিকর মন্তব্য বা কনটেন্ট পোস্ট করা।</li>
+<li>ওয়েবসাইট বা অ্যাপের সার্ভারে ক্ষতিকর কোড (ভাইরাস, ম্যালওয়্যার) পুশ করা বা হ্যাকিংয়ের চেষ্টা করা।</li>
+<li>ডেটা স্ক্র্যাপিং (Data Scraping) বা বট (Bot) ব্যবহার করে ওয়েবসাইটের ডেটা, প্রশ্ন বা কনটেন্ট স্বয়ংক্রিয়ভাবে সংগ্রহ করা।</li>
+<li>সিস্টেমের কোনো দুর্বলতা খোঁজার চেষ্টা করা।</li>
+</ul>
+
+<h3>৬. দায়বদ্ধতার সীমাবদ্ধতা (Limitation of Liability)</h3>
+<p>আমরা প্ল্যাটফর্মে সঠিক এবং হালনাগাদ তথ্য দেওয়ার সর্বোচ্চ চেষ্টা করি। তবে থার্ড-পার্টি সোর্স থেকে পাওয়া তথ্য (যেমন: বিশ্ববিদ্যালয়ের নোটিশ, আসন সংখ্যা) ভুল হলে বা কোনো সিস্টেম ত্রুটির কারণে আপনার কোনো প্রত্যক্ষ, পরোক্ষ বা আর্থিক ক্ষতি হলে CampusWay বা এর কর্তৃপক্ষ আইনিভাবে দায়ী থাকবে না।</p>
+<p>প্ল্যাটফর্মের কোনো ডাউনটাইম বা সার্ভার মেইনটেনেন্সের কারণে সাময়িক অসুবিধার জন্য আমরা দায়ী থাকব না।</p>
+
+<h3>৭. থার্ড-পার্টি লিংক বা ওয়েবসাইট</h3>
+<p>আমাদের ওয়েবসাইটে অন্যান্য প্রতিষ্ঠানের বা বিশ্ববিদ্যালয়ের লিংক থাকতে পারে। ঐসব থার্ড-পার্টি ওয়েবসাইটে আপনি ভিজিট করলে, তাদের নিজস্ব টার্মস ও পলিসি প্রযোজ্য হবে। তাদের কনটেন্ট বা পলিসির দায়ভার CampusWay বহন করে না।</p>
+
+<h3>৮. অ্যাকাউন্ট বাতিল বা সাসপেনশন (Termination)</h3>
+<p>আমরা যদি মনে করি যে আপনি এই টার্মস অ্যান্ড কন্ডিশনস লঙ্ঘন করেছেন, অনৈতিক কাজ করেছেন বা প্রতারণার আশ্রয় নিয়েছেন, তবে আমরা আপনাকে কোনো নোটিশ না দিয়েই আপনার অ্যাকাউন্ট, সাবস্ক্রিপশন ব্লক বা স্থায়ীভাবে বাতিল করার পূর্ণ অধিকার রাখি।</p>
+
+<h3>৯. শর্তাবলীর পরিবর্তন (Changes to Terms)</h3>
+<p>আমরা যেকোনো সময় এই শর্তাবলী আপডেট, পরিবর্তন বা সংশোধন করার অধিকার রাখি। সংশোধিত শর্তাবলী ওয়েবসাইটে পাবলিশ হওয়ার সাথে সাথেই কার্যকর বলে গণ্য হবে। নিয়মিত এই পেইজটি চেক করা আপনার দায়িত্ব।</p>
+
+<h3>১০. প্রযোজ্য আইন (Governing Law)</h3>
+<p>এই শর্তাবলী গণপ্রজাতন্ত্রী বাংলাদেশের প্রচলিত আইনি কাঠামোর অধীনে পরিচালিত ও ব্যাখ্যাত হবে। CampusWay ও এর ব্যবহারকারীদের মধ্যকার যেকোনো আইনি বিরোধ শুধু বাংলাদেশের বিচার ব্যবস্থার আওতাধীন থাকবে।</p>
+
+<h3>১১. যোগাযোগ</h3>
+<p>এই শর্তাবলী সম্পর্কে কোনো প্রশ্ন থাকলে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন প্ল্যাটফর্মের কন্টাক্ট পেজের মাধ্যমে।</p>`;
+
+const ABOUT_HTML = `<h2>CampusWay সম্পর্কে</h2>
+
+<p>CampusWay বাংলাদেশের শিক্ষার্থীদের জন্য একটি সম্পূর্ণ শিক্ষামূলক প্ল্যাটফর্ম। আমরা বিশ্ববিদ্যালয় ভর্তি পরীক্ষার প্রস্তুতি, একাডেমিক রিসোর্স এবং ক্যারিয়ার গাইডেন্স — সবকিছু এক জায়গায় প্রদান করি।</p>
+
+<h3>আমাদের মিশন</h3>
+<p>প্রতিটি শিক্ষার্থীর জন্য মানসম্মত শিক্ষা সহজলভ্য ও সাশ্রয়ী করা — তাদের অবস্থান বা পটভূমি যাই হোক না কেন।</p>
+
+<h3>আমাদের ভিশন</h3>
+<p>বাংলাদেশের সবচেয়ে বিশ্বস্ত শিক্ষামূলক প্ল্যাটফর্ম হিসেবে প্রতিষ্ঠিত হওয়া, যেখানে শিক্ষার্থীরা ভর্তি প্রস্তুতি এবং সিদ্ধান্ত গ্রহণে সর্বোচ্চ সহায়তা পাবে।</p>
+
+<h3>আমরা যা অফার করি</h3>
+<ul>
+<li>রিয়েল-টাইম ফিডব্যাক সহ ইন্টারেক্টিভ পরীক্ষার প্রস্তুতি</li>
+<li>বিশ্ববিদ্যালয় ভর্তি গাইডেন্স এবং রিসোর্স</li>
+<li>কিউরেটেড স্টাডি ম্যাটেরিয়াল এবং প্রশ্নব্যাংক</li>
+<li>কমিউনিটি-ড্রিভেন লার্নিং এনভায়রনমেন্ট</li>
+<li>সর্বশেষ ভর্তি সংবাদ এবং আপডেট</li>
+</ul>
+
+<h3>যত্নের সাথে তৈরি</h3>
+<p>এই প্ল্যাটফর্মটি শিক্ষার্থীদের বাস্তব সমস্যাগুলোকে কেন্দ্র করে তৈরি — ডেডলাইনের চাপ, বিক্ষিপ্ত তথ্য, এবং ভালো প্রস্তুতির প্রয়োজনীয়তা। মোবাইল ও ডেস্কটপ উভয়েই দ্রুত ব্রাউজিংয়ের জন্য ডিজাইন করা হয়েছে।</p>
+
+<p>হাজার হাজার শিক্ষার্থী ইতিমধ্যে CampusWay-এর সাথে তাদের একাডেমিক সাফল্যের পথে এগিয়ে যাচ্ছে। আপনিও যোগ দিন!</p>`;
+
 const legalPages = [
     {
         slug: 'about',
-        title: 'About CampusWay',
-        htmlContent: `<h2>Welcome to CampusWay</h2>
-<p>CampusWay is a comprehensive educational platform designed to empower students across Bangladesh. We provide tools for exam preparation, university admissions guidance, and academic resources — all in one place.</p>
-<h3>Our Mission</h3>
-<p>To make quality education accessible and affordable for every student, regardless of their location or background.</p>
-<h3>What We Offer</h3>
-<ul>
-<li>Interactive exam preparation with real-time feedback</li>
-<li>University admission guidance and resources</li>
-<li>Curated study materials and question banks</li>
-<li>Community-driven learning environment</li>
-</ul>
-<p>Join thousands of students who are already on their path to academic excellence with CampusWay.</p>`,
-        metaTitle: 'About CampusWay - Your Academic Companion',
-        metaDescription: 'Learn about CampusWay, the comprehensive educational platform empowering students across Bangladesh with exam preparation, university guidance, and academic resources.',
+        title: 'CampusWay সম্পর্কে',
+        htmlContent: ABOUT_HTML,
+        metaTitle: 'CampusWay সম্পর্কে - আপনার একাডেমিক সঙ্গী',
+        metaDescription: 'CampusWay সম্পর্কে জানুন — বাংলাদেশের শিক্ষার্থীদের জন্য পরীক্ষার প্রস্তুতি, বিশ্ববিদ্যালয় ভর্তি গাইডেন্স এবং একাডেমিক রিসোর্স প্রদানকারী সম্পূর্ণ শিক্ষামূলক প্ল্যাটফর্ম।',
     },
     {
         slug: 'terms',
-        title: 'Terms of Service',
-        htmlContent: `<h2>Terms of Service</h2>
-<p>Last updated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-<p>By accessing and using CampusWay, you agree to be bound by these Terms of Service.</p>
-<h3>1. Acceptance of Terms</h3>
-<p>By creating an account or using our services, you acknowledge that you have read, understood, and agree to these terms.</p>
-<h3>2. User Accounts</h3>
-<p>You are responsible for maintaining the confidentiality of your account credentials. You must provide accurate information during registration.</p>
-<h3>3. Acceptable Use</h3>
-<p>You agree not to misuse the platform, including but not limited to: sharing exam content without authorization, attempting to access other users' accounts, or disrupting platform services.</p>
-<h3>4. Intellectual Property</h3>
-<p>All content on CampusWay, including questions, study materials, and platform design, is protected by intellectual property laws. Unauthorized reproduction is prohibited.</p>
-<h3>5. Limitation of Liability</h3>
-<p>CampusWay provides educational resources on an "as-is" basis. We do not guarantee specific academic outcomes.</p>
-<h3>6. Changes to Terms</h3>
-<p>We reserve the right to modify these terms at any time. Continued use of the platform constitutes acceptance of updated terms.</p>`,
-        metaTitle: 'Terms of Service - CampusWay',
-        metaDescription: 'Read the Terms of Service for CampusWay. Understand your rights and responsibilities when using our educational platform.',
+        title: 'শর্তাবলী',
+        htmlContent: TERMS_HTML,
+        metaTitle: 'শর্তাবলী - CampusWay',
+        metaDescription: 'CampusWay-এর শর্তাবলী পড়ুন। আমাদের শিক্ষামূলক প্ল্যাটফর্ম ব্যবহার করার সময় আপনার অধিকার ও দায়িত্ব সম্পর্কে জানুন।',
     },
     {
         slug: 'privacy',
-        title: 'Privacy Policy',
-        htmlContent: `<h2>Privacy Policy</h2>
-<p>Last updated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-<p>CampusWay is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information.</p>
-<h3>1. Information We Collect</h3>
-<p>We collect information you provide during registration (name, email, phone number) and usage data (exam attempts, study progress).</p>
-<h3>2. How We Use Your Information</h3>
-<ul>
-<li>To provide and improve our educational services</li>
-<li>To personalize your learning experience</li>
-<li>To communicate important updates and notifications</li>
-<li>To ensure platform security and prevent fraud</li>
-</ul>
-<h3>3. Data Security</h3>
-<p>We implement industry-standard security measures to protect your personal information from unauthorized access or disclosure.</p>
-<h3>4. Third-Party Sharing</h3>
-<p>We do not sell your personal information. We may share data with service providers who assist in platform operations, subject to confidentiality agreements.</p>
-<h3>5. Your Rights</h3>
-<p>You may request access to, correction of, or deletion of your personal data by contacting our support team.</p>
-<h3>6. Contact Us</h3>
-<p>For privacy-related inquiries, please contact us through the platform's support channels.</p>`,
-        metaTitle: 'Privacy Policy - CampusWay',
-        metaDescription: 'Read the CampusWay Privacy Policy. Learn how we collect, use, and protect your personal information on our educational platform.',
+        title: 'প্রাইভেসি পলিসি',
+        htmlContent: PRIVACY_HTML,
+        metaTitle: 'প্রাইভেসি পলিসি - CampusWay',
+        metaDescription: 'CampusWay-এর প্রাইভেসি পলিসি পড়ুন। আমরা কীভাবে আপনার ব্যক্তিগত তথ্য সংগ্রহ, ব্যবহার এবং সুরক্ষিত রাখি তা জানুন।',
     },
 ];
 
@@ -77,13 +178,12 @@ export async function seedLegalPages(): Promise<void> {
     console.log('[seed:legal-pages] Seeding legal pages...');
 
     for (const page of legalPages) {
-        const existing = await LegalPage.findOne({ slug: page.slug }).lean();
-        if (existing) {
-            console.log(`[seed:legal-pages] Skipped (already exists): ${page.slug}`);
-            continue;
-        }
-        await LegalPage.create(page);
-        console.log(`[seed:legal-pages] Created: ${page.slug}`);
+        await LegalPage.findOneAndUpdate(
+            { slug: page.slug },
+            { $set: page },
+            { upsert: true, new: true },
+        );
+        console.log(`[seed:legal-pages] Upserted: ${page.slug}`);
     }
 
     console.log('[seed:legal-pages] Done.');
