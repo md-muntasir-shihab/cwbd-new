@@ -84,6 +84,7 @@ interface UniversityBrowseShellProps {
     subtitle?: string;
     hideCategoryTabs?: boolean;
     cardVariant?: UniversityCardVisualVariant;
+    hideSearch?: boolean;
 }
 
 interface ParsedBrowseState {
@@ -133,6 +134,7 @@ export default function UniversityBrowseShell({
     subtitle = 'Browse universities grouped by category. Tap a category to filter.',
     hideCategoryTabs = false,
     cardVariant = 'modern',
+    hideSearch = false,
 }: UniversityBrowseShellProps) {
     const [searchParams, setSearchParams] = useSearchParams();
     const homeSettingsQuery = usePublicHomeSettings();
@@ -356,6 +358,7 @@ export default function UniversityBrowseShell({
                     updateUrlState({ cluster: '', q: '', sort: adminDefaultSort, replace: true });
                 }}
                 hideCategoryTabs={hideCategoryTabs}
+                hideSearch={hideSearch}
             />
 
             <div className={`mt-5 sm:mt-6 transition-opacity duration-200 ${isRefreshing ? 'opacity-60 pointer-events-none' : ''}`}>

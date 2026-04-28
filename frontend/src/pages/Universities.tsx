@@ -53,7 +53,7 @@ export default function UniversitiesPage() {
                     />
                 </PageHeroBanner>
             )}
-            <UniversityBrowseShell cardVariant="classic" />
+            <UniversityBrowseShell cardVariant="classic" hideSearch={hero.enabled} />
         </>
     );
 }

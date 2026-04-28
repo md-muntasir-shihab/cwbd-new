@@ -103,10 +103,6 @@ function StudentNavigation({
                         </div>
                         {active ? (
                             <ChevronRight className="w-4 h-4 text-indigo-400 dark:text-indigo-500 opacity-60" />
-                        ) : showBadge ? (
-                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-100 px-1.5 text-[max(10px,0.625rem)] font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
-                                {unreadNotifCount > 99 ? '99+' : unreadNotifCount}
-                            </span>
                         ) : null}
                     </Link>
                 );
