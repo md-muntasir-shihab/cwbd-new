@@ -3484,6 +3484,30 @@ export const createStudentSupportTicket = (data: { subject: string; message: str
 export const replyStudentSupportTicket = (id: string, message: string) =>
     api.post<{ item: StudentSupportTicketItem; message: string }>(`/student/support-tickets/${id}/reply`, { message });
 
+/* ── Public Leaderboard ── */
+export interface PublicLeaderboardEntry {
+    rank: number;
+    displayName: string;
+    avatarUrl: string | null;
+    institution: string | null;
+    points: number;
+    streakCurrent: number;
+    streakLongest: number;
+}
+export interface PublicLeaderboardResponse {
+    scope: 'points' | 'streak';
+    items: PublicLeaderboardEntry[];
+    total: number;
+    limit: number;
+    offset: number;
+    generatedAt: string;
+}
+export const getPublicLeaderboard = (params: {
+    scope?: 'points' | 'streak';
+    limit?: number;
+    offset?: number;
+}) => api.get<PublicLeaderboardResponse>('/public/leaderboard', { params });
+
 /* ── Practice Mode ── */
 export interface PracticeLocalizedText {
     en: string;

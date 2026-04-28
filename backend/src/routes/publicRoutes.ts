@@ -38,6 +38,7 @@ import {
     getPublicResourceSettings,
 } from '../controllers/resourceController';
 import { getActiveBanners } from '../controllers/bannerController';
+import { getPublicLeaderboard } from '../controllers/publicLeaderboardController';
 import { getHomeConfig } from '../controllers/homeConfigController';
 import { getSiteSettings } from '../controllers/cmsController';
 import { getPublicServiceConfig } from '../controllers/cmsController';
@@ -259,6 +260,9 @@ router.get('/legal-pages/:slug', getPublicLegalPage);
 
 /* ── Public — Founder ── */
 router.get('/founder', getPublicFounder);
+
+/* ── Public — Leaderboard ── */
+router.get('/public/leaderboard', getPublicLeaderboard);
 
 /* ── Public — Services ── */
 router.get('/services', getServices);
