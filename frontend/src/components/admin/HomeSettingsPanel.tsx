@@ -190,6 +190,10 @@ const FALLBACK_HOME_SETTINGS: HomeSettingsConfig = {
         showApplicationProgress: true,
         showExamDates: true,
         defaultSort: 'alphabetical',
+        showProgressBar: true,
+        showCategoryBadge: true,
+        showClusterBadge: false,
+        showExamCentersOnHomeCards: false,
     },
     highlightedCategories: [],
     featuredUniversities: [],
@@ -1533,6 +1537,30 @@ export default function HomeSettingsPanel() {
                                     value={draft.universityCardConfig.showExamDates}
                                     onChange={(value) => updateDraft((prev) => ({ ...prev, universityCardConfig: { ...prev.universityCardConfig, showExamDates: value } }))}
 
+                                />
+                                <Toggle
+                                    label="Show Progress Bar"
+                                    value={draft.universityCardConfig.showProgressBar}
+                                    onChange={(value) => updateDraft((prev) => ({ ...prev, universityCardConfig: { ...prev.universityCardConfig, showProgressBar: value } }))}
+                                    helper="Display visual progress bar on home page cards"
+                                />
+                                <Toggle
+                                    label="Show Category Badge"
+                                    value={draft.universityCardConfig.showCategoryBadge}
+                                    onChange={(value) => updateDraft((prev) => ({ ...prev, universityCardConfig: { ...prev.universityCardConfig, showCategoryBadge: value } }))}
+                                    helper="Display category badge on home page cards"
+                                />
+                                <Toggle
+                                    label="Show Cluster Badge"
+                                    value={draft.universityCardConfig.showClusterBadge}
+                                    onChange={(value) => updateDraft((prev) => ({ ...prev, universityCardConfig: { ...prev.universityCardConfig, showClusterBadge: value } }))}
+                                    helper="Display cluster group badge on home page cards"
+                                />
+                                <Toggle
+                                    label="Show Exam Centers on Home Cards"
+                                    value={draft.universityCardConfig.showExamCentersOnHomeCards}
+                                    onChange={(value) => updateDraft((prev) => ({ ...prev, universityCardConfig: { ...prev.universityCardConfig, showExamCentersOnHomeCards: value } }))}
+                                    helper="Display exam center names on home page cards"
                                 />
                             </div>
                             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">

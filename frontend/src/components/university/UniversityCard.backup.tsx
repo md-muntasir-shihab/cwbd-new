@@ -28,6 +28,10 @@ export const DEFAULT_UNIVERSITY_CARD_CONFIG: HomeUniversityCardConfig = {
     showApplicationProgress: true,
     showExamDates: true,
     defaultSort: 'alphabetical',
+    showProgressBar: true,
+    showCategoryBadge: true,
+    showClusterBadge: false,
+    showExamCentersOnHomeCards: false,
 };
 
 export type UniversityCardActionVariant = 'default' | 'deadline' | 'exam';

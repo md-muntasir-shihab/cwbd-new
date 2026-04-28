@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { CalendarDays, ExternalLink } from 'lucide-react';
 import { daysUntil, urgencyTone } from '../CountdownChip';
+import ProgressBar from './ProgressBar';
 import type { ApiUniversityCardPreview } from '../../../services/api';
 import {
     formatUniversityDate,
@@ -34,15 +35,6 @@ function pickNearestExam(uni: ApiUniversityCardPreview): string {
     return usable[0]?.toISOString() || '';
 }
 
-function ExamChip({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-xl border border-slate-200/60 bg-white/80 px-2.5 py-2 text-center dark:border-slate-700/60 dark:bg-slate-950/50">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{label}</p>
-            <p className="mt-1 text-xs font-bold text-slate-800 dark:text-slate-100">{formatUniversityDate(value, 'en-GB', { day: '2-digit', month: 'short' })}</p>
-        </div>
-    );
-}
-
 export default function UpcomingExamCard({ university: uni }: UpcomingExamCardProps) {
     const nearestExam = pickNearestExam(uni);
     const resolvedExamDate = uni.endedAt || nearestExam;
@@ -70,14 +62,13 @@ export default function UpcomingExamCard({ university: uni }: UpcomingExamCardPr
                         <h3 className="truncate text-sm font-bold leading-snug text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-cyan-300" title={uni.name}>{uni.name}</h3>
                     </Link>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">{uni.category}</span>
-                        {uni.clusterGroup && <span className="rounded-lg border border-purple-200/60 bg-purple-50/80 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-200">{uni.clusterGroup}</span>}
+                        <span className="truncate max-w-[20ch] rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200" title={uni.category}>{uni.category}</span>
                     </div>
                 </div>
             </div>
 
             {/* Exam info */}
-            <div className="space-y-2.5 px-4 pb-3">
+            <div className="flex-1 space-y-2.5 px-4 pb-3">
                 <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
                         <CalendarDays className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" />
@@ -87,23 +78,7 @@ export default function UpcomingExamCard({ university: uni }: UpcomingExamCardPr
                         {isHistorical ? 'Ended' : days === null ? 'TBD' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `${days}d left`}
                     </span>
                 </div>
-
-                {/* Application Window */}
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50/80 p-2.5 dark:border-slate-700/60 dark:bg-slate-950/40">
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="text-slate-400 dark:text-slate-500">Application Window</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-200">
-                            {formatUniversityDate(uni.applicationStartDate || uni.applicationStart, 'en-GB', { day: '2-digit', month: 'short' })} – {formatUniversityDate(uni.applicationEndDate || uni.applicationEnd, 'en-GB', { day: '2-digit', month: 'short' })}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Exam Dates */}
-                <div className="grid grid-cols-3 gap-1.5">
-                    <ExamChip label="Science" value={uni.examDateScience || uni.scienceExamDate || ''} />
-                    <ExamChip label="Humanities" value={uni.examDateArts || uni.artsExamDate || ''} />
-                    <ExamChip label="Business" value={uni.examDateBusiness || uni.businessExamDate || ''} />
-                </div>
+                <ProgressBar startDate={uni.applicationEndDate || uni.applicationEnd} endDate={nearestExam} closingSoonDays={7} />
             </div>
 
             {/* Actions — 2 buttons */}

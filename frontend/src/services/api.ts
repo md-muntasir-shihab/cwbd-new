@@ -1069,6 +1069,10 @@ export interface HomeUniversityCardConfig {
     showApplicationProgress: boolean;
     showExamDates: boolean;
     defaultSort: UniversityCardSort;
+    showProgressBar: boolean;
+    showCategoryBadge: boolean;
+    showClusterBadge: boolean;
+    showExamCentersOnHomeCards: boolean;
 }
 
 /* ── Page Hero Banner Settings ── */

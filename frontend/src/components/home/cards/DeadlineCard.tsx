@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import CountdownChip, { daysUntil, urgencyTone } from '../CountdownChip';
+import ProgressBar from './ProgressBar';
 import type { ApiUniversityCardPreview } from '../../../services/api';
 import UniversityLogo from '../../university/UniversityLogo';
 import { formatUniversityDate, pickText } from '../../../lib/universityPresentation';
@@ -23,16 +24,6 @@ const accentGradient: Record<string, string> = {
     success: 'from-emerald-500 to-cyan-500',
     muted: 'from-slate-400 to-slate-500',
 };
-
-function ExamChip({ label, value }: { label: string; value: string }) {
-    const formatted = formatUniversityDate(value, 'en-GB', { day: '2-digit', month: 'short' });
-    return (
-        <div className="rounded-xl border border-slate-200/70 bg-white/80 px-2.5 py-2 text-center dark:border-slate-700/60 dark:bg-slate-950/50">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{label}</p>
-            <p className="mt-1 text-xs font-bold text-slate-800 dark:text-slate-100">{formatted}</p>
-        </div>
-    );
-}
 
 export default function DeadlineCard({ university: uni }: DeadlineCardProps) {
     const endDate = uni.applicationEndDate || uni.applicationEnd;
@@ -62,8 +53,7 @@ export default function DeadlineCard({ university: uni }: DeadlineCardProps) {
                         <h3 className="truncate text-sm font-bold leading-snug text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-cyan-300" title={uni.name}>{uni.name}</h3>
                     </Link>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200">{uni.category}</span>
-                        {uni.clusterGroup && <span className="rounded-lg border border-purple-200/60 bg-purple-50/80 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-200">{uni.clusterGroup}</span>}
+                        <span className="truncate max-w-[20ch] rounded-lg border border-sky-200/60 bg-sky-50/80 px-2 py-0.5 text-[10px] font-bold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200" title={uni.category}>{uni.category}</span>
                     </div>
                 </div>
             </div>
@@ -74,27 +64,9 @@ export default function DeadlineCard({ university: uni }: DeadlineCardProps) {
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                         {isHistorical ? `Closed ${formatUniversityDate(historicalEndDate, 'en-GB', { day: '2-digit', month: 'short' })}` : `Apply by ${formatUniversityDate(endDate, 'en-GB', { day: '2-digit', month: 'short' })}`}
                     </span>
-                    {isHistorical ? (
-                        <span className="rounded-lg border border-slate-200/70 bg-slate-100/80 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">Closed</span>
-                    ) : (<CountdownChip targetDate={endDate} size="sm" />)}
+                    <CountdownChip targetDate={isHistorical ? historicalEndDate : endDate} size="sm" />
                 </div>
-
-                {/* Application Window */}
-                <div className="rounded-xl border border-slate-200/60 bg-slate-50/80 p-2.5 dark:border-slate-700/60 dark:bg-slate-950/40">
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="text-slate-400 dark:text-slate-500">Application Window</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-200">
-                            {formatUniversityDate(startDate, 'en-GB', { day: '2-digit', month: 'short' })} – {formatUniversityDate(endDate, 'en-GB', { day: '2-digit', month: 'short' })}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Exam Dates */}
-                <div className="grid grid-cols-3 gap-1.5">
-                    <ExamChip label="Science" value={uni.examDateScience || uni.scienceExamDate || ''} />
-                    <ExamChip label="Humanities" value={uni.examDateArts || uni.artsExamDate || ''} />
-                    <ExamChip label="Business" value={uni.examDateBusiness || uni.businessExamDate || ''} />
-                </div>
+                <ProgressBar startDate={startDate} endDate={endDate} closingSoonDays={7} />
             </div>
 
             {/* Actions — simplified to 2 buttons */}

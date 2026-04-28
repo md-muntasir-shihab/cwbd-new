@@ -28,6 +28,10 @@ export const DEFAULT_UNIVERSITY_CARD_CONFIG: HomeUniversityCardConfig = {
     showApplicationProgress: true,
     showExamDates: true,
     defaultSort: 'alphabetical',
+    showProgressBar: true,
+    showCategoryBadge: true,
+    showClusterBadge: false,
+    showExamCentersOnHomeCards: false,
 };
 
 export type UniversityCardActionVariant = 'default' | 'deadline' | 'exam';
@@ -691,31 +695,38 @@ const UniversityCard = memo(function UniversityCard({
                                 </span>
 
                                 {/* Category badge */}
-                                <span className={`inline-flex items-center rounded-[6px] border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${(category && category !== 'N/A') ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300' : 'border-slate-200/60 bg-slate-50 text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500'}`}>
+                                <span
+                                    className={`inline-flex items-center truncate max-w-[24ch] rounded-[6px] border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${(category && category !== 'N/A') ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300' : 'border-slate-200/60 bg-slate-50 text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500'}`}
+                                    title={category && category !== 'N/A' ? category : 'N/A'}
+                                >
                                     {category && category !== 'N/A' ? category : 'N/A'}
                                 </span>
 
                                 {/* Cluster badge */}
-                                {clusterGroup && clusterGroup !== 'N/A' ? (
-                                    clusterUrl ? (
-                                        <Link
-                                            to={clusterUrl}
-                                            className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 transition hover:bg-purple-100 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20"
-                                        >
-                                            <Layers3 className="h-3 w-3" />
-                                            <span className="max-w-[13rem] truncate">{clusterGroup}</span>
-                                        </Link>
-                                    ) : (
-                                        <span className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300">
-                                            <Layers3 className="h-3 w-3" />
-                                            <span className="max-w-[13rem] truncate">{clusterGroup}</span>
-                                        </span>
-                                    )
-                                ) : (
-                                    <span className="inline-flex items-center gap-1 rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500">
-                                        <Layers3 className="h-3 w-3 opacity-50" />
-                                        <span>N/A</span>
-                                    </span>
+                                {mergedConfig.showClusterBadge !== false && (
+                                    <>
+                                        {clusterGroup && clusterGroup !== 'N/A' ? (
+                                            clusterUrl ? (
+                                                <Link
+                                                    to={clusterUrl}
+                                                    className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 transition hover:bg-purple-100 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20"
+                                                >
+                                                    <Layers3 className="h-3 w-3" />
+                                                    <span className="max-w-[13rem] truncate">{clusterGroup}</span>
+                                                </Link>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-[6px] border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-purple-700 dark:border-purple-500/20 dark:bg-purple-500/10 dark:text-purple-300">
+                                                    <Layers3 className="h-3 w-3" />
+                                                    <span className="max-w-[13rem] truncate">{clusterGroup}</span>
+                                                </span>
+                                            )
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 rounded-[6px] border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:border-slate-700/60 dark:bg-slate-800/50 dark:text-slate-500">
+                                                <Layers3 className="h-3 w-3 opacity-50" />
+                                                <span>N/A</span>
+                                            </span>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -739,28 +750,32 @@ const UniversityCard = memo(function UniversityCard({
             </div>
 
             <div className="space-y-3 px-4 pb-4">
-                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-1">
-                            <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Application Window</div>
-                            <div className="text-xs font-semibold text-slate-700 dark:text-slate-100">{appMeta.windowLabel}</div>
+                {mergedConfig.showApplicationProgress !== false && (
+                    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/90 p-3 dark:border-slate-700/80 dark:bg-slate-950/55">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="space-y-1">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">Application Window</div>
+                                <div className="text-xs font-semibold text-slate-700 dark:text-slate-100">{appMeta.windowLabel}</div>
+                            </div>
+                            <DaysLeftChip daysLeft={appMeta.daysLeft} urgencyState={appMeta.urgencyState} />
                         </div>
-                        <DaysLeftChip daysLeft={appMeta.daysLeft} urgencyState={appMeta.urgencyState} />
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <span className="font-medium text-slate-500 dark:text-slate-400">{appMeta.deadlineLabel}</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-100">
+                                {nearestExam ? formatUniversityDate(nearestExam, 'en-GB', { day: '2-digit', month: 'short' }) : 'N/A'}
+                            </span>
+                        </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <span className="font-medium text-slate-500 dark:text-slate-400">{appMeta.deadlineLabel}</span>
-                        <span className="font-semibold text-slate-700 dark:text-slate-100">
-                            {nearestExam ? formatUniversityDate(nearestExam, 'en-GB', { day: '2-digit', month: 'short' }) : 'N/A'}
-                        </span>
-                    </div>
-                </div>
+                )}
 
-                <div className="grid grid-cols-3 gap-2">
-                    <UnitDateChip label="Science" value={university.scienceExamDate || university.examDateScience} />
-                    <UnitDateChip label="Humanities" value={university.artsExamDate || university.examDateArts} />
-                    <UnitDateChip label="Business" value={university.businessExamDate || university.examDateBusiness} />
-                </div>
-                {mergedConfig.showExamCentersPreview && examCenterPreview.length > 0 && (
+                {mergedConfig.showExamDates !== false && (
+                    <div className="grid grid-cols-3 gap-2">
+                        <UnitDateChip label="Science" value={university.scienceExamDate || university.examDateScience} />
+                        <UnitDateChip label="Humanities" value={university.artsExamDate || university.examDateArts} />
+                        <UnitDateChip label="Business" value={university.businessExamDate || university.examDateBusiness} />
+                    </div>
+                )}
+                {(mergedConfig.showExamCentersPreview || mergedConfig.showExamCentersOnHomeCards) && examCenterPreview.length > 0 && (
                     <p className="line-clamp-1 text-xs text-slate-500 dark:text-slate-400">
                         Centers: {examCenterPreview.join(', ')}
                     </p>
