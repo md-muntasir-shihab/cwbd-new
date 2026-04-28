@@ -77,12 +77,13 @@ export async function seedLegalPages(): Promise<void> {
     console.log('[seed:legal-pages] Seeding legal pages...');
 
     for (const page of legalPages) {
-        await LegalPage.findOneAndUpdate(
-            { slug: page.slug },
-            { $set: page },
-            { upsert: true, new: true },
-        );
-        console.log(`[seed:legal-pages] Upserted: ${page.slug}`);
+        const existing = await LegalPage.findOne({ slug: page.slug }).lean();
+        if (existing) {
+            console.log(`[seed:legal-pages] Skipped (already exists): ${page.slug}`);
+            continue;
+        }
+        await LegalPage.create(page);
+        console.log(`[seed:legal-pages] Created: ${page.slug}`);
     }
 
     console.log('[seed:legal-pages] Done.');
