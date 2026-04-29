@@ -137,6 +137,14 @@ export async function getRuntimeConfig(
     };
 }
 
+/** Convenience: read a single decrypted secret value, or null when absent. */
+export async function getDecryptedSecret(key: IntegrationKey, secretName: string): Promise<string | null> {
+    const runtime = await getRuntimeConfig(key);
+    if (!runtime) return null;
+    const value = runtime.secrets[secretName];
+    return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
 export interface UpdateInput {
     enabled?: boolean;
     config?: Record<string, unknown>;
