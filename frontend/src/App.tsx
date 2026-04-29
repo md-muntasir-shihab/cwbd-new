@@ -8,6 +8,7 @@ import { I18nProvider } from './i18n';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ForceLogoutModal from './components/auth/ForceLogoutModal';
+import AnalyticsTracker from './components/AnalyticsTracker';
 
 // Route-based code splitting — page-level components loaded on demand
 const HomePage = lazy(() => import('./pages/HomeModern'));
@@ -372,6 +373,7 @@ export default function App() {
                 <AuthProvider>
                     <I18nProvider>
                         <BrowserRouter>
+                            <AnalyticsTracker />
                             <AppLayout>
                                 <Suspense fallback={<RouteLoadingFallback />}>
                                     <Routes>

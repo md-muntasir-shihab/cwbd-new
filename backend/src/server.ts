@@ -36,6 +36,7 @@ import adminProviderRoutes from './routes/adminProviderRoutes';
 import adminNotificationRoutes from './routes/adminNotificationRoutes';
 import adminStudentSecurityRoutes from './routes/adminStudentSecurityRoutes';
 import adminIntegrationsRoutes from './routes/adminIntegrationsRoutes';
+import publicIntegrationsRoutes from './routes/publicIntegrationsRoutes';
 
 // Exam Management System v1 routes
 import questionHierarchyRoutes from './routes/questionHierarchy.routes';
@@ -383,6 +384,7 @@ app.get('/api/auth/csrf-token', csrfTokenEndpoint);
 
 // Public API
 app.use('/api', publicRoutes);
+app.use('/api/integrations', publicIntegrationsRoutes);
 
 // Admin API (behind secret path)
 app.use(`/api/${ADMIN_SECRET_PATH}`, adminRateLimiter);
