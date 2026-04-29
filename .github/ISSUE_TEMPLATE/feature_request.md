@@ -6,14 +6,18 @@ labels: enhancement
 assignees: ''
 ---
 
-## Problem
-What problem does this solve?
+## 🎯 Problem Statement
+What problem does this feature solve? Who benefits from it?
 
-## Proposed Solution
-Describe the feature you'd like.
+## 💡 Proposed Solution
+Describe the feature you'd like. Be as specific as possible.
 
-## Alternatives Considered
+## 🔄 Alternatives Considered
 Any alternative approaches you've thought about.
 
-## Additional Context
-Screenshots, mockups, or references.
+## 📊 Impact
+- **Users affected:** Students / Admins / Examiners / All
+- **Priority:** Low / Medium / High / Critical
+
+## 📸 Mockups / References
+Screenshots, wireframes, or links to similar features.

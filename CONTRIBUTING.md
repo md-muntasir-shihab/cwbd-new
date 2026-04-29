@@ -1,43 +1,73 @@
-# Contributing to CampusWay
+# 🤝 Contributing to CampusWay
 
-Thank you for your interest in contributing!
+Thank you for your interest in contributing! This guide will help you get started.
 
-## Development Setup
+---
 
-1. Fork and clone the repository
-2. Follow the [Quick Start](README.md#-quick-start) guide
-3. Create a feature branch: `git checkout -b feat/your-feature`
+## 🚀 Getting Started
 
-## Coding Conventions
+1. **Fork** the repository on GitHub
+2. **Clone** your fork locally
+3. **Install** dependencies: `cd backend && npm install && cd ../frontend && npm install`
+4. **Create** a feature branch: `git checkout -b feat/your-feature`
 
-### Naming
-- **Files:** PascalCase for models/components (`User.ts`, `ExamRunner.tsx`)
-- **Functions/Variables:** camelCase (`generateAccessToken`)
-- **Types/Interfaces:** PascalCase with `I` prefix for Mongoose (`IUser`)
-- **Constants:** UPPER_SNAKE_CASE (`JWT_SECRET`)
+## 📐 Coding Conventions
 
-### Backend
-- Service layer for business logic — controllers stay thin
-- Zod schemas for all request validation
-- `ResponseBuilder` for consistent API responses
+### File Naming
+| Type | Convention | Example |
+|------|-----------|---------|
+| Models & Components | PascalCase | `User.ts`, `ExamRunner.tsx` |
+| Services & Utils | PascalCase | `GamificationService.ts` |
+| Hooks | camelCase with `use` prefix | `useExamQueries.ts` |
+| Routes | kebab-case with `.routes` | `battle.routes.ts` |
+| Validators | kebab-case with `.validator` | `exam.validator.ts` |
+
+### Backend Patterns
+- **Controllers** stay thin — delegate to services
+- **Services** contain business logic
+- **Zod schemas** validate all request bodies
+- **ResponseBuilder** for consistent API responses
 - Middleware chain: `authenticate → requirePermission → zodValidate → controller`
 
-### Frontend
-- Lazy loading for all page components
-- TanStack Query for server state
-- TailwindCSS for styling (no inline styles)
+### Frontend Patterns
+- **Lazy loading** for all page components
+- **TanStack Query** for server state management
+- **TailwindCSS** for styling (no inline styles, no CSS modules)
+- **Lucide React** for icons
+- All pages support **dark mode** via `dark:` variants
 
-## Pull Request Process
+## 📝 Commit Messages
 
-1. Run `bash scripts/dev.sh check` before pushing
-2. Write descriptive commit messages: `feat:`, `fix:`, `chore:`, `docs:`
-3. Keep PRs focused — one feature or fix per PR
-4. Update tests if you change behavior
-
-## Commit Messages
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-<type>: <short description>
-
-Types: feat, fix, chore, docs, refactor, test, style
+feat: add battle mode leaderboard
+fix: correct score computation for negative marks
+chore: update dependencies
+docs: add API documentation
+refactor: extract question filter logic
+test: add property tests for streak tracking
 ```
+
+## ✅ Before Submitting a PR
+
+```bash
+bash scripts/dev.sh check
+# Runs: typecheck + lint + test
+```
+
+## 🔄 Pull Request Process
+
+1. Keep PRs **focused** — one feature or fix per PR
+2. Write a **clear description** of what changed and why
+3. Add/update **tests** if you change behavior
+4. Ensure all **CI checks pass**
+5. Request review from a maintainer
+
+## 🐛 Reporting Bugs
+
+Use the [Bug Report template](https://github.com/md-muntasir-shihab/Campusway-BD/issues/new?template=bug_report.md).
+
+## 💡 Suggesting Features
+
+Use the [Feature Request template](https://github.com/md-muntasir-shihab/Campusway-BD/issues/new?template=feature_request.md).

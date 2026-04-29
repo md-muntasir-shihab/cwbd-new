@@ -6,24 +6,28 @@ labels: bug
 assignees: ''
 ---
 
-## Description
-A clear description of the bug.
+## 📝 Description
+A clear and concise description of the bug.
 
-## Steps to Reproduce
+## 🔄 Steps to Reproduce
 1. Go to '...'
 2. Click on '...'
 3. See error
 
-## Expected Behavior
-What should happen.
+## ✅ Expected Behavior
+What you expected to happen.
 
-## Actual Behavior
-What actually happens.
+## ❌ Actual Behavior
+What actually happened. Include error messages if any.
 
-## Environment
+## 🖥️ Environment
 - **Browser:** Chrome / Firefox / Safari
+- **OS:** Windows / macOS / Linux
 - **Device:** Desktop / Mobile
-- **Role:** Student / Admin / Examiner
+- **User Role:** Student / Admin / Examiner
 
-## Screenshots
-If applicable, add screenshots.
+## 📸 Screenshots
+If applicable, add screenshots or screen recordings.
+
+## 📋 Additional Context
+Console errors, network logs, or other relevant info.
