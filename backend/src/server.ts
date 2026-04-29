@@ -34,6 +34,7 @@ import adminStudentMgmtRoutes from './routes/adminStudentMgmtRoutes';
 import adminProviderRoutes from './routes/adminProviderRoutes';
 import adminNotificationRoutes from './routes/adminNotificationRoutes';
 import adminStudentSecurityRoutes from './routes/adminStudentSecurityRoutes';
+import adminIntegrationsRoutes from './routes/adminIntegrationsRoutes';
 
 // Exam Management System v1 routes
 import questionHierarchyRoutes from './routes/questionHierarchy.routes';
@@ -388,7 +389,8 @@ app.use(`/api/${ADMIN_SECRET_PATH}`, adminRoutes);
 app.use('/api/admin', adminRateLimiter);
 app.use('/api/admin', standaloneAdminApiHardening, adminStudentMgmtRoutes);
 app.use('/api/admin', standaloneAdminApiHardening, adminNotificationRoutes);
-app.use('/api/admin', standaloneAdminApiHardening, adminProviderRoutes);
+    app.use('/api/admin', standaloneAdminApiHardening, adminProviderRoutes);
+    app.use('/api/admin', standaloneAdminApiHardening, adminIntegrationsRoutes);
 app.use('/api/admin', standaloneAdminApiHardening, adminStudentSecurityRoutes);
 app.use('/api/admin', adminRoutes);
 
