@@ -24,6 +24,7 @@ import { startModernExamCronJobs } from './cron/modernExamJobs';
 import { startStudentDashboardCronJobs } from './cron/dashboardJobs';
 import { startFinanceRecurringCronJobs } from './cron/financeRecurringJobs';
 import { seedDefaultChartOfAccounts } from './services/financeCenterService';
+import { seedIntegrationConfigs } from './services/integrations/integrationsService';
 import { startNewsV2CronJobs } from './cron/newsJobs';
 import { startNotificationJobCron } from './cron/notificationJobs';
 import { startRetentionCronJobs } from './cron/retentionJobs';
@@ -516,6 +517,9 @@ async function start() {
 
         // Seed default Chart-of-Account entries (idempotent)
         await seedDefaultChartOfAccounts();
+
+        // Seed integration registry rows (idempotent, all disabled by default)
+        await seedIntegrationConfigs();
     } catch (err) { console.error('[startup] Core data/cron sync failed. MongoDB might be down. Keeping container ALIVE:', err); }
 
     const server = app.listen(Number(PORT), '0.0.0.0', () => {

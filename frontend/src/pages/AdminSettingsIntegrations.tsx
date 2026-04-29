@@ -44,7 +44,7 @@ function formatRelative(iso: string | null): string {
     return `${days}d ago`;
 }
 
-function StatusBadge({ status }: { status: 'success' | 'failure' | 'unknown' }) {
+function StatusBadge({ status }: { status: 'success' | 'failed' | 'unknown' | 'skipped' }) {
     if (status === 'success') {
         return (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
@@ -52,7 +52,7 @@ function StatusBadge({ status }: { status: 'success' | 'failure' | 'unknown' }) 
             </span>
         );
     }
-    if (status === 'failure') {
+    if (status === 'failed') {
         return (
             <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
                 <XCircle className="h-3.5 w-3.5" /> Failing
@@ -144,8 +144,9 @@ function IntegrationCard({ item }: { item: IntegrationItem }) {
     const testMutation = useMutation({
         mutationFn: () => testIntegration(item.key),
         onSuccess: (result) => {
+            const latency = typeof result.latencyMs === 'number' ? ` (${result.latencyMs}ms)` : '';
             if (result.status === 'success') {
-                toast.success(`${item.displayName}: ${result.message} (${result.latencyMs}ms)`);
+                toast.success(`${item.displayName}: ${result.message}${latency}`);
             } else {
                 toast.error(`${item.displayName}: ${result.message}`);
             }

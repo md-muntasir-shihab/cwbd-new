@@ -34,7 +34,7 @@ export type IntegrationState = {
     config: Record<string, unknown>;
     configuredSecrets: string[];
     lastTestedAt: string | null;
-    lastTestStatus: 'success' | 'failure' | 'unknown';
+    lastTestStatus: 'success' | 'failed' | 'unknown' | 'skipped';
     lastTestMessage: string;
     updatedAt: string;
 };
@@ -73,8 +73,8 @@ export async function toggleIntegration(key: string, enabled: boolean): Promise<
     return data.state;
 }
 
-export async function testIntegration(key: string): Promise<{ status: 'success' | 'failure'; message: string; latencyMs: number }> {
-    const { data } = await api.post<{ result: { status: 'success' | 'failure'; message: string; latencyMs: number } }>(
+export async function testIntegration(key: string): Promise<{ status: 'success' | 'failed'; message: string; latencyMs?: number }> {
+    const { data } = await api.post<{ result: { status: 'success' | 'failed'; message: string; latencyMs?: number } }>(
         `/${ADMIN_PATH}/integrations/${encodeURIComponent(key)}/test`,
     );
     return data.result;
