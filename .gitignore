@@ -71,6 +71,10 @@ PHASE_1_INVENTORY_LOG.md
 PHASE_1_ROUTE_INVENTORY.json
 PHASE_2_4_TEST_EXECUTION_REPORT.md
 SESSION_2_COMPLETION_SUMMARY.md
+AUDIT_INDEX.md
+AUDIT_SUMMARY.txt
+CODEBASE_AUDIT.md
+temp-*.csv
 
 # ─── E2E docs (generated) ────────────────────────────────────
 frontend/E2E_*.md
