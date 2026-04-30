@@ -14,6 +14,7 @@ import {
     HelpCircle,
     CheckCircle,
     ClipboardCheck,
+    Plug,
 } from 'lucide-react';
 
 export type AdminMenuIcon = ComponentType<{ className?: string }>;
@@ -339,6 +340,17 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         icon: Shield,
         module: 'security_logs',
         matchPrefixes: [adminUi('settings/security-center'), adminUi('settings/system-logs'), adminUi('reports')],
+    },
+
+    // 12b. Integrations
+    {
+        key: 'integrations',
+        label: 'Integrations',
+        path: ADMIN_PATHS.integrations,
+        icon: Plug,
+        module: 'site_settings',
+        allowedRoles: ['superadmin', 'admin'],
+        matchPrefixes: [adminUi('settings/integrations')],
     },
 
     // 13. Admin Profile

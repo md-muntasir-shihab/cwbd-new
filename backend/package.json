@@ -25,6 +25,7 @@
         "security:payload-smoke": "tsx src/scripts/security-payload-smoke.ts",
         "release:cleanup-public-surface": "tsx src/scripts/release-cleanup-public-surface.ts",
         "seed": "tsx src/seeds/index.ts",
+        "seed:test-users": "tsx src/seeds/seedTestUsers.ts",
         "seed:legal-pages": "tsx src/seeds/seedLegalPages.ts",
         "seed:founder": "tsx src/seeds/seedFounderProfile.ts"
     },

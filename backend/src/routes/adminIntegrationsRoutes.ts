@@ -1,4 +1,27 @@
+/**
+ * @module adminIntegrationsRoutes
+ * @description Integration Config CRUD — manages the 10 external service integrations
+ * with enable/disable toggles, configuration fields, encrypted secrets, and
+ * connection testing.
+ *
+ * Mounted at: /api/admin/integrations
+ *
+ * Supported integrations: Meilisearch, Imgproxy, Listmonk, Mautic, Novu, Umami,
+ * Plausible, B2 Backup, SMTP, and Cloudinary.
+ *
+ * BOUNDARY NOTE: This file is distinct from `adminProviderRoutes.ts`.
+ * - This file (adminIntegrationsRoutes) manages **integration configs** — external
+ *   service connections with config/secret fields, enable/disable state, and
+ *   connection test probes.
+ * - `adminProviderRoutes.ts` manages **notification providers** — per-channel delivery
+ *   configuration (email, SMS, push) used by the notification/campaign system.
+ *
+ * The Novu entry here manages Novu API credentials and enable/disable state,
+ * while the provider system in `adminProviderRoutes.ts` manages per-channel
+ * delivery configuration that Novu uses to actually send notifications.
+ */
 import { Request, Response, NextFunction, Router } from 'express';
+import { z } from 'zod';
 import AuditLog from '../models/AuditLog';
 import {
     INTEGRATIONS_REGISTRY,
@@ -15,14 +38,15 @@ import { authenticate, authorize } from '../middlewares/auth';
 import type { IntegrationKey } from '../models/IntegrationConfig';
 
 /**
- * /api/admin/integrations
- *
- * Admin-only registry for the 10 supported external integrations. Routes are
- * gated by the same `authenticate + authorize(superadmin, admin)` middleware
- * pair used for notification providers (`adminProviderRoutes.ts`). All
- * mutation endpoints write to AuditLog. The /test endpoint is rate-limited to
- * at most 5 requests per minute per admin (per the integration spec).
+ * Zod schema for the PUT /integrations/:key request body.
+ * Validates the top-level shape: enabled is boolean, config is a plain object,
+ * and secrets is an object of string values.
  */
+const updateIntegrationBodySchema = z.object({
+    enabled: z.boolean().optional(),
+    config: z.record(z.string(), z.unknown()).optional(),
+    secrets: z.record(z.string(), z.string()).optional(),
+}).strict();
 
 type AuthRequest = Request & { user?: { _id?: string; role?: string; id?: string } };
 
@@ -148,21 +172,24 @@ router.put('/integrations/:key', ...adminAuth, async (req: AuthRequest, res: Res
         res.status(400).json({ message: 'Unknown integration key' });
         return;
     }
-    const body = (req.body ?? {}) as {
-        enabled?: unknown;
-        config?: unknown;
-        secrets?: unknown;
-    };
+
+    // Validate request body shape with Zod
+    const parseResult = updateIntegrationBodySchema.safeParse(req.body ?? {});
+    if (!parseResult.success) {
+        const issues = parseResult.error?.issues ?? [];
+        const errors = issues.map((e) => ({
+            path: e.path.join('.'),
+            message: e.message,
+        }));
+        res.status(400).json({ message: 'Validation failed', code: 'VALIDATION_ERROR', errors });
+        return;
+    }
+
+    const body = parseResult.data;
     const input = {
-        enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
-        config:
-            body.config && typeof body.config === 'object' && !Array.isArray(body.config)
-                ? (body.config as Record<string, unknown>)
-                : undefined,
-        secrets:
-            body.secrets && typeof body.secrets === 'object' && !Array.isArray(body.secrets)
-                ? (body.secrets as Record<string, string>)
-                : undefined,
+        enabled: body.enabled,
+        config: body.config,
+        secrets: body.secrets,
         actorId: String(req.user?._id || ''),
     };
 

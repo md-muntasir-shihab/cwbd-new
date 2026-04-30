@@ -11,6 +11,8 @@ import { useAuth } from './useAuth';
  */
 const MODULE_ALIASES: Record<string, string[]> = {
   home_control: ['banner_manager'],
+  exams: ['exam_center'],
+  exam_center: ['exams'],
   students_groups: ['student_groups'],
   subscription_plans: ['subscriptions'],
   finance_center: ['finance'],

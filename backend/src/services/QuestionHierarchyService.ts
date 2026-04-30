@@ -20,22 +20,22 @@ import QuestionBankQuestion from '../models/QuestionBankQuestion';
 // ─── DTO Types ──────────────────────────────────────────────
 
 export interface CreateGroupDto {
-    name: { en: string; bn: string };
-    slug?: string;
+    code: string;
+    title: { en: string; bn: string };
     description?: { en?: string; bn?: string };
-    icon?: string;
+    iconUrl?: string;
     color?: string;
-    sortOrder?: number;
+    order?: number;
     isActive?: boolean;
 }
 
 export interface UpdateGroupDto {
-    name?: { en: string; bn: string };
-    slug?: string;
+    code?: string;
+    title?: { en: string; bn: string };
     description?: { en?: string; bn?: string };
-    icon?: string;
+    iconUrl?: string;
     color?: string;
-    sortOrder?: number;
+    order?: number;
     isActive?: boolean;
 }
 
@@ -58,7 +58,6 @@ export interface CreateSubjectDto {
 
 export interface CreateChapterDto {
     subject_id: string;
-    group_id: string;
     code: string;
     title: { en: string; bn: string };
     description?: { en?: string; bn?: string };
@@ -87,24 +86,24 @@ function toObjectId(id: string): mongoose.Types.ObjectId {
  * Requirement 1.1, 1.2, 1.11
  */
 export async function createGroup(data: CreateGroupDto): Promise<IQuestionGroup> {
-    // Check duplicate name at group level
+    // Check duplicate title at group level
     const duplicate = await QuestionGroup.findOne({
         $or: [
-            { 'title.en': data.name.en },
-            { 'title.bn': data.name.bn },
+            { 'title.en': data.title.en },
+            { 'title.bn': data.title.bn },
         ],
     });
     if (duplicate) {
-        throw new Error(`A group with the name "${data.name.en}" or "${data.name.bn}" already exists`);
+        throw new Error(`A group with the name "${data.title.en}" or "${data.title.bn}" already exists`);
     }
 
     const group = await QuestionGroup.create({
-        code: data.slug || data.name.en.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-        title: { en: data.name.en, bn: data.name.bn },
+        code: data.code,
+        title: { en: data.title.en, bn: data.title.bn },
         description: data.description ? { en: data.description.en || '', bn: data.description.bn || '' } : undefined,
-        iconUrl: data.icon || '',
+        iconUrl: data.iconUrl || '',
         color: data.color || '',
-        order: data.sortOrder ?? 0,
+        order: data.order ?? 0,
         isActive: data.isActive ?? true,
     });
 
@@ -122,28 +121,28 @@ export async function updateGroup(id: string, data: UpdateGroupDto): Promise<IQu
         throw new Error('Group not found');
     }
 
-    // Check duplicate name if name is being updated
-    if (data.name) {
+    // Check duplicate title if title is being updated
+    if (data.title) {
         const duplicate = await QuestionGroup.findOne({
             _id: { $ne: toObjectId(id) },
             $or: [
-                { 'title.en': data.name.en },
-                { 'title.bn': data.name.bn },
+                { 'title.en': data.title.en },
+                { 'title.bn': data.title.bn },
             ],
         });
         if (duplicate) {
-            throw new Error(`A group with the name "${data.name.en}" or "${data.name.bn}" already exists`);
+            throw new Error(`A group with the name "${data.title.en}" or "${data.title.bn}" already exists`);
         }
-        group.title = { en: data.name.en, bn: data.name.bn };
+        group.title = { en: data.title.en, bn: data.title.bn };
     }
 
-    if (data.slug !== undefined) group.code = data.slug;
+    if (data.code !== undefined) group.code = data.code;
     if (data.description !== undefined) {
         group.description = { en: data.description.en || '', bn: data.description.bn || '' };
     }
-    if (data.icon !== undefined) group.iconUrl = data.icon;
+    if (data.iconUrl !== undefined) group.iconUrl = data.iconUrl;
     if (data.color !== undefined) group.color = data.color;
-    if (data.sortOrder !== undefined) group.order = data.sortOrder;
+    if (data.order !== undefined) group.order = data.order;
     if (data.isActive !== undefined) group.isActive = data.isActive;
 
     await group.save();
@@ -305,7 +304,7 @@ export async function deleteSubject(id: string): Promise<void> {
 
 /**
  * Create a new Chapter under a Subject.
- * Validates parent Subject exists, validates group_id matches the chain,
+ * Validates parent Subject exists, derives group_id from Subject,
  * rejects duplicate title under same parent Subject.
  * Requirement 1.1, 1.5, 1.11
  */
@@ -316,12 +315,8 @@ export async function createChapter(data: CreateChapterDto): Promise<IQuestionCh
         throw new Error(`Parent subject "${data.subject_id}" not found`);
     }
 
-    // Validate group_id matches the Subject's group_id (chain consistency)
-    if (parentSubject.group_id.toString() !== data.group_id) {
-        throw new Error(
-            `group_id "${data.group_id}" does not match the subject's group "${parentSubject.group_id}" — invalid hierarchy chain`,
-        );
-    }
+    // Derive group_id from the parent Subject (chain consistency)
+    const derivedGroupId = parentSubject.group_id;
 
     // Validate the full chain: Subject → SubGroup → Group
     if (parentSubject.parent_id) {
@@ -347,7 +342,7 @@ export async function createChapter(data: CreateChapterDto): Promise<IQuestionCh
 
     const chapter = await QuestionChapter.create({
         subject_id: toObjectId(data.subject_id),
-        group_id: toObjectId(data.group_id),
+        group_id: derivedGroupId,
         code: data.code,
         title: { en: data.title.en, bn: data.title.bn },
         description: data.description ? { en: data.description.en || '', bn: data.description.bn || '' } : undefined,

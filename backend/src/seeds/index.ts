@@ -5,6 +5,7 @@ import { seedLegalPages } from './seedLegalPages';
 import { seedFounderProfile } from './seedFounderProfile';
 import { seedQuestionTaxonomy } from './seedQuestionTaxonomy';
 import { seedExamSystem } from './examSystemSeed';
+import { seedTestUsers } from './seedTestUsers';
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ async function runAllSeeds(): Promise<void> {
     console.log('[seed] Starting all seeds...');
     await connectDB();
 
+    await seedTestUsers();
     await seedLegalPages();
     await seedFounderProfile();
     await seedQuestionTaxonomy();

@@ -22,12 +22,17 @@ import {
     previewExam,
     publishExam,
     cloneExam,
+    getPendingEvaluationResults,
+    gradeWrittenAnswer,
+    getAntiCheatReport,
+    getAnalyticsOverview,
     startExamSession,
     saveAnswers,
     submitExamSession,
     getResult,
     getExamLeaderboardHandler,
 } from '../controllers/examManagementController';
+import { gradeWrittenAnswerSchema } from '../validators/examGrading.validator';
 
 // ── Exam Management Routes ──────────────────────────────────
 // Mount at: /api/v1/exams
@@ -39,6 +44,27 @@ const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+// ═══════════════════════════════════════════════════════════
+// Non-Wildcard Routes — Must be registered before /:id/ routes
+// to prevent Express from matching "analytics" or "results"
+// as an :id parameter.
+// ═══════════════════════════════════════════════════════════
+
+// GET /analytics/overview — Exam center analytics metrics
+router.get(
+    '/analytics/overview',
+    requirePermission('exams', 'view'),
+    getAnalyticsOverview,
+);
+
+// POST /results/:resultId/grade — Grade a written answer
+router.post(
+    '/results/:resultId/grade',
+    requirePermission('exams', 'edit'),
+    validateBody(gradeWrittenAnswerSchema),
+    gradeWrittenAnswer,
+);
 
 // ═══════════════════════════════════════════════════════════
 // Admin Routes — Exam Builder Wizard
@@ -103,6 +129,24 @@ router.post(
     '/:id/clone',
     requirePermission('exams', 'create'),
     cloneExam,
+);
+
+// ═══════════════════════════════════════════════════════════
+// Admin Routes — Grading & Anti-Cheat
+// ═══════════════════════════════════════════════════════════
+
+// GET /:id/results/pending-evaluation — Fetch results needing written grading
+router.get(
+    '/:id/results/pending-evaluation',
+    requirePermission('exams', 'view'),
+    getPendingEvaluationResults,
+);
+
+// GET /:id/anti-cheat-report — Generate anti-cheat violation report
+router.get(
+    '/:id/anti-cheat-report',
+    requirePermission('exams', 'view'),
+    getAntiCheatReport,
 );
 
 // ═══════════════════════════════════════════════════════════

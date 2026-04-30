@@ -22,15 +22,15 @@ export async function getPublicAnalyticsConfig(): Promise<AnalyticsClientConfig>
         domain: null,
     };
 
-    if (await isIntegrationReady('umami', ['host'])) {
+    if (await isIntegrationReady('umami')) {
         const cfg = await getIntegrationConfig('umami');
         if (cfg) {
-            const host = String(cfg.host || '').replace(/\/$/, '');
+            const baseUrl = String(cfg.baseUrl || '').replace(/\/$/, '');
             const websiteId = cfg.websiteId ? String(cfg.websiteId) : null;
-            if (host && websiteId) {
+            if (baseUrl && websiteId) {
                 return {
                     provider: 'umami',
-                    scriptUrl: `${host}/script.js`,
+                    scriptUrl: `${baseUrl}/script.js`,
                     siteId: websiteId,
                     domain: cfg.domain ? String(cfg.domain) : null,
                 };
@@ -38,15 +38,15 @@ export async function getPublicAnalyticsConfig(): Promise<AnalyticsClientConfig>
         }
     }
 
-    if (await isIntegrationReady('plausible', ['domain'])) {
+    if (await isIntegrationReady('plausible')) {
         const cfg = await getIntegrationConfig('plausible');
         if (cfg) {
-            const host = String(cfg.host || 'https://plausible.io').replace(/\/$/, '');
+            const baseUrl = String(cfg.baseUrl || 'https://plausible.io').replace(/\/$/, '');
             const domain = cfg.domain ? String(cfg.domain) : null;
             if (domain) {
                 return {
                     provider: 'plausible',
-                    scriptUrl: `${host}/js/script.js`,
+                    scriptUrl: `${baseUrl}/js/script.js`,
                     siteId: domain,
                     domain,
                 };

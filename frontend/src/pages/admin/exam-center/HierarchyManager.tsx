@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import AdminGuardShell from '../../../components/admin/AdminGuardShell';
 import {
     ChevronRight,
     ChevronDown,
@@ -659,138 +660,140 @@ export default function HierarchyManager() {
     }, []);
 
     return (
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-            {/* Page header */}
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
-                        <FolderTree size={20} />
+        <AdminGuardShell title="Question Hierarchy" description="Manage the 5-level question taxonomy" requiredModule="exam_center">
+            <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+                {/* Page header */}
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
+                            <FolderTree size={20} />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
+                                Question Hierarchy
+                            </h1>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                Manage the 5-level question taxonomy
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
-                            Question Hierarchy
-                        </h1>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Manage the 5-level question taxonomy
-                        </p>
-                    </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    {/* Language toggle */}
-                    <button
-                        type="button"
-                        onClick={() => setLang((prev) => (prev === 'en' ? 'bn' : 'en'))}
-                        className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
-                        aria-label={`Switch to ${lang === 'en' ? 'Bengali' : 'English'}`}
-                    >
-                        <Languages size={16} />
-                        {lang === 'en' ? 'EN' : 'বাং'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Language toggle */}
+                        <button
+                            type="button"
+                            onClick={() => setLang((prev) => (prev === 'en' ? 'bn' : 'en'))}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                            aria-label={`Switch to ${lang === 'en' ? 'Bengali' : 'English'}`}
+                        >
+                            <Languages size={16} />
+                            {lang === 'en' ? 'EN' : 'বাং'}
+                        </button>
 
-                    {/* Refresh */}
-                    <button
-                        type="button"
-                        onClick={() => refetch()}
-                        disabled={isLoading}
-                        className="rounded-lg border border-slate-300 p-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 disabled:opacity-50"
-                        aria-label="Refresh tree"
-                    >
-                        <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-                    </button>
-
-                    {/* Add root group */}
-                    <button
-                        type="button"
-                        onClick={() => setCreateModal({ level: 'group', parentId: null })}
-                        className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                    >
-                        <Plus size={16} />
-                        Add Group
-                    </button>
-                </div>
-            </div>
-
-            {/* Tree content */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                {isLoading && <TreeSkeleton />}
-
-                {isError && (
-                    <div className="flex flex-col items-center gap-3 py-12 text-center">
-                        <AlertCircle size={32} className="text-red-400" />
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {error instanceof Error ? error.message : 'Failed to load hierarchy tree'}
-                        </p>
+                        {/* Refresh */}
                         <button
                             type="button"
                             onClick={() => refetch()}
-                            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                            disabled={isLoading}
+                            className="rounded-lg border border-slate-300 p-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 disabled:opacity-50"
+                            aria-label="Refresh tree"
                         >
-                            <RefreshCw size={14} />
-                            Retry
+                            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
                         </button>
-                    </div>
-                )}
 
-                {!isLoading && !isError && tree.length === 0 && (
-                    <div className="flex flex-col items-center gap-3 py-12 text-center">
-                        <FolderTree size={32} className="text-slate-300 dark:text-slate-600" />
-                        <p className="text-sm text-slate-500 dark:text-slate-400">
-                            No hierarchy nodes yet. Create your first group to get started.
-                        </p>
+                        {/* Add root group */}
                         <button
                             type="button"
                             onClick={() => setCreateModal({ level: 'group', parentId: null })}
-                            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
                         >
-                            <Plus size={14} />
+                            <Plus size={16} />
                             Add Group
                         </button>
                     </div>
+                </div>
+
+                {/* Tree content */}
+                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                    {isLoading && <TreeSkeleton />}
+
+                    {isError && (
+                        <div className="flex flex-col items-center gap-3 py-12 text-center">
+                            <AlertCircle size={32} className="text-red-400" />
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                                {error instanceof Error ? error.message : 'Failed to load hierarchy tree'}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => refetch()}
+                                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                            >
+                                <RefreshCw size={14} />
+                                Retry
+                            </button>
+                        </div>
+                    )}
+
+                    {!isLoading && !isError && tree.length === 0 && (
+                        <div className="flex flex-col items-center gap-3 py-12 text-center">
+                            <FolderTree size={32} className="text-slate-300 dark:text-slate-600" />
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                No hierarchy nodes yet. Create your first group to get started.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setCreateModal({ level: 'group', parentId: null })}
+                                className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                            >
+                                <Plus size={14} />
+                                Add Group
+                            </button>
+                        </div>
+                    )}
+
+                    {!isLoading && !isError && tree.length > 0 && (
+                        <div role="tree" aria-label="Question hierarchy tree">
+                            {tree.map((group) => (
+                                <TreeNode
+                                    key={group._id}
+                                    node={group}
+                                    lang={lang}
+                                    depth={0}
+                                    onRequestCreate={(level, parentId) => setCreateModal({ level, parentId })}
+                                    onRequestDelete={setDeleteTarget}
+                                    draggedNodeId={draggedNodeId}
+                                    onDragStart={handleDragStart}
+                                    onDragOver={handleDragOver}
+                                    onDrop={handleDrop}
+                                    onDragEnd={handleDragEnd}
+                                    parentId={null}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Create modal */}
+                {createModal && (
+                    <CreateNodeModal
+                        level={createModal.level}
+                        parentId={createModal.parentId}
+                        onClose={() => setCreateModal(null)}
+                        onCreated={() => refetch()}
+                    />
                 )}
 
-                {!isLoading && !isError && tree.length > 0 && (
-                    <div role="tree" aria-label="Question hierarchy tree">
-                        {tree.map((group) => (
-                            <TreeNode
-                                key={group._id}
-                                node={group}
-                                lang={lang}
-                                depth={0}
-                                onRequestCreate={(level, parentId) => setCreateModal({ level, parentId })}
-                                onRequestDelete={setDeleteTarget}
-                                draggedNodeId={draggedNodeId}
-                                onDragStart={handleDragStart}
-                                onDragOver={handleDragOver}
-                                onDrop={handleDrop}
-                                onDragEnd={handleDragEnd}
-                                parentId={null}
-                            />
-                        ))}
-                    </div>
+                {/* Delete confirmation dialog */}
+                {deleteTarget && (
+                    <DeleteDialog
+                        node={deleteTarget}
+                        lang={lang}
+                        onConfirm={handleDelete}
+                        onCancel={() => setDeleteTarget(null)}
+                        isDeleting={isDeleting}
+                    />
                 )}
             </div>
-
-            {/* Create modal */}
-            {createModal && (
-                <CreateNodeModal
-                    level={createModal.level}
-                    parentId={createModal.parentId}
-                    onClose={() => setCreateModal(null)}
-                    onCreated={() => refetch()}
-                />
-            )}
-
-            {/* Delete confirmation dialog */}
-            {deleteTarget && (
-                <DeleteDialog
-                    node={deleteTarget}
-                    lang={lang}
-                    onConfirm={handleDelete}
-                    onCancel={() => setDeleteTarget(null)}
-                    isDeleting={isDeleting}
-                />
-            )}
-        </div>
+        </AdminGuardShell>
     );
 }

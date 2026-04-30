@@ -86,14 +86,14 @@ export async function uploadBuffer(
     if (!ready) return false;
     const cfg = await getIntegrationConfig(KEY);
     if (!cfg) return false;
-    const bucketId = String(cfg.bucketId || '');
+    const bucket = String(cfg.bucket || '');
     const keyId = (await getDecryptedSecret(KEY, 'keyId')) ?? '';
     const appKey = (await getDecryptedSecret(KEY, 'applicationKey')) ?? '';
-    if (!bucketId || !keyId || !appKey) return false;
+    if (!bucket || !keyId || !appKey) return false;
 
     const auth = await authorize(keyId, appKey);
     if (!auth) return false;
-    const upload = await getUploadUrl(auth.apiUrl, auth.authorizationToken, bucketId);
+    const upload = await getUploadUrl(auth.apiUrl, auth.authorizationToken, bucket);
     if (!upload) return false;
 
     const sha1 = crypto.createHash('sha1').update(data).digest('hex');

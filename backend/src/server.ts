@@ -50,6 +50,7 @@ import studyRoutineRoutes from './routes/studyRoutine.routes';
 import doubtRoutes from './routes/doubt.routes';
 import examinerRoutes from './routes/examiner.routes';
 import examPackageRoutes from './routes/examPackage.routes';
+import notificationManagementRoutes from './routes/notificationManagement.routes';
 import { serveSecureUpload } from './controllers/secureUploadController';
 import {
     enforceAdminPanelPolicy,
@@ -392,8 +393,8 @@ app.use(`/api/${ADMIN_SECRET_PATH}`, adminRoutes);
 app.use('/api/admin', adminRateLimiter);
 app.use('/api/admin', standaloneAdminApiHardening, adminStudentMgmtRoutes);
 app.use('/api/admin', standaloneAdminApiHardening, adminNotificationRoutes);
-    app.use('/api/admin', standaloneAdminApiHardening, adminProviderRoutes);
-    app.use('/api/admin', standaloneAdminApiHardening, adminIntegrationsRoutes);
+app.use('/api/admin', standaloneAdminApiHardening, adminProviderRoutes);
+app.use('/api/admin', standaloneAdminApiHardening, adminIntegrationsRoutes);
 app.use('/api/admin', standaloneAdminApiHardening, adminStudentSecurityRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -407,6 +408,7 @@ app.use('/api', studentExamRoutes);
 app.use('/api/v1/question-hierarchy', questionHierarchyRoutes);
 app.use('/api/v1/questions', questionBankRoutes);
 app.use('/api/v1/exams', examManagementRoutes);
+app.use('/api/v1/notifications', notificationManagementRoutes);
 app.use('/api/v1/gamification', gamificationRoutes);
 app.use('/api/v1/battles', battleRoutes);
 app.use('/api/v1/mistake-vault', mistakeVaultRoutes);

@@ -1192,25 +1192,25 @@ export function AdminExamsPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-4">
-                    <div className="admin-panel-bg rounded-xl p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">Total Exams</p>
-                        <p className="mt-2 text-2xl font-bold text-text dark:text-dark-text">{exams.length}</p>
+                    <div className="admin-panel-bg rounded-xl p-3 sm:p-4">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Total Exams</p>
+                        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-text dark:text-dark-text">{exams.length}</p>
                     </div>
-                    <div className="admin-panel-bg rounded-xl p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">External</p>
-                        <p className="mt-2 text-2xl font-bold text-sky-600">{externalExams.length}</p>
+                    <div className="admin-panel-bg rounded-xl p-3 sm:p-4">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">External</p>
+                        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-sky-600">{externalExams.length}</p>
                     </div>
-                    <div className="admin-panel-bg rounded-xl p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">Internal</p>
-                        <p className="mt-2 text-2xl font-bold text-emerald-600">{internalExams.length}</p>
+                    <div className="admin-panel-bg rounded-xl p-3 sm:p-4">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Internal</p>
+                        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-emerald-600">{internalExams.length}</p>
                     </div>
-                    <div className="admin-panel-bg rounded-xl p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-text-muted">Centers</p>
-                        <p className="mt-2 text-2xl font-bold text-violet-600">{examCenters.length}</p>
+                    <div className="admin-panel-bg rounded-xl p-3 sm:p-4">
+                        <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-text-muted">Centers</p>
+                        <p className="mt-1.5 sm:mt-2 text-xl sm:text-2xl font-bold text-violet-600">{examCenters.length}</p>
                     </div>
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                     {EXAM_CENTER_VIEW_OPTIONS.map((item) => {
                         const Icon = item.icon;
                         const active = centerView === item.key;
@@ -1219,13 +1219,14 @@ export function AdminExamsPage() {
                                 key={item.key}
                                 type="button"
                                 onClick={() => changeCenterView(item.key)}
-                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${active
+                                title={item.label}
+                                className={`inline-flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-full border px-2.5 sm:px-4 py-2 text-xs sm:text-sm font-medium transition ${active
                                     ? 'border-primary bg-primary/10 text-primary'
                                     : 'border-card-border bg-white text-text-muted hover:border-primary/30 hover:text-text dark:border-slate-700 dark:bg-slate-900 dark:text-dark-text/70'
                                     }`}
                             >
-                                <Icon className="h-4 w-4" />
-                                {item.label}
+                                <Icon className="h-4 w-4 shrink-0" />
+                                <span className="hidden sm:inline">{item.label}</span>
                             </button>
                         );
                     })}
@@ -1245,7 +1246,7 @@ export function AdminExamsPage() {
                 ) : null}
 
                 {centerView === 'imports' ? (
-                    <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                    <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
                         <div className="admin-panel-bg rounded-2xl p-5 space-y-4">
                             <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-sm text-cyan-900 dark:text-cyan-100">
                                 Upload the result sheet, review the detected columns, then save reusable mapping profiles or templates for the next import run.
@@ -1422,7 +1423,7 @@ export function AdminExamsPage() {
                 ) : null}
 
                 {centerView === 'templates' ? (
-                    <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="grid gap-4 lg:grid-cols-2">
                         <div className="admin-panel-bg rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-2">
                                 <FileCog className="h-4 w-4 text-primary" />
@@ -1606,7 +1607,7 @@ export function AdminExamsPage() {
                 ) : null}
 
                 {centerView === 'centers' ? (
-                    <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+                    <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                         <div className="admin-panel-bg rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-2">
                                 <MapPin className="h-4 w-4 text-primary" />
@@ -1690,7 +1691,7 @@ export function AdminExamsPage() {
                 ) : null}
 
                 {centerView === 'sync-logs' ? (
-                    <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+                    <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                         <div className="admin-panel-bg rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-2">
                                 <Clock3 className="h-4 w-4 text-primary" />
@@ -1776,17 +1777,17 @@ export function AdminExamsPage() {
 
                 {centerView === 'settings' ? (
                     <div className="admin-panel-bg rounded-2xl p-5 space-y-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="flex items-center gap-2">
-                                <Settings2 className="h-4 w-4 text-primary" />
-                                <div>
-                                    <h3 className="text-lg font-semibold text-text dark:text-dark-text">Exam Center Settings</h3>
-                                    <p className="text-xs text-text-muted">
+                        <div className="flex flex-col sm:flex-row flex-wrap items-start justify-between gap-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <Settings2 className="h-4 w-4 shrink-0 text-primary" />
+                                <div className="min-w-0">
+                                    <h3 className="text-base sm:text-lg font-semibold text-text dark:text-dark-text">Exam Center Settings</h3>
+                                    <p className="text-xs text-text-muted line-clamp-2">
                                         Import automation, profile sync defaults, notification triggers, and external import control.
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                                 {isExamCenterSettingsDirty ? (
                                     <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
                                         Unsaved changes

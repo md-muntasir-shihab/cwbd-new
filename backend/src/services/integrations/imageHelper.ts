@@ -37,10 +37,10 @@ export async function transformUrl(sourceUrl: string, opts: ImageOptions = {}): 
     try {
         const cfg = await getIntegrationConfig(KEY);
         if (!cfg) return sourceUrl;
-        const host = String(cfg.host || '').replace(/\/$/, '');
-        const keyHex = (await getDecryptedSecret(KEY, 'key')) ?? '';
-        const saltHex = (await getDecryptedSecret(KEY, 'salt')) ?? '';
-        if (!host || !keyHex || !saltHex) return sourceUrl;
+        const baseUrl = String(cfg.baseUrl || '').replace(/\/$/, '');
+        const keyHex = (await getDecryptedSecret(KEY, 'signingKey')) ?? '';
+        const saltHex = (await getDecryptedSecret(KEY, 'signingSalt')) ?? '';
+        if (!baseUrl || !keyHex || !saltHex) return sourceUrl;
 
         const keyBuf = hexToBytes(keyHex);
         const saltBuf = hexToBytes(saltHex);
@@ -58,7 +58,7 @@ export async function transformUrl(sourceUrl: string, opts: ImageOptions = {}): 
         hmac.update(saltBuf);
         hmac.update(path);
         const sig = urlSafeBase64(hmac.digest());
-        return `${host}/${sig}${path}`;
+        return `${baseUrl}/${sig}${path}`;
     } catch (err) {
         logger.warn(`[imageHelper] transformUrl failed: ${(err as Error).message}`);
         return sourceUrl;

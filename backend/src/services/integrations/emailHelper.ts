@@ -24,13 +24,13 @@ export async function sendTransactionalEmail(msg: EmailMessage): Promise<boolean
     if (!ready) return false;
     const cfg = await getIntegrationConfig('smtp');
     if (!cfg) return false;
+    const username = (await getDecryptedSecret('smtp', 'username')) ?? '';
     const password = (await getDecryptedSecret('smtp', 'password')) ?? '';
     const host = String(cfg.host || '');
     const port = Number(cfg.port || 587);
-    const user = String(cfg.user || '');
-    const fromAddress = msg.from || String(cfg.fromAddress || user || '');
-    const secure = port === 465;
-    if (!host || !user || !password || !fromAddress) return false;
+    const fromAddress = msg.from || String(cfg.fromAddress || username || '');
+    const secure = cfg.secure === true || cfg.secure === 'true' || port === 465;
+    if (!host || !username || !password || !fromAddress) return false;
 
     try {
         // Dynamic require so the project doesn't take a hard dep on nodemailer
@@ -41,7 +41,7 @@ export async function sendTransactionalEmail(msg: EmailMessage): Promise<boolean
             host,
             port,
             secure,
-            auth: { user, pass: password },
+            auth: { user: username, pass: password },
         });
         await transporter.sendMail({
             from: fromAddress,
@@ -62,16 +62,16 @@ export async function subscribeToList(email: string, name?: string): Promise<boo
     if (!ready) return false;
     const cfg = await getIntegrationConfig('listmonk');
     if (!cfg) return false;
-    const host = String(cfg.host || '').replace(/\/$/, '');
+    const baseUrl = String(cfg.baseUrl || '').replace(/\/$/, '');
     const listIdRaw = cfg.defaultListId;
     const listId = typeof listIdRaw === 'number' ? listIdRaw : Number(listIdRaw);
-    const username = String(cfg.username || '');
+    const username = (await getDecryptedSecret('listmonk', 'username')) ?? '';
     const password = (await getDecryptedSecret('listmonk', 'password')) ?? '';
-    if (!host || !username || !password || !listId || Number.isNaN(listId)) return false;
+    if (!baseUrl || !username || !password || !listId || Number.isNaN(listId)) return false;
 
     try {
         const auth = Buffer.from(`${username}:${password}`).toString('base64');
-        const res = await fetch(`${host}/api/subscribers`, {
+        const res = await fetch(`${baseUrl}/api/subscribers`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

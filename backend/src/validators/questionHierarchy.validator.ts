@@ -34,12 +34,12 @@ const hierarchyLevel = z.enum(['group', 'sub-group', 'subject', 'chapter', 'topi
 // ── Group (Level 1) ─────────────────────────────────────
 
 export const createGroupSchema = z.object({
-    name: bilingualText,
-    slug: codeField.optional(),
+    code: codeField,
+    title: bilingualText,
     description: bilingualTextOptional,
-    icon: z.string().trim().optional(),
+    iconUrl: z.string().trim().optional(),
     color: z.string().trim().optional(),
-    sortOrder: z.number().int().min(0).optional(),
+    order: z.number().int().min(0).optional(),
     isActive: z.boolean().optional(),
 });
 
@@ -75,14 +75,13 @@ export const updateSubjectSchema = createSubjectSchema.partial().omit({ sub_grou
 
 export const createChapterSchema = z.object({
     subject_id: objectId,
-    group_id: objectId,
     code: codeField,
     title: bilingualText,
     description: bilingualTextOptional,
     order: z.number().int().min(0).optional(),
 });
 
-export const updateChapterSchema = createChapterSchema.partial().omit({ subject_id: true, group_id: true });
+export const updateChapterSchema = createChapterSchema.partial().omit({ subject_id: true });
 
 // ── Topic (Level 5) ─────────────────────────────────────
 

@@ -13,18 +13,21 @@ import { logger } from '../../utils/logger';
 const KEY = 'meilisearch';
 const TIMEOUT_MS = 5000;
 
-async function meiliRequest(path: string, init: RequestInit = {}): Promise<Response | null> {
+async function meiliRequest(path: string, init: RequestInit = {}, useSearchKey = false): Promise<Response | null> {
     const ready = await isIntegrationReady(KEY);
     if (!ready) return null;
     const cfg = await getIntegrationConfig(KEY);
     if (!cfg) return null;
-    const host = String(cfg.host || '').replace(/\/$/, '');
-    const apiKey = await getDecryptedSecret(KEY, 'apiKey');
-    if (!host || !apiKey) return null;
+    const baseUrl = String(cfg.baseUrl || '').replace(/\/$/, '');
+    // For search operations prefer the scoped searchKey; fall back to masterKey
+    const apiKey = useSearchKey
+        ? ((await getDecryptedSecret(KEY, 'searchKey')) ?? (await getDecryptedSecret(KEY, 'masterKey')))
+        : (await getDecryptedSecret(KEY, 'masterKey'));
+    if (!baseUrl || !apiKey) return null;
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
     try {
-        const res = await fetch(`${host}${path}`, {
+        const res = await fetch(`${baseUrl}${path}`, {
             ...init,
             headers: {
                 'Content-Type': 'application/json',
@@ -67,7 +70,7 @@ export async function search<T = SearchHit>(index: string, query: string, limit 
     const res = await meiliRequest(`/indexes/${encodeURIComponent(index)}/search`, {
         method: 'POST',
         body: JSON.stringify({ q: query, limit }),
-    });
+    }, true);
     if (!res || !res.ok) return [];
     try {
         const data = (await res.json()) as { hits?: T[] };

@@ -1,3 +1,22 @@
+/**
+ * @module adminProviderRoutes
+ * @description Notification Provider CRUD — manages per-channel delivery configuration
+ * for email, SMS, and push notifications (e.g., SendGrid, Twilio, Firebase FCM).
+ *
+ * Mounted at: /api/admin/providers and /api/admin/notifications/providers
+ *
+ * BOUNDARY NOTE: This file is distinct from `adminIntegrationsRoutes.ts`.
+ * - This file (adminProviderRoutes) manages **notification providers** — the delivery
+ *   channels used by the notification/campaign system to send messages to users.
+ * - `adminIntegrationsRoutes.ts` manages **integration configs** — the 10 external
+ *   service integrations (Meilisearch, Imgproxy, Listmonk, Mautic, Novu, Umami,
+ *   Plausible, B2 Backup, SMTP, Cloudinary) with enable/disable, config fields,
+ *   encrypted secrets, and connection testing.
+ *
+ * The Novu integration in the integrations panel manages Novu API credentials and
+ * enable/disable state, while this provider system manages per-channel delivery
+ * configuration that Novu (or other systems) use to actually send notifications.
+ */
 import { Request, Response, Router } from 'express';
 import { authenticate, authorize } from '../middlewares/auth';
 import { requireSensitiveAction } from '../middlewares/sensitiveAction';

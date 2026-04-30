@@ -153,6 +153,37 @@ export interface UpdateInput {
     actorId: string;
 }
 
+/**
+ * Validates config field values against their declared types in the registry.
+ * Returns an array of error messages for invalid fields. Empty array = valid.
+ */
+function validateConfigFieldTypes(
+    config: Record<string, unknown>,
+    descriptor: { configFields: Array<{ name: string; label: string; type: string }> },
+): string[] {
+    const errors: string[] = [];
+    for (const field of descriptor.configFields) {
+        const value = config[field.name];
+        if (value === undefined || value === null || value === '') continue;
+
+        if (field.type === 'url' && typeof value === 'string') {
+            try {
+                new URL(value);
+            } catch {
+                errors.push(`Field "${field.label}" must be a valid URL`);
+            }
+        }
+
+        if (field.type === 'number') {
+            const num = Number(value);
+            if (isNaN(num)) {
+                errors.push(`Field "${field.label}" must be a valid number`);
+            }
+        }
+    }
+    return errors;
+}
+
 export async function updateConfig(
     key: IntegrationKey,
     input: UpdateInput,
@@ -172,6 +203,12 @@ export async function updateConfig(
     }
 
     if (input.config && typeof input.config === 'object') {
+        // Validate field types against registry definitions
+        const fieldErrors = validateConfigFieldTypes(input.config, descriptor);
+        if (fieldErrors.length > 0) {
+            throw Object.assign(new Error(fieldErrors.join('; ')), { status: 400 });
+        }
+
         const allowedNames = new Set(descriptor.configFields.map((f) => f.name));
         const sanitized: Record<string, unknown> = { ...(doc.config as Record<string, unknown>) };
         for (const [k, v] of Object.entries(input.config)) {

@@ -2,35 +2,47 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
+    AlertTriangle,
     CheckCircle2,
     Loader2,
     Plug,
     RefreshCw,
     Save,
     ShieldAlert,
+    SkipForward,
+    WifiOff,
     XCircle,
 } from 'lucide-react';
 import AdminGuardShell from '../components/admin/AdminGuardShell';
 import {
+    didFallBackToMock,
     listIntegrations,
     testIntegration,
     toggleIntegration,
     updateIntegration,
-    type IntegrationCategory,
     type IntegrationItem,
 } from '../services/integrationsApi';
 
-const CATEGORY_LABELS: Record<IntegrationCategory, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
     search: 'Search',
-    images: 'Images',
+    image: 'Image',
     email: 'Email',
     marketing: 'Marketing',
     notifications: 'Notifications',
     analytics: 'Analytics',
     backup: 'Backup',
+    storage: 'Storage',
 };
 
-function formatRelative(iso: string | null): string {
+export function getCategoryLabel(category: string): string {
+    if (Object.prototype.hasOwnProperty.call(CATEGORY_LABELS, category)) return CATEGORY_LABELS[category];
+    // Fallback: title-case the key (e.g. 'my_category' → 'My Category')
+    return category
+        .replace(/[_-]/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function formatRelative(iso: string | null): string {
     if (!iso) return 'never';
     const ts = Date.parse(iso);
     if (Number.isNaN(ts)) return 'never';
@@ -44,7 +56,7 @@ function formatRelative(iso: string | null): string {
     return `${days}d ago`;
 }
 
-function StatusBadge({ status }: { status: 'success' | 'failed' | 'unknown' | 'skipped' }) {
+export function StatusBadge({ status }: { status: 'success' | 'failed' | 'unknown' | 'skipped' }) {
     if (status === 'success') {
         return (
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
@@ -56,6 +68,13 @@ function StatusBadge({ status }: { status: 'success' | 'failed' | 'unknown' | 's
         return (
             <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold text-rose-700 dark:text-rose-300">
                 <XCircle className="h-3.5 w-3.5" /> Failing
+            </span>
+        );
+    }
+    if (status === 'skipped') {
+        return (
+            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-1 text-[11px] font-semibold text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-300">
+                <SkipForward className="h-3.5 w-3.5" /> Skipped
             </span>
         );
     }
@@ -71,6 +90,50 @@ type DraftState = {
     config: Record<string, string>;
     secrets: Record<string, string>;
 };
+
+/**
+ * Validates integration config fields against their type and required constraints.
+ * Returns a record of field name → error message for any invalid fields.
+ * An empty record means all fields are valid.
+ */
+export function validateIntegrationFields(
+    configFields: IntegrationItem['configFields'],
+    configValues: Record<string, string>,
+): Record<string, string> {
+    const errors: Record<string, string> = {};
+
+    for (const field of configFields) {
+        const value = (configValues[field.name] ?? '').trim();
+
+        // Required check
+        if (field.required && value === '') {
+            errors[field.name] = `${field.label} is required`;
+            continue;
+        }
+
+        // Skip further validation if value is empty and not required
+        if (value === '') continue;
+
+        // URL validation
+        if (field.type === 'url') {
+            try {
+                new URL(value);
+            } catch {
+                errors[field.name] = `${field.label} must be a valid URL`;
+            }
+        }
+
+        // Number validation
+        if (field.type === 'number') {
+            const n = Number(value);
+            if (!Number.isFinite(n)) {
+                errors[field.name] = `${field.label} must be a valid number`;
+            }
+        }
+    }
+
+    return errors;
+}
 
 function buildInitialDraft(item: IntegrationItem): DraftState {
     const config: Record<string, string> = {};
@@ -89,13 +152,14 @@ function buildInitialDraft(item: IntegrationItem): DraftState {
 function IntegrationCard({ item }: { item: IntegrationItem }) {
     const queryClient = useQueryClient();
     const [draft, setDraft] = useState<DraftState>(() => buildInitialDraft(item));
+    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
     const refresh = () => queryClient.invalidateQueries({ queryKey: ['admin', 'integrations'] });
 
     const toggleMutation = useMutation({
         mutationFn: (enabled: boolean) => toggleIntegration(item.key, enabled),
-        onSuccess: () => {
-            toast.success(`${item.displayName} ${draft.enabled ? 'disabled' : 'enabled'}`);
+        onSuccess: (_data, enabled) => {
+            toast.success(`${item.displayName} ${enabled ? 'enabled' : 'disabled'}`);
             refresh();
         },
         onError: (err: unknown) => {
@@ -167,7 +231,7 @@ function IntegrationCard({ item }: { item: IntegrationItem }) {
                         <Plug className="h-4 w-4 text-primary" />
                         <h3 className="text-base font-semibold cw-text">{item.displayName}</h3>
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
-                            {CATEGORY_LABELS[item.category]}
+                            {getCategoryLabel(item.category)}
                         </span>
                     </div>
                     <p className="mt-1 text-xs cw-muted">{item.description}</p>
@@ -218,14 +282,24 @@ function IntegrationCard({ item }: { item: IntegrationItem }) {
                             className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm cw-text shadow-sm focus:border-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900"
                             value={draft.config[field.name] ?? ''}
                             placeholder={field.helpText ?? ''}
-                            onChange={(event) =>
+                            onChange={(event) => {
                                 setDraft((prev) => ({
                                     ...prev,
                                     config: { ...prev.config, [field.name]: event.target.value },
-                                }))
-                            }
+                                }));
+                                setValidationErrors((prev) => {
+                                    if (!prev[field.name]) return prev;
+                                    const next = { ...prev };
+                                    delete next[field.name];
+                                    return next;
+                                });
+                            }}
                         />
-                        {field.helpText ? <span className="mt-1 block text-[10px] text-slate-500">{field.helpText}</span> : null}
+                        {validationErrors[field.name] ? (
+                            <span className="mt-1 block text-[10px] text-rose-500">{validationErrors[field.name]}</span>
+                        ) : field.helpText ? (
+                            <span className="mt-1 block text-[10px] text-slate-500">{field.helpText}</span>
+                        ) : null}
                     </label>
                 ))}
                 {item.secretFields.map((field) => {
@@ -234,11 +308,10 @@ function IntegrationCard({ item }: { item: IntegrationItem }) {
                         <label key={field.name} className="block text-xs font-medium cw-muted">
                             {field.label}
                             <span
-                                className={`ml-2 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide ${
-                                    isConfigured
-                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                                }`}
+                                className={`ml-2 rounded-full px-1.5 py-0.5 text-[9px] uppercase tracking-wide ${isConfigured
+                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                    }`}
                             >
                                 {isConfigured ? 'set' : 'empty'}
                             </span>
@@ -288,7 +361,12 @@ function IntegrationCard({ item }: { item: IntegrationItem }) {
                     <button
                         type="button"
                         className="btn-primary inline-flex items-center gap-2 text-xs"
-                        onClick={() => saveMutation.mutate()}
+                        onClick={() => {
+                            const errors = validateIntegrationFields(item.configFields, draft.config);
+                            setValidationErrors(errors);
+                            if (Object.keys(errors).length > 0) return;
+                            saveMutation.mutate();
+                        }}
                         disabled={saveMutation.isPending}
                     >
                         {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -332,13 +410,64 @@ export default function AdminSettingsIntegrationsPage() {
                     </button>
                 </div>
 
+                {!isLoading && !isError && didFallBackToMock() && (
+                    <div className="flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 dark:border-yellow-500/30 dark:bg-yellow-500/10">
+                        <WifiOff className="h-4 w-4 flex-shrink-0 text-yellow-700 dark:text-yellow-300" />
+                        <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">
+                            Backend unreachable — showing cached configuration
+                        </p>
+                    </div>
+                )}
+
                 {isLoading ? (
-                    <div className="card-flat flex items-center justify-center gap-2 px-5 py-10 text-sm cw-muted">
-                        <Loader2 className="h-4 w-4 animate-spin" /> Loading integrations…
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="card-flat animate-pulse border border-cyan-500/20 p-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-4 w-4 rounded bg-slate-200 dark:bg-slate-700" />
+                                            <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+                                            <div className="h-4 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
+                                        </div>
+                                        <div className="mt-2 h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2">
+                                        <div className="h-5 w-20 rounded-full bg-slate-200 dark:bg-slate-700" />
+                                        <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+                                    </div>
+                                </div>
+                                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                    <div className="h-14 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                                    <div className="h-14 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                                    <div className="h-14 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                                    <div className="h-14 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                                </div>
+                                <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-800">
+                                    <div className="h-3 w-40 rounded bg-slate-200 dark:bg-slate-700" />
+                                    <div className="flex gap-2">
+                                        <div className="h-8 w-28 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                                        <div className="h-8 w-24 rounded-lg bg-slate-200 dark:bg-slate-700" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : isError ? (
-                    <div className="card-flat border-rose-500/30 px-5 py-6 text-sm text-rose-700 dark:text-rose-300">
-                        Failed to load integrations: {error instanceof Error ? error.message : 'unknown error'}
+                    <div className="card-flat border border-rose-500/30 px-5 py-6">
+                        <div className="flex items-center gap-2 text-sm text-rose-700 dark:text-rose-300">
+                            <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                            Failed to load integrations: {error instanceof Error ? error.message : 'unknown error'}
+                        </div>
+                        <button
+                            type="button"
+                            className="btn-outline mt-3 inline-flex items-center gap-2 text-xs"
+                            onClick={() => refetch()}
+                            disabled={isFetching}
+                        >
+                            {isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                            Retry
+                        </button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
