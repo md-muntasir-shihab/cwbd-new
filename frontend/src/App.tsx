@@ -44,6 +44,7 @@ import {
     AdminResourcesPage,
     AdminSettingsAnalyticsPage,
     AdminSettingsIntegrationsPage,
+    AdminAllSettingsPage,
     AdminSettingsBannersPage,
     AdminSettingsCenterPage,
     AdminSettingsLogsPage,
@@ -502,6 +503,7 @@ export default function App() {
                                         <Route path={adminUi('settings/notifications')} element={<AdminSettingsNotificationsPage />} />
                                         <Route path={adminUi('settings/analytics')} element={<AdminSettingsAnalyticsPage />} />
                                         <Route path={adminUi('settings/integrations')} element={<AdminSettingsIntegrationsPage />} />
+                                        <Route path={adminUi('settings/all')} element={<AdminAllSettingsPage />} />
                                         <Route path={adminUi('settings/news')} element={<AdminSettingsNewsPage />} />
                                         <Route path={adminUi('settings/resource-settings')} element={<AdminSettingsResourcesPage />} />
                                         <Route path={adminUi('settings/admin-profile')} element={<AdminSettingsProfilePage />} />

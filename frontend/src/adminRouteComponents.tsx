@@ -15,6 +15,7 @@ export const AdminSettingsProfilePage = lazy(() => import('./pages/AdminSettings
 export const AdminSettingsNotificationsPage = lazy(() => import('./pages/AdminSettingsNotifications'));
 export const AdminSettingsAnalyticsPage = lazy(() => import('./pages/AdminSettingsAnalytics'));
 export const AdminSettingsIntegrationsPage = lazy(() => import('./pages/AdminSettingsIntegrations'));
+export const AdminAllSettingsPage = lazy(() => import('./pages/AdminAllSettings'));
 export const AdminSettingsNewsPage = lazy(() => import('./pages/AdminSettingsNews'));
 export const AdminReportsPage = lazy(() => import('./pages/AdminReports'));
 export const AdminNewsConsole = lazy(() => import('./pages/admin-news/AdminNewsConsole'));

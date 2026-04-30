@@ -389,7 +389,7 @@ export const ExamsListPage = () => {
                 </motion.div>
 
                 {isLoading ? (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                         {Array.from({ length: 6 }).map((_, index) => (
                             <ExamCardSkeleton key={`exam-skeleton-${index}`} />
                         ))}
@@ -443,7 +443,7 @@ export const ExamsListPage = () => {
                             <Users className="h-3.5 w-3.5" />
                             <span>{totalCount} exam{totalCount !== 1 ? "s" : ""}</span>
                         </div>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                             <AnimatePresence mode="popLayout">
                                 {filteredItems.map((item, index) => (
                                     <ExamCard key={item.id} item={item} index={index} />

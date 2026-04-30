@@ -199,7 +199,7 @@ export const ExamSolutionsPage = () => {
                 {solutionsPdfQuery.data ? (
                     <button
                         type="button"
-                        className="btn-secondary ml-auto"
+                        className="btn-secondary w-full sm:ml-auto sm:w-auto"
                         onClick={() => {
                             void downloadPdfEndpoint(
                                 examPdfUrls.solutions(examId),

@@ -747,9 +747,9 @@ export const ExamRunnerPage = () => {
     }
 
     return (
-        <div className="section-container flex flex-col min-h-[100dvh] py-4 sm:py-6">
+        <div className="section-container py-4 pb-24 sm:py-6 sm:pb-8">
             <div className="sticky top-0 sm:top-16 z-40 overflow-hidden rounded-2xl border border-card-border bg-surface/95 backdrop-blur dark:bg-dark-surface/95">
-                <div className="p-3">
+                <div className="p-2.5 sm:p-3">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         {rules?.showTimer ? (
                             <div className={`inline-flex min-h-[38px] items-center gap-2 rounded-xl border px-3 font-mono text-sm font-semibold transition-colors duration-300 ${timerUrgency === "critical"
@@ -776,15 +776,15 @@ export const ExamRunnerPage = () => {
                         </div>
                         <div className="text-xs font-medium text-text-muted dark:text-dark-text/70 sm:hidden">{saveStatusLabel}</div>
 
-                        <div className="ml-auto flex items-center gap-2">
-                            <button type="button" onClick={() => setShowRulesSheet(true)} className="btn-secondary">
+                        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+                            <button type="button" onClick={() => setShowRulesSheet(true)} className="btn-secondary text-xs sm:text-sm">
                                 Rules
                             </button>
                             {rules?.showQuestionPalette ? (
                                 <button
                                     type="button"
                                     onClick={() => setShowMobilePalette(true)}
-                                    className="btn-secondary lg:hidden"
+                                    className="btn-secondary text-xs sm:text-sm lg:hidden"
                                 >
                                     Palette
                                 </button>
@@ -792,11 +792,11 @@ export const ExamRunnerPage = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowSubmitConfirm(true)}
-                                className="btn-primary"
+                                className="btn-primary text-xs sm:text-sm"
                                 disabled={submitMutation.isPending}
                             >
-                                <Send className="mr-1.5 h-4 w-4" />
-                                Submit
+                                <Send className="h-4 w-4 sm:mr-1.5" />
+                                <span className="hidden sm:inline">Submit</span>
                             </button>
                         </div>
                     </div>
@@ -824,7 +824,7 @@ export const ExamRunnerPage = () => {
                 </div>
             </div>
 
-            <div className="mt-4 flex-1 overflow-y-auto grid gap-4 lg:grid-cols-[1fr_300px]">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_300px]">
                 <div className="space-y-4">
                     {questions.map((question, index) => {
                         const answer = answers[question.id];
@@ -985,7 +985,7 @@ export const ExamRunnerPage = () => {
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
-                        <div className="grid grid-cols-6 gap-2">
+                        <div className="grid grid-cols-5 gap-2 sm:grid-cols-8">
                             {questions.map((question, index) => {
                                 const isAnswered = Boolean(answers[question.id]?.selectedKey);
                                 const isMarked = Boolean(markedMap[question.id]);

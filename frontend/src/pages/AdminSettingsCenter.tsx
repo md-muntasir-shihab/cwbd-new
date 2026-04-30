@@ -34,6 +34,7 @@ const settingsCards = [
     { key: 'settings-notifications', title: 'Notifications', description: 'Set automation triggers and reminder timing.', icon: BellRing, to: '/__cw_admin__/settings/notifications' },
     { key: 'settings-analytics', title: 'Analytics', description: 'Toggle event tracking and analytics privacy controls.', icon: BarChart3, to: '/__cw_admin__/settings/analytics' },
     { key: 'settings-integrations', title: 'Integrations', description: 'Configure search, image, email, marketing, notification, analytics and backup services.', icon: Plug, to: '/__cw_admin__/settings/integrations' },
+    { key: 'settings-all', title: 'All Settings (Unified)', description: 'View and edit all 12 application settings categories from a single panel.', icon: LayoutPanelLeft, to: '/__cw_admin__/settings/all' },
     { key: 'settings-banners', title: 'Banner Manager', description: 'Control banner settings, campaign blocks, and News fallback media.', icon: Image, to: '/__cw_admin__/settings/banner-manager' },
     { key: 'settings-news', title: 'News Settings', description: 'Configure news appearance, AI, share templates, and workflow controls.', icon: Settings, to: '/__cw_admin__/settings/news' },
     { key: 'settings-resources', title: 'Resource Settings', description: 'Configure the resources page title, featured section, and view tracking.', icon: BookOpen, to: '/__cw_admin__/settings/resource-settings' },

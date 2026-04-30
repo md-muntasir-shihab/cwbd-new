@@ -106,6 +106,7 @@ export const ADMIN_PATHS = {
     contact: adminUi('contact'),
     notifications: adminUi('settings/notifications'),
     integrations: adminUi('settings/integrations'),
+    allSettings: adminUi('settings/all'),
     reports: adminUi('reports'),
     securityCenter: adminUi('settings/security-center'),
     systemLogs: adminUi('settings/system-logs'),

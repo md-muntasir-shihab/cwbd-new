@@ -310,7 +310,7 @@ export const ExamResultPage = () => {
                 </div>
 
                 {/* Stats grid */}
-                <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-4 sm:p-6">
+                <div className="grid grid-cols-2 gap-2.5 p-4 sm:gap-3 sm:grid-cols-4 sm:p-6">
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="rounded-xl border border-success/20 bg-success/5 p-3">
                         <div className="flex items-center gap-2 text-success">
                             <CheckCircle2 className="h-4 w-4" />
@@ -342,7 +342,7 @@ export const ExamResultPage = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="border-t border-card-border px-5 py-4 sm:px-6">
+                <div className="border-t border-card-border px-4 py-4 sm:px-6">
                     <div className="flex flex-wrap gap-2">
                         <Link to={`/exam/${examId}/solutions?sessionId=${sessionId}`} className="btn-primary">
                             View Solutions
