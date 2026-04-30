@@ -66,3 +66,12 @@ export const ExamPreviewPage = lazy(() => import('./pages/admin/exams/ExamPrevie
 export const AdminLegalPagesPage = lazy(() => import('./pages/admin/AdminLegalPages'));
 export const AdminFounderDetailsPage = lazy(() => import('./pages/admin/AdminFounderDetails'));
 export const AdminTestimonialsPage = lazy(() => import('./pages/admin/TestimonialsManagementPage'));
+
+// ─── Exam Management System v2 ─────────────────────────────────────────────
+export const HierarchyManagerPage = lazy(() => import('./pages/admin/exam-center/HierarchyManager'));
+export const QuestionBankManagerV2Page = lazy(() => import('./pages/admin/question-bank/QuestionBankManager'));
+export const ExamBuilderWizardPage = lazy(() => import('./pages/admin/exam-center/ExamBuilderWizard'));
+export const WrittenGradingInterfacePage = lazy(() => import('./pages/admin/exam-center/WrittenGradingInterface'));
+export const AntiCheatReportPage = lazy(() => import('./pages/admin/exam-center/AntiCheatReport'));
+export const NotificationManagementPage = lazy(() => import('./pages/admin/exam-center/NotificationManagement'));
+export const AdminAnalyticsDashboardV2Page = lazy(() => import('./pages/admin/analytics/AdminAnalyticsDashboard'));

@@ -231,6 +231,17 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         matchPrefixes: [adminUi('question-bank')],
     },
 
+    // 6b. Exam Center (v2)
+    {
+        key: 'examCenter',
+        label: 'Exam Center',
+        path: ADMIN_PATHS.examCenterHierarchy,
+        icon: ClipboardCheck,
+        module: 'exam_center',
+        allowedRoles: ['superadmin', 'admin', 'moderator', 'editor'],
+        matchPrefixes: [adminUi('exam-center')],
+    },
+
     // 7. Student Management
     {
         key: 'students',

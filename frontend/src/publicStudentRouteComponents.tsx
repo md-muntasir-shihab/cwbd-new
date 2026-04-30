@@ -55,3 +55,8 @@ export const StudentResources = lazy(() => import('./pages/student/StudentResour
 export const StudentPractice = lazy(() => import('./pages/student/StudentPractice'));
 export const StudentSupport = lazy(() => import('./pages/student/StudentSupport'));
 export const StudentSupportThread = lazy(() => import('./pages/student/StudentSupportThread'));
+
+// ─── Student Exam System v2 ────────────────────────────────────────────────
+export const ExamRunnerV2Page = lazy(() => import('./pages/student/exam/ExamRunner'));
+export const ExamResultViewPage = lazy(() => import('./pages/student/exam/ExamResultView'));
+export const LeaderboardViewPage = lazy(() => import('./pages/student/exam/LeaderboardView'));

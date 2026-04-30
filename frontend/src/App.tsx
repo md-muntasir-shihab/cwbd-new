@@ -96,6 +96,13 @@ import {
     StudentManagementLayout,
     SubscriptionContactCenterPage,
     TeamAccessConsolePage,
+    HierarchyManagerPage,
+    QuestionBankManagerV2Page,
+    ExamBuilderWizardPage,
+    WrittenGradingInterfacePage,
+    AntiCheatReportPage,
+    NotificationManagementPage,
+    AdminAnalyticsDashboardV2Page,
 } from './adminRouteComponents';
 import {
     CertificateVerifyPage,
@@ -134,6 +141,9 @@ import {
     StudentSecurity,
     StudentSupport,
     StudentSupportThread,
+    ExamRunnerV2Page,
+    ExamResultViewPage,
+    LeaderboardViewPage,
     SubscriptionPlanCheckoutPage,
     SubscriptionPlanDetailPage,
     SubscriptionPlansPage,
@@ -437,6 +447,17 @@ export default function App() {
                                         <Route path={adminUi('exams/:examId/preview')} element={<ExamPreviewPage />} />
                                         <Route path={ADMIN_PATHS.questionBank} element={<AdminQuestionBankPage />} />
                                         <Route path={adminUi('question-bank/*')} element={<AdminQuestionBankPage />} />
+                                        {/* Exam Management System v2 — Exam Center */}
+                                        <Route path={ADMIN_PATHS.examCenterHierarchy} element={<HierarchyManagerPage />} />
+                                        <Route path={ADMIN_PATHS.examCenterQuestionBank} element={<QuestionBankManagerV2Page />} />
+                                        <Route path={ADMIN_PATHS.examCenterBuilder} element={<ExamBuilderWizardPage />} />
+                                        <Route path={ADMIN_PATHS.examCenterBuilderNew} element={<ExamBuilderWizardPage />} />
+                                        <Route path={adminUi('exam-center/exam-builder/:examId/edit')} element={<ExamBuilderWizardPage />} />
+                                        <Route path={ADMIN_PATHS.examCenterGrading} element={<WrittenGradingInterfacePage />} />
+                                        <Route path={adminUi('exam-center/grading/:examId')} element={<WrittenGradingInterfacePage />} />
+                                        <Route path={ADMIN_PATHS.examCenterAntiCheat} element={<AntiCheatReportPage />} />
+                                        <Route path={ADMIN_PATHS.examCenterNotifications} element={<NotificationManagementPage />} />
+                                        <Route path={ADMIN_PATHS.examCenterAnalytics} element={<AdminAnalyticsDashboardV2Page />} />
                                         <Route path={ADMIN_PATHS.students} element={<Navigate to={adminUi('student-management/list')} replace />} />
                                         <Route path={ADMIN_PATHS.studentGroups} element={<Navigate to={adminUi('student-management/groups')} replace />} />
                                         <Route path={adminUi('subscription-plans')} element={<Navigate to={adminUi('subscriptions/plans')} replace />} />
@@ -581,6 +602,10 @@ export default function App() {
                                             <Route path="/student/profile" element={<StudentProfile />} />
                                             <Route path="/student/security" element={<StudentSecurity />} />
                                             <Route path="/student/applications" element={<StudentApplications />} />
+                                            {/* Student Exam System v2 */}
+                                            <Route path="/student/exam/:examId" element={<ExamRunnerV2Page />} />
+                                            <Route path="/student/exam/:examId/result" element={<ExamResultViewPage />} />
+                                            <Route path="/student/exam/:examId/leaderboard" element={<LeaderboardViewPage />} />
                                         </Route>
 
                                         <Route path="*" element={<NotFoundPage />} />
