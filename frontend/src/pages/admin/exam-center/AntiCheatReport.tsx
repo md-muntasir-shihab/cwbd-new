@@ -500,20 +500,21 @@ export default function AntiCheatReport() {
                     </Section>
                 )}
             </div>
-            );
+        </AdminGuardShell>
+    );
 }
 
-            // ─── Suspicious Patterns Sub-component ───────────────────────────────────
+// ─── Suspicious Patterns Sub-component ───────────────────────────────────
 
-            function SuspiciousPatterns({sessions}: {sessions: FlaggedSession[] }) {
+function SuspiciousPatterns({ sessions }: { sessions: FlaggedSession[] }) {
     // Detect duplicate fingerprints
     const fingerprintGroups = useMemo(() => {
         const map = new Map<string, FlaggedSession[]>();
-            for (const s of sessions) {
+        for (const s of sessions) {
             if (s.deviceFingerprint) {
                 const existing = map.get(s.deviceFingerprint) ?? [];
-            existing.push(s);
-            map.set(s.deviceFingerprint, existing);
+                existing.push(s);
+                map.set(s.deviceFingerprint, existing);
             }
         }
         return Array.from(map.entries()).filter(([, group]) => group.length > 1);
@@ -522,150 +523,102 @@ export default function AntiCheatReport() {
     // Detect duplicate IPs
     const ipGroups = useMemo(() => {
         const map = new Map<string, FlaggedSession[]>();
-            for (const s of sessions) {
+        for (const s of sessions) {
             if (s.ipAddress) {
                 const existing = map.get(s.ipAddress) ?? [];
-            existing.push(s);
-            map.set(s.ipAddress, existing);
+                existing.push(s);
+                map.set(s.ipAddress, existing);
             }
         }
         return Array.from(map.entries()).filter(([, group]) => group.length > 1);
     }, [sessions]);
 
-            // High violation students (5+)
-            const highViolation = useMemo(
+    // High violation students (5+)
+    const highViolation = useMemo(
         () => sessions.filter((s) => s.violationCount >= 5),
-            [sessions],
-            );
+        [sessions],
+    );
 
-            if (fingerprintGroups.length === 0 && ipGroups.length === 0 && highViolation.length === 0) {
+    if (fingerprintGroups.length === 0 && ipGroups.length === 0 && highViolation.length === 0) {
         return (
             <p className="py-6 text-center text-sm text-slate-400 dark:text-slate-500">
                 No suspicious patterns detected
             </p>
-            );
+        );
     }
 
-            return (
-            <div className="space-y-4">
-                {/* Duplicate fingerprints */}
-                {fingerprintGroups.length > 0 && (
-                    <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-800/50 dark:bg-purple-950/20">
-                        <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-purple-700 dark:text-purple-300">
-                            <Fingerprint size={14} />
-                            Shared Device Fingerprints ({fingerprintGroups.length} group
-                            {fingerprintGroups.length !== 1 ? 's' : ''})
-                        </h4>
-                        <div className="space-y-2">
-                            {fingerprintGroups.map(([fp, group]) => (
-                                <div key={fp} className="text-sm">
-                                    <span className="mr-2 rounded bg-purple-100 px-1.5 py-0.5 font-mono text-[10px] text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                                        {fp.slice(0, 16)}…
-                                    </span>
-                                    <span className="text-slate-600 dark:text-slate-400">
-                                        shared by{' '}
-                                        {group.map((s) => s.studentName || 'Unknown').join(', ')}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
+    return (
+        <div className="space-y-4">
+            {/* Duplicate fingerprints */}
+            {fingerprintGroups.length > 0 && (
+                <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-800/50 dark:bg-purple-950/20">
+                    <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-purple-700 dark:text-purple-300">
+                        <Fingerprint size={14} />
+                        Shared Device Fingerprints ({fingerprintGroups.length} group
+                        {fingerprintGroups.length !== 1 ? 's' : ''})
+                    </h4>
+                    <div className="space-y-2">
+                        {fingerprintGroups.map(([fp, group]) => (
+                            <div key={fp} className="text-sm">
+                                <span className="mr-2 rounded bg-purple-100 px-1.5 py-0.5 font-mono text-[10px] text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                                    {fp.slice(0, 16)}…
+                                </span>
+                                <span className="text-slate-600 dark:text-slate-400">
+                                    shared by{' '}
+                                    {group.map((s) => s.studentName || 'Unknown').join(', ')}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                )}
-
-                {/* Duplicate IPs */}
-                {ipGroups.length > 0 && (
-                    <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-800/50 dark:bg-rose-950/20">
-                        <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-rose-700 dark:text-rose-300">
-                            <Globe size={14} />
-                            Shared IP Addresses ({ipGroups.length} group
-                            {ipGroups.length !== 1 ? 's' : ''})
-                        </h4>
-                        <div className="space-y-2">
-                            {ipGroups.map(([ip, group]) => (
-                                <div key={ip} className="text-sm">
-                                    <span className="mr-2 rounded bg-rose-100 px-1.5 py-0.5 font-mono text-[10px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-                                        {ip}
-                                    </span>
-                                    <span className="text-slate-600 dark:text-slate-400">
-                                        shared by{' '}
-                                        {group.map((s) => s.studentName || 'Unknown').join(', ')}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* High violation students */}
-                {highViolation.length > 0 && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                        <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                            <AlertTriangle size={14} />
-                            High Violation Count ({highViolation.length} student
-                            {highViolation.length !== 1 ? 's' : ''})
-                        </h4>
-                        <div className="space-y-2">
-                            {highViolation.map((s) => (
-                                <div key={s.sessionId} className="flex items-center justify-between text-sm">
-                                    <span className="text-slate-700 dark:text-slate-300">
-                                        {s.studentName || 'Unknown'}
-                                    </span>
-                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                                        {s.violationCount} violations
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-            );
-}
-            {ipGroups.map(([ip, group]) => (
-                <div key={ip} className="text-sm">
-                    <span className="mr-2 rounded bg-rose-100 px-1.5 py-0.5 font-mono text-[10px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
-                        {ip}
-                    </span>
-                    <span className="text-slate-600 dark:text-slate-400">
-                        shared by{' '}
-                        {group.map((s) => s.studentName || 'Unknown').join(', ')}
-                    </span>
                 </div>
-            ))}
-        </div>
-                </div >
-            )
-}
+            )}
 
-{/* High violation students */ }
-{
-    highViolation.length > 0 && (
-        <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 dark:border-red-800/50 dark:bg-red-950/20">
-            <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-red-700 dark:text-red-300">
-                <AlertTriangle size={14} />
-                High Violation Count (5+) — {highViolation.length} student
-                {highViolation.length !== 1 ? 's' : ''}
-            </h4>
-            <div className="space-y-1">
-                {highViolation.map((s) => (
-                    <div key={s.sessionId} className="text-sm text-slate-600 dark:text-slate-400">
-                        <span className="font-medium text-slate-800 dark:text-slate-200">
-                            {s.studentName || 'Unknown'}
-                        </span>{' '}
-                        — {s.violationCount} violations (
-                        {s.violationTypes
-                            .map(
-                                (vt) =>
-                                    VIOLATION_META[vt]?.label ?? vt.replace(/_/g, ' '),
-                            )
-                            .join(', ')}
-                        )
+            {/* Duplicate IPs */}
+            {ipGroups.length > 0 && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-800/50 dark:bg-rose-950/20">
+                    <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                        <Globe size={14} />
+                        Shared IP Addresses ({ipGroups.length} group
+                        {ipGroups.length !== 1 ? 's' : ''})
+                    </h4>
+                    <div className="space-y-2">
+                        {ipGroups.map(([ip, group]) => (
+                            <div key={ip} className="text-sm">
+                                <span className="mr-2 rounded bg-rose-100 px-1.5 py-0.5 font-mono text-[10px] text-rose-700 dark:bg-rose-900/40 dark:text-rose-300">
+                                    {ip}
+                                </span>
+                                <span className="text-slate-600 dark:text-slate-400">
+                                    shared by{' '}
+                                    {group.map((s) => s.studentName || 'Unknown').join(', ')}
+                                </span>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </div>
+            )}
+
+            {/* High violation students */}
+            {highViolation.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
+                    <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                        <AlertTriangle size={14} />
+                        High Violation Count ({highViolation.length} student
+                        {highViolation.length !== 1 ? 's' : ''})
+                    </h4>
+                    <div className="space-y-2">
+                        {highViolation.map((s) => (
+                            <div key={s.sessionId} className="flex items-center justify-between text-sm">
+                                <span className="text-slate-700 dark:text-slate-300">
+                                    {s.studentName || 'Unknown'}
+                                </span>
+                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                    {s.violationCount} violations
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
-    )
-}
-        </div >
     );
 }

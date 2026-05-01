@@ -650,5 +650,6 @@ export default function NotificationManagement() {
                     </div>
                 </Section>
             </div>
-            );
+        </AdminGuardShell>
+    );
 }
