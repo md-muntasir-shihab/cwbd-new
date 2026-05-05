@@ -20,6 +20,13 @@ function isCacheEnabled(): boolean {
     return process.env.CACHE_ENABLED?.toLowerCase() !== 'false';
 }
 
+export function isRedisConfigured(): boolean {
+    return Boolean(
+        process.env.UPSTASH_REDIS_REST_URL?.trim() &&
+        process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Upstash Redis client (lazy init)
 // ---------------------------------------------------------------------------
@@ -39,6 +46,24 @@ function getRedisClient(): Redis | null {
         return redisClient;
     } catch {
         return null;
+    }
+}
+
+export async function checkRedisConnection(): Promise<{ configured: boolean; connected: boolean }> {
+    const configured = isRedisConfigured();
+    const redis = getRedisClient();
+    if (!configured || !redis) {
+        return { configured, connected: false };
+    }
+
+    const key = `${CACHE_PREFIX}health:${Date.now()}`;
+    try {
+        await redis.set(key, 'ok', { ex: 10 });
+        const value = await redis.get<string>(key);
+        await redis.del(key).catch(() => undefined);
+        return { configured: true, connected: value === 'ok' };
+    } catch {
+        return { configured: true, connected: false };
     }
 }
 
@@ -237,6 +262,8 @@ export const cacheService = {
     delByPattern,
     buildKey,
     parseKey,
+    isRedisConfigured,
+    checkRedisConnection,
 };
 
 export default cacheService;

@@ -12,6 +12,7 @@ import mongoose from 'mongoose';
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import { connectDB } from './config/db';
+import { isFirebaseAdminEnabled } from './config/firebaseAdmin';
 import { authenticate, requirePermission } from './middlewares/auth';
 import publicRoutes from './routes/publicRoutes';
 import adminRoutes from './routes/adminRoutes';
@@ -64,6 +65,7 @@ import { requestIdMiddleware } from './middlewares/requestId';
 import { cspNonceMiddleware } from './middlewares/cspNonce';
 import { csrfTokenEndpoint } from './middlewares/csrfGuard';
 import { logger } from './utils/logger';
+import { checkRedisConnection, isRedisConfigured } from './services/cacheService';
 import { runCommunicationCenterMigration } from './scripts/migrate-communication-center-v1';
 import {
     type PermissionAction,
@@ -436,21 +438,37 @@ app.post('/api/csp-violation-report', express.json({ type: 'application/csp-repo
 });
 
 // Health check - /health alias for Render's health checker, /api/health for API clients
-const healthHandler = (_req: express.Request, res: express.Response) => {
-    const dbStateMap: Record<number, 'down' | 'connected'> = {
-        0: 'down',
+const healthHandler = async (_req: express.Request, res: express.Response) => {
+    const dbStateMap: Record<number, 'disconnected' | 'connected' | 'connecting' | 'disconnecting'> = {
+        0: 'disconnected',
         1: 'connected',
-        2: 'down',
-        3: 'down',
-        99: 'down',
+        2: 'connecting',
+        3: 'disconnecting',
+        99: 'disconnected',
     };
     const readyState = mongoose.connection.readyState;
-    const db = dbStateMap[readyState] || 'down';
+    const db = dbStateMap[readyState] || 'disconnected';
+    const redis = await checkRedisConnection();
     res.json({
         status: 'OK',
         timeUTC: new Date().toISOString(),
         version: APP_VERSION,
         db,
+        services: {
+            mongodb: {
+                configured: Boolean(String(process.env.MONGODB_URI || process.env.MONGO_URI || '').trim()),
+                connected: readyState === 1,
+                state: db,
+            },
+            redis: {
+                configured: isRedisConfigured(),
+                connected: redis.connected,
+            },
+            firebaseAdmin: {
+                configured: isFirebaseAdminEnabled(),
+                appCheckEnforced: process.env.APP_CHECK_ENFORCED === 'true',
+            },
+        },
     });
 };
 app.get('/health', healthHandler);
