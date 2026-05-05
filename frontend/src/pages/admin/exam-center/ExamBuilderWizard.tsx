@@ -717,9 +717,14 @@ export default function ExamBuilderWizard() {
                 // Create draft on leaving Step 1
                 if (!examId) {
                     const result = await createDraft.mutateAsync(infoWithHierarchy);
-                    const data = result?.data as Record<string, unknown> | undefined;
-                    const newId = data ? String(data._id ?? data.id ?? '') : '';
-                    if (newId) setExamId(newId);
+                    // result is ApiResponse<exam> — data is the exam object directly
+                    const examObj = (result?.data ?? result) as Record<string, unknown>;
+                    const newId = String(examObj?._id ?? examObj?.id ?? '');
+                    if (!newId) {
+                        toast.error('Failed to create exam draft. Please try again.');
+                        return;
+                    }
+                    setExamId(newId);
                 }
             } else if (currentStep === 1 && examId) {
                 // Save question selection on leaving Step 2

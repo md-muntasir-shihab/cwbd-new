@@ -67,6 +67,66 @@ export async function deleteGroup(req: AuthRequest, res: Response): Promise<void
 }
 
 /**
+ * DELETE /sub-groups/:id — Delete a sub-group (rejects if children exist).
+ */
+export async function deleteSubGroup(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        await QuestionHierarchyService.deleteSubGroup(String(req.params.id));
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Sub-group deleted successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : message.includes('Cannot delete') ? 409 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : status === 409 ? 'CONFLICT' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * DELETE /subjects/:id — Delete a subject (rejects if children exist).
+ */
+export async function deleteSubject(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        await QuestionHierarchyService.deleteSubject(String(req.params.id));
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Subject deleted successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : message.includes('Cannot delete') ? 409 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : status === 409 ? 'CONFLICT' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * DELETE /chapters/:id — Delete a chapter (rejects if children exist).
+ */
+export async function deleteChapter(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        await QuestionHierarchyService.deleteChapter(String(req.params.id));
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Chapter deleted successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : message.includes('Cannot delete') ? 409 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : status === 409 ? 'CONFLICT' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * DELETE /topics/:id — Delete a topic.
+ */
+export async function deleteTopic(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        await QuestionHierarchyService.deleteTopic(String(req.params.id));
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(null, 'Topic deleted successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
  * PUT /sub-groups/:id — Update an existing sub-group.
  */
 export async function updateSubGroup(req: AuthRequest, res: Response): Promise<void> {

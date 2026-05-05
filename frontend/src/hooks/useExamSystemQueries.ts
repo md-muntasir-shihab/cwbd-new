@@ -139,7 +139,7 @@ export const useCreateGroup = () => {
     return useMutation({
         mutationFn: (payload: CreateGroupDto) => hierarchyApi.createGroup(payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -151,7 +151,7 @@ export const useUpdateGroup = () => {
         mutationFn: ({ id, payload }: { id: string; payload: UpdateGroupDto }) =>
             hierarchyApi.updateGroup(id, payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -162,7 +162,7 @@ export const useDeleteGroup = () => {
     return useMutation({
         mutationFn: (id: string) => hierarchyApi.deleteGroup(id),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -173,7 +173,7 @@ export const useCreateSubGroup = () => {
     return useMutation({
         mutationFn: (payload: CreateSubGroupDto) => hierarchyApi.createSubGroup(payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -184,7 +184,7 @@ export const useCreateSubject = () => {
     return useMutation({
         mutationFn: (payload: CreateSubjectDto) => hierarchyApi.createSubject(payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -195,7 +195,7 @@ export const useCreateChapter = () => {
     return useMutation({
         mutationFn: (payload: CreateChapterDto) => hierarchyApi.createChapter(payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -206,7 +206,7 @@ export const useCreateTopic = () => {
     return useMutation({
         mutationFn: (payload: CreateTopicDto) => hierarchyApi.createTopic(payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -218,7 +218,7 @@ export const useReorderNodes = () => {
         mutationFn: ({ level, id, payload }: { level: HierarchyLevel; id: string; payload: ReorderNodesDto }) =>
             hierarchyApi.reorderNodes(level, id, payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };
@@ -230,7 +230,99 @@ export const useMergeNodes = () => {
         mutationFn: ({ level, payload }: { level: HierarchyLevel; payload: MergeNodesDto }) =>
             hierarchyApi.mergeNodes(level, payload),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchy });
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Update a sub-group. */
+export const useUpdateSubGroup = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateGroupDto }) =>
+            hierarchyApi.updateSubGroup(id, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Update a subject. */
+export const useUpdateSubject = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateGroupDto }) =>
+            hierarchyApi.updateSubject(id, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Update a chapter. */
+export const useUpdateChapter = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateGroupDto }) =>
+            hierarchyApi.updateChapter(id, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Update a topic. */
+export const useUpdateTopic = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateGroupDto }) =>
+            hierarchyApi.updateTopic(id, payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Delete a sub-group. */
+export const useDeleteSubGroup = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => hierarchyApi.deleteSubGroup(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Delete a subject. */
+export const useDeleteSubject = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => hierarchyApi.deleteSubject(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Delete a chapter. */
+export const useDeleteChapter = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => hierarchyApi.deleteChapter(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
+        },
+    });
+};
+
+/** Delete a topic. */
+export const useDeleteTopic = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => hierarchyApi.deleteTopic(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: examSystemKeys.hierarchyTree });
         },
     });
 };

@@ -534,10 +534,10 @@ export async function resolveOrCreateHierarchy(row: ExtendedRawImportRow): Promi
 }
 
 /** Escape special regex characters to prevent regex injection. */
+/** Escape special regex characters to prevent regex injection. */
 function escapeRegex(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
 /**
  * Validate that referenced topic, category, and group values exist in the database.
  * Uses name-based lookup (case-insensitive) since import files use human-readable names.
@@ -696,6 +696,9 @@ function buildQuestionDoc(
         created_by: adminId,
         updatedByAdminId: adminId,
         isActive: true,
+        isArchived: false,
+        status: 'draft',
+        review_status: 'pending',
     };
 }
 

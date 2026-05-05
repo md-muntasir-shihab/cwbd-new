@@ -18,12 +18,16 @@ import {
     deleteGroup,
     createSubGroup,
     updateSubGroup,
+    deleteSubGroup,
     createSubject,
     updateSubject,
+    deleteSubject,
     createChapter,
     updateChapter,
+    deleteChapter,
     createTopic,
     updateTopic,
+    deleteTopic,
     reorderNodes,
     mergeNodes,
 } from '../controllers/questionHierarchyController';
@@ -84,6 +88,13 @@ router.put(
     updateSubGroup,
 );
 
+// DELETE /sub-groups/:id — Delete sub-group (delete permission)
+router.delete(
+    '/sub-groups/:id',
+    requirePermission('question_bank', 'delete'),
+    deleteSubGroup,
+);
+
 // POST /subjects — Create subject (create permission)
 router.post(
     '/subjects',
@@ -98,6 +109,13 @@ router.put(
     requirePermission('question_bank', 'edit'),
     validateBody(updateGroupSchema),
     updateSubject,
+);
+
+// DELETE /subjects/:id — Delete subject (delete permission)
+router.delete(
+    '/subjects/:id',
+    requirePermission('question_bank', 'delete'),
+    deleteSubject,
 );
 
 // POST /chapters — Create chapter (create permission)
@@ -116,6 +134,13 @@ router.put(
     updateChapter,
 );
 
+// DELETE /chapters/:id — Delete chapter (delete permission)
+router.delete(
+    '/chapters/:id',
+    requirePermission('question_bank', 'delete'),
+    deleteChapter,
+);
+
 // POST /topics — Create topic (create permission)
 router.post(
     '/topics',
@@ -130,6 +155,13 @@ router.put(
     requirePermission('question_bank', 'edit'),
     validateBody(updateGroupSchema),
     updateTopic,
+);
+
+// DELETE /topics/:id — Delete topic (delete permission)
+router.delete(
+    '/topics/:id',
+    requirePermission('question_bank', 'delete'),
+    deleteTopic,
 );
 
 // PUT /:level/:id/reorder — Reorder nodes at a hierarchy level (edit permission)

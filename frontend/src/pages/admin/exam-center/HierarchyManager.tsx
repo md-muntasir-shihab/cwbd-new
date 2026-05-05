@@ -22,7 +22,15 @@ import {
     useHierarchyTree,
     useCreateGroup,
     useUpdateGroup,
+    useUpdateSubGroup,
+    useUpdateSubject,
+    useUpdateChapter,
+    useUpdateTopic,
     useDeleteGroup,
+    useDeleteSubGroup,
+    useDeleteSubject,
+    useDeleteChapter,
+    useDeleteTopic,
     useCreateSubGroup,
     useCreateSubject,
     useCreateChapter,
@@ -376,9 +384,22 @@ function TreeNode({
     const editInputRef = useRef<HTMLInputElement>(null);
 
     const updateGroup = useUpdateGroup();
+    const updateSubGroup = useUpdateSubGroup();
+    const updateSubject = useUpdateSubject();
+    const updateChapter = useUpdateChapter();
+    const updateTopic = useUpdateTopic();
     const hasChildren = node.children && node.children.length > 0;
     const childLevel = CHILD_LEVEL[node.level];
     const isDragged = draggedNodeId === node._id;
+
+    // Pick the right update mutation based on node level
+    const updateMutation = {
+        group: updateGroup,
+        sub_group: updateSubGroup,
+        subject: updateSubject,
+        chapter: updateChapter,
+        topic: updateTopic,
+    }[node.level];
 
     useEffect(() => {
         if (isEditing && editInputRef.current) {
@@ -404,7 +425,7 @@ function TreeNode({
         }
         setIsSaving(true);
         try {
-            await updateGroup.mutateAsync({
+            await updateMutation.mutateAsync({
                 id: node._id,
                 payload: {
                     title: { en: editTitleEn.trim(), bn: editTitleBn.trim() || editTitleEn.trim() },
@@ -703,6 +724,10 @@ export default function HierarchyManager() {
 
     const { data: treeResponse, isLoading, isError, error, refetch } = useHierarchyTree();
     const deleteGroup = useDeleteGroup();
+    const deleteSubGroup = useDeleteSubGroup();
+    const deleteSubject = useDeleteSubject();
+    const deleteChapter = useDeleteChapter();
+    const deleteTopic = useDeleteTopic();
     const reorderNodes = useReorderNodes();
 
     const tree = treeResponse?.groups ?? [];
@@ -711,7 +736,14 @@ export default function HierarchyManager() {
         if (!deleteTarget) return;
         setIsDeleting(true);
         try {
-            await deleteGroup.mutateAsync(deleteTarget._id);
+            const deleteMutation = {
+                group: deleteGroup,
+                sub_group: deleteSubGroup,
+                subject: deleteSubject,
+                chapter: deleteChapter,
+                topic: deleteTopic,
+            }[deleteTarget.level];
+            await deleteMutation.mutateAsync(deleteTarget._id);
             toast.success(`${LEVEL_LABELS[deleteTarget.level]} deleted`);
             setDeleteTarget(null);
         } catch (err) {
@@ -720,7 +752,7 @@ export default function HierarchyManager() {
         } finally {
             setIsDeleting(false);
         }
-    }, [deleteTarget, deleteGroup]);
+    }, [deleteTarget, deleteGroup, deleteSubGroup, deleteSubject, deleteChapter, deleteTopic]);
 
     // Drag-and-drop handlers
     const handleDragStart = useCallback(
