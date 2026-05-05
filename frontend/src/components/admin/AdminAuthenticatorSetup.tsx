@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard, Loader2, QrCode, Shield, ShieldCheck, Smartphone, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../hooks/useAuth';
 import {
     beginTotpSetup,
@@ -225,12 +225,7 @@ const AdminAuthenticatorSetup: React.FC = () => {
                             !user?.twoFactorEnabled && setupData.otpAuthUrl && (
                                 <div className="flex flex-col items-center justify-center space-y-3 p-4 rounded-xl bg-white/5 border border-white/10 shrink-0 md:w-48">
                                     <div className="rounded-xl overflow-hidden p-2.5 bg-white shrink-0">
-                                        <QRCodeCanvas 
-                                            value={setupData.otpAuthUrl} 
-                                            size={140} 
-                                            level="M"
-                                            includeMargin
-                                        />
+                                        <QRCodeSVG value={setupData.otpAuthUrl} size={200} level="M" includeMargin />
                                     </div>
                                     <p className="text-[10px] text-slate-400 text-center uppercase tracking-wider font-semibold">Scan with your app</p>
                                 </div>

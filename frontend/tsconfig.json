@@ -27,6 +27,9 @@
             ],
             "@shared/*": [
                 "../backend/src/types/shared/*"
+            ],
+            "qrcode.react": [
+                "./node_modules/qrcode.react/lib/index.d.ts"
             ]
         }
     },

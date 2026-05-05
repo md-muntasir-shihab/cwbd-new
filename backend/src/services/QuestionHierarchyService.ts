@@ -86,15 +86,10 @@ function toObjectId(id: string): mongoose.Types.ObjectId {
  * Requirement 1.1, 1.2, 1.11
  */
 export async function createGroup(data: CreateGroupDto): Promise<IQuestionGroup> {
-    // Check duplicate title at group level
-    const duplicate = await QuestionGroup.findOne({
-        $or: [
-            { 'title.en': data.title.en },
-            { 'title.bn': data.title.bn },
-        ],
-    });
+    // Check duplicate by code only (title can be similar across groups)
+    const duplicate = await QuestionGroup.findOne({ code: data.code });
     if (duplicate) {
-        throw new Error(`A group with the name "${data.title.en}" or "${data.title.bn}" already exists`);
+        throw new Error(`A group with code "${data.code}" already exists`);
     }
 
     const group = await QuestionGroup.create({
@@ -121,18 +116,19 @@ export async function updateGroup(id: string, data: UpdateGroupDto): Promise<IQu
         throw new Error('Group not found');
     }
 
-    // Check duplicate title if title is being updated
-    if (data.title) {
+    // Check duplicate code if code is being updated
+    if (data.code !== undefined && data.code !== group.code) {
         const duplicate = await QuestionGroup.findOne({
             _id: { $ne: toObjectId(id) },
-            $or: [
-                { 'title.en': data.title.en },
-                { 'title.bn': data.title.bn },
-            ],
+            code: data.code,
         });
         if (duplicate) {
-            throw new Error(`A group with the name "${data.title.en}" or "${data.title.bn}" already exists`);
+            throw new Error(`A group with code "${data.code}" already exists`);
         }
+    }
+
+    // Check duplicate title if title is being updated
+    if (data.title) {
         group.title = { en: data.title.en, bn: data.title.bn };
     }
 
@@ -174,6 +170,21 @@ export async function deleteGroup(id: string): Promise<void> {
 // ─── SubGroup (Level 2) CRUD ────────────────────────────────
 
 /**
+ * Update an existing SubGroup.
+ */
+export async function updateSubGroup(id: string, data: Partial<CreateSubGroupDto>): Promise<IQuestionSubGroup> {
+    const subGroup = await QuestionSubGroup.findById(id);
+    if (!subGroup) throw new Error('Sub-group not found');
+
+    if (data.title) subGroup.title = { en: data.title.en, bn: data.title.bn };
+    if (data.code !== undefined) subGroup.code = data.code;
+    if (data.order !== undefined) subGroup.order = data.order;
+
+    await subGroup.save();
+    return subGroup;
+}
+
+/**
  * Create a new SubGroup under a Group.
  * Validates parent Group exists, rejects duplicate title under same parent.
  * Requirement 1.1, 1.3, 1.11
@@ -185,17 +196,14 @@ export async function createSubGroup(data: CreateSubGroupDto): Promise<IQuestion
         throw new Error(`Parent group "${data.group_id}" not found`);
     }
 
-    // Check duplicate title under same parent group
+    // Check duplicate by code under same parent group
     const duplicate = await QuestionSubGroup.findOne({
         group_id: toObjectId(data.group_id),
-        $or: [
-            { 'title.en': data.title.en },
-            { 'title.bn': data.title.bn },
-        ],
+        code: data.code,
     });
     if (duplicate) {
         throw new Error(
-            `A sub-group with the title "${data.title.en}" or "${data.title.bn}" already exists under group "${parentGroup.title.en}"`,
+            `A sub-group with code "${data.code}" already exists under group "${parentGroup.title.en}"`,
         );
     }
 
@@ -235,6 +243,21 @@ export async function deleteSubGroup(id: string): Promise<void> {
 // ─── Subject (Level 3) CRUD — uses QuestionCategory model ──
 
 /**
+ * Update an existing Subject.
+ */
+export async function updateSubject(id: string, data: Partial<CreateSubjectDto>): Promise<IQuestionCategory> {
+    const subject = await QuestionCategory.findById(id);
+    if (!subject) throw new Error('Subject not found');
+
+    if (data.title) subject.title = { en: data.title.en, bn: data.title.bn };
+    if (data.code !== undefined) subject.code = data.code;
+    if (data.order !== undefined) subject.order = data.order;
+
+    await subject.save();
+    return subject;
+}
+
+/**
  * Create a new Subject under a SubGroup.
  * Validates parent SubGroup exists, derives group_id from SubGroup,
  * rejects duplicate title under same parent SubGroup.
@@ -253,17 +276,14 @@ export async function createSubject(data: CreateSubjectDto): Promise<IQuestionCa
         throw new Error(`Parent group for sub-group "${parentSubGroup.title.en}" not found — broken hierarchy chain`);
     }
 
-    // Check duplicate title under same parent SubGroup
+    // Check duplicate by code under same parent SubGroup
     const duplicate = await QuestionCategory.findOne({
         parent_id: toObjectId(data.sub_group_id),
-        $or: [
-            { 'title.en': data.title.en },
-            { 'title.bn': data.title.bn },
-        ],
+        code: data.code,
     });
     if (duplicate) {
         throw new Error(
-            `A subject with the title "${data.title.en}" or "${data.title.bn}" already exists under sub-group "${parentSubGroup.title.en}"`,
+            `A subject with code "${data.code}" already exists under sub-group "${parentSubGroup.title.en}"`,
         );
     }
 
@@ -303,6 +323,21 @@ export async function deleteSubject(id: string): Promise<void> {
 // ─── Chapter (Level 4) CRUD ─────────────────────────────────
 
 /**
+ * Update an existing Chapter.
+ */
+export async function updateChapter(id: string, data: Partial<CreateChapterDto>): Promise<IQuestionChapter> {
+    const chapter = await QuestionChapter.findById(id);
+    if (!chapter) throw new Error('Chapter not found');
+
+    if (data.title) chapter.title = { en: data.title.en, bn: data.title.bn };
+    if (data.code !== undefined) chapter.code = data.code;
+    if (data.order !== undefined) chapter.order = data.order;
+
+    await chapter.save();
+    return chapter;
+}
+
+/**
  * Create a new Chapter under a Subject.
  * Validates parent Subject exists, derives group_id from Subject,
  * rejects duplicate title under same parent Subject.
@@ -326,17 +361,14 @@ export async function createChapter(data: CreateChapterDto): Promise<IQuestionCh
         }
     }
 
-    // Check duplicate title under same parent Subject
+    // Check duplicate by code under same parent Subject
     const duplicate = await QuestionChapter.findOne({
         subject_id: toObjectId(data.subject_id),
-        $or: [
-            { 'title.en': data.title.en },
-            { 'title.bn': data.title.bn },
-        ],
+        code: data.code,
     });
     if (duplicate) {
         throw new Error(
-            `A chapter with the title "${data.title.en}" or "${data.title.bn}" already exists under subject "${parentSubject.title.en}"`,
+            `A chapter with code "${data.code}" already exists under subject "${parentSubject.title.en}"`,
         );
     }
 
@@ -376,6 +408,21 @@ export async function deleteChapter(id: string): Promise<void> {
 // ─── Topic (Level 5) CRUD ───────────────────────────────────
 
 /**
+ * Update an existing Topic.
+ */
+export async function updateTopic(id: string, data: Partial<CreateTopicDto>): Promise<IQuestionTopic> {
+    const topic = await QuestionTopic.findById(id);
+    if (!topic) throw new Error('Topic not found');
+
+    if (data.title) topic.title = { en: data.title.en, bn: data.title.bn };
+    if (data.code !== undefined) topic.code = data.code;
+    if (data.order !== undefined) topic.order = data.order;
+
+    await topic.save();
+    return topic;
+}
+
+/**
  * Create a new Topic under a Chapter.
  * Validates parent Chapter exists, derives category_id and group_id from Chapter,
  * rejects duplicate title under same parent Chapter.
@@ -394,17 +441,14 @@ export async function createTopic(data: CreateTopicDto): Promise<IQuestionTopic>
         throw new Error(`Parent subject for chapter "${parentChapter.title.en}" not found — broken hierarchy chain`);
     }
 
-    // Check duplicate title under same parent Chapter
+    // Check duplicate by code under same parent Chapter
     const duplicate = await QuestionTopic.findOne({
         parent_id: toObjectId(data.chapter_id),
-        $or: [
-            { 'title.en': data.title.en },
-            { 'title.bn': data.title.bn },
-        ],
+        code: data.code,
     });
     if (duplicate) {
         throw new Error(
-            `A topic with the title "${data.title.en}" or "${data.title.bn}" already exists under chapter "${parentChapter.title.en}"`,
+            `A topic with code "${data.code}" already exists under chapter "${parentChapter.title.en}"`,
         );
     }
 
@@ -489,13 +533,20 @@ export async function getFullTree(): Promise<Record<string, unknown>[]> {
     // Assemble nested tree
     return groups.map((group) => ({
         ...group,
+        level: 'group' as const,
         children: (subGroupsByGroup.get(group._id.toString()) ?? []).map((sg) => ({
             ...sg,
+            level: 'sub_group' as const,
             children: (subjectsBySubGroup.get(sg._id.toString()) ?? []).map((subj) => ({
                 ...subj,
+                level: 'subject' as const,
                 children: (chaptersBySubject.get(subj._id.toString()) ?? []).map((ch) => ({
                     ...ch,
-                    children: topicsByChapter.get(ch._id.toString()) ?? [],
+                    level: 'chapter' as const,
+                    children: (topicsByChapter.get(ch._id.toString()) ?? []).map((t) => ({
+                        ...t,
+                        level: 'topic' as const,
+                    })),
                 })),
             })),
         })),

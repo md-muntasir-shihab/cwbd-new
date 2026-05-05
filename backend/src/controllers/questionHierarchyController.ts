@@ -13,8 +13,8 @@ import type { HierarchyLevel } from '../services/QuestionHierarchyService';
  */
 export async function getTree(_req: AuthRequest, res: Response): Promise<void> {
     try {
-        const tree = await QuestionHierarchyService.getFullTree();
-        ResponseBuilder.send(res, 200, ResponseBuilder.success(tree));
+        const groups = await QuestionHierarchyService.getFullTree();
+        ResponseBuilder.send(res, 200, ResponseBuilder.success({ groups }));
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Server error';
         ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', message));
@@ -62,6 +62,66 @@ export async function deleteGroup(req: AuthRequest, res: Response): Promise<void
         const message = err instanceof Error ? err.message : 'Server error';
         const status = message.includes('not found') ? 404 : message.includes('Cannot delete') ? 409 : 500;
         const code = status === 404 ? 'NOT_FOUND' : status === 409 ? 'CONFLICT' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * PUT /sub-groups/:id — Update an existing sub-group.
+ */
+export async function updateSubGroup(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const subGroup = await QuestionHierarchyService.updateSubGroup(String(req.params.id), req.body);
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(subGroup, 'Sub-group updated successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * PUT /subjects/:id — Update an existing subject.
+ */
+export async function updateSubject(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const subject = await QuestionHierarchyService.updateSubject(String(req.params.id), req.body);
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(subject, 'Subject updated successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * PUT /chapters/:id — Update an existing chapter.
+ */
+export async function updateChapter(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const chapter = await QuestionHierarchyService.updateChapter(String(req.params.id), req.body);
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(chapter, 'Chapter updated successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : 'SERVER_ERROR';
+        ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
+    }
+}
+
+/**
+ * PUT /topics/:id — Update an existing topic.
+ */
+export async function updateTopic(req: AuthRequest, res: Response): Promise<void> {
+    try {
+        const topic = await QuestionHierarchyService.updateTopic(String(req.params.id), req.body);
+        ResponseBuilder.send(res, 200, ResponseBuilder.success(topic, 'Topic updated successfully'));
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Server error';
+        const status = message.includes('not found') ? 404 : 500;
+        const code = status === 404 ? 'NOT_FOUND' : 'SERVER_ERROR';
         ResponseBuilder.send(res, status, ResponseBuilder.error(code, message));
     }
 }

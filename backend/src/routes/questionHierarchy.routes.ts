@@ -17,9 +17,13 @@ import {
     updateGroup,
     deleteGroup,
     createSubGroup,
+    updateSubGroup,
     createSubject,
+    updateSubject,
     createChapter,
+    updateChapter,
     createTopic,
+    updateTopic,
     reorderNodes,
     mergeNodes,
 } from '../controllers/questionHierarchyController';
@@ -72,12 +76,28 @@ router.post(
     createSubGroup,
 );
 
+// PUT /sub-groups/:id — Update sub-group (edit permission)
+router.put(
+    '/sub-groups/:id',
+    requirePermission('question_bank', 'edit'),
+    validateBody(updateGroupSchema),
+    updateSubGroup,
+);
+
 // POST /subjects — Create subject (create permission)
 router.post(
     '/subjects',
     requirePermission('question_bank', 'create'),
     validateBody(createSubjectSchema),
     createSubject,
+);
+
+// PUT /subjects/:id — Update subject (edit permission)
+router.put(
+    '/subjects/:id',
+    requirePermission('question_bank', 'edit'),
+    validateBody(updateGroupSchema),
+    updateSubject,
 );
 
 // POST /chapters — Create chapter (create permission)
@@ -88,12 +108,28 @@ router.post(
     createChapter,
 );
 
+// PUT /chapters/:id — Update chapter (edit permission)
+router.put(
+    '/chapters/:id',
+    requirePermission('question_bank', 'edit'),
+    validateBody(updateGroupSchema),
+    updateChapter,
+);
+
 // POST /topics — Create topic (create permission)
 router.post(
     '/topics',
     requirePermission('question_bank', 'create'),
     validateBody(createTopicSchema),
     createTopic,
+);
+
+// PUT /topics/:id — Update topic (edit permission)
+router.put(
+    '/topics/:id',
+    requirePermission('question_bank', 'edit'),
+    validateBody(updateGroupSchema),
+    updateTopic,
 );
 
 // PUT /:level/:id/reorder — Reorder nodes at a hierarchy level (edit permission)
