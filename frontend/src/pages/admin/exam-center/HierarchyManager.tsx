@@ -14,6 +14,8 @@ import {
     Check,
     X,
     Loader2,
+    LayoutGrid,
+    List,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -82,6 +84,30 @@ function TreeSkeleton() {
                             <div className="h-5 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
                         </div>
                     ))}
+                </div>
+            ))}
+            <span className="sr-only">Loading...</span>
+        </div>
+    );
+}
+
+type ViewMode = 'tree' | 'card';
+
+const VIEW_MODE_KEY = 'hierarchy-view-mode';
+
+function CardSkeleton() {
+    return (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-pulse" role="status" aria-label="Loading hierarchy cards">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+                    <div className="mb-3 flex items-center gap-2">
+                        <div className="h-5 w-16 rounded-full bg-slate-200 dark:bg-slate-700" />
+                        <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="h-3 w-full rounded bg-slate-100 dark:bg-slate-800" />
+                        <div className="h-3 w-2/3 rounded bg-slate-100 dark:bg-slate-800" />
+                    </div>
                 </div>
             ))}
             <span className="sr-only">Loading...</span>
@@ -555,13 +581,121 @@ function TreeNode({
 }
 
 
+// ─── Hierarchy Card Component ────────────────────────────────────────────
+
+interface HierarchyCardProps {
+    node: HierarchyNode;
+    lang: 'en' | 'bn';
+    onRequestCreate: (level: HierarchyLevel, parentId: string) => void;
+    onRequestDelete: (node: HierarchyNode) => void;
+}
+
+function HierarchyCard({ node, lang, onRequestCreate, onRequestDelete }: HierarchyCardProps) {
+    const displayTitle = node.title[lang] || node.title.en;
+    const childLevel = CHILD_LEVEL[node.level];
+    const childCount = node.children?.length ?? 0;
+
+    const CARD_ACCENT: Record<HierarchyLevel, string> = {
+        group: 'border-l-indigo-500',
+        sub_group: 'border-l-emerald-500',
+        subject: 'border-l-amber-500',
+        chapter: 'border-l-sky-500',
+        topic: 'border-l-rose-500',
+    };
+
+    return (
+        <div
+            className={`group relative rounded-xl border border-slate-200 border-l-4 ${CARD_ACCENT[node.level]} bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-900`}
+        >
+            {/* Header */}
+            <div className="mb-3 flex items-start justify-between">
+                <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${LEVEL_COLORS[node.level]}`}>
+                            {LEVEL_LABELS[node.level]}
+                        </span>
+                        <span className="text-[10px] text-slate-400">#{node.order}</span>
+                    </div>
+                    <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white" title={displayTitle}>
+                        {displayTitle}
+                    </h3>
+                    {node.title.bn && lang === 'en' && (
+                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{node.title.bn}</p>
+                    )}
+                </div>
+                {/* Actions */}
+                <div className="ml-2 flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                        type="button"
+                        onClick={() => onRequestDelete(node)}
+                        className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/30"
+                        aria-label={`Delete ${displayTitle}`}
+                    >
+                        <Trash2 size={13} />
+                    </button>
+                    {childLevel && (
+                        <button
+                            type="button"
+                            onClick={() => onRequestCreate(childLevel, node._id)}
+                            className="rounded p-1 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-900/30"
+                            aria-label={`Add ${LEVEL_LABELS[childLevel]}`}
+                        >
+                            <Plus size={13} />
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Children summary */}
+            {childCount > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {node.children!.slice(0, 6).map((child) => (
+                        <span
+                            key={child._id}
+                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${LEVEL_COLORS[child.level]}`}
+                            title={child.title[lang] || child.title.en}
+                        >
+                            {(child.title[lang] || child.title.en).length > 18
+                                ? (child.title[lang] || child.title.en).slice(0, 18) + '…'
+                                : (child.title[lang] || child.title.en)}
+                        </span>
+                    ))}
+                    {childCount > 6 && (
+                        <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            +{childCount - 6} more
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* Footer stats */}
+            <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                    {childLevel ? `${childCount} ${LEVEL_LABELS[childLevel].toLowerCase()}${childCount !== 1 ? 's' : ''}` : 'Leaf node'}
+                </span>
+                <span className="text-[10px] font-mono text-slate-400 dark:text-slate-600">{node.code}</span>
+            </div>
+        </div>
+    );
+}
+
+
 // ─── Main HierarchyManager Page ──────────────────────────────────────────
+
 
 export default function HierarchyManager() {
     const [lang, setLang] = useState<'en' | 'bn'>('en');
     const [createModal, setCreateModal] = useState<{ level: HierarchyLevel; parentId: string | null } | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<HierarchyNode | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [viewMode, setViewMode] = useState<ViewMode>(() => {
+        try { return (localStorage.getItem(VIEW_MODE_KEY) as ViewMode) || 'tree'; } catch { return 'tree'; }
+    });
+
+    const handleViewModeChange = useCallback((mode: ViewMode) => {
+        setViewMode(mode);
+        try { localStorage.setItem(VIEW_MODE_KEY, mode); } catch { /* noop */ }
+    }, []);
 
     // Drag-and-drop state
     const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
@@ -571,7 +705,7 @@ export default function HierarchyManager() {
     const deleteGroup = useDeleteGroup();
     const reorderNodes = useReorderNodes();
 
-    const tree = treeResponse?.data?.groups ?? [];
+    const tree = treeResponse?.groups ?? [];
 
     const handleDelete = useCallback(async () => {
         if (!deleteTarget) return;
@@ -690,6 +824,28 @@ export default function HierarchyManager() {
                             {lang === 'en' ? 'EN' : 'বাং'}
                         </button>
 
+                        {/* View mode toggle */}
+                        <div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-600">
+                            <button
+                                type="button"
+                                onClick={() => handleViewModeChange('tree')}
+                                className={`rounded-l-lg p-2 transition-colors ${viewMode === 'tree' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'}`}
+                                aria-label="Tree view"
+                                title="Tree view"
+                            >
+                                <List size={16} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleViewModeChange('card')}
+                                className={`rounded-r-lg p-2 transition-colors ${viewMode === 'card' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'}`}
+                                aria-label="Card view"
+                                title="Card view"
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
+                        </div>
+
                         {/* Refresh */}
                         <button
                             type="button"
@@ -713,9 +869,9 @@ export default function HierarchyManager() {
                     </div>
                 </div>
 
-                {/* Tree content */}
-                <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                    {isLoading && <TreeSkeleton />}
+                {/* Content */}
+                <div className={viewMode === 'card' ? '' : 'rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900'}>
+                    {isLoading && (viewMode === 'card' ? <CardSkeleton /> : <TreeSkeleton />)}
 
                     {isError && (
                         <div className="flex flex-col items-center gap-3 py-12 text-center">
@@ -751,7 +907,8 @@ export default function HierarchyManager() {
                         </div>
                     )}
 
-                    {!isLoading && !isError && tree.length > 0 && (
+                    {/* Tree View */}
+                    {!isLoading && !isError && tree.length > 0 && viewMode === 'tree' && (
                         <div role="tree" aria-label="Question hierarchy tree">
                             {tree.map((group) => (
                                 <TreeNode
@@ -767,6 +924,21 @@ export default function HierarchyManager() {
                                     onDrop={handleDrop}
                                     onDragEnd={handleDragEnd}
                                     parentId={null}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Card View */}
+                    {!isLoading && !isError && tree.length > 0 && viewMode === 'card' && (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Question hierarchy cards">
+                            {tree.map((group) => (
+                                <HierarchyCard
+                                    key={group._id}
+                                    node={group}
+                                    lang={lang}
+                                    onRequestCreate={(level, parentId) => setCreateModal({ level, parentId })}
+                                    onRequestDelete={setDeleteTarget}
                                 />
                             ))}
                         </div>

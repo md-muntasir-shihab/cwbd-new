@@ -58,20 +58,32 @@ const ASYNC_THRESHOLD = 10_000;
 /** UTF-8 BOM for proper Bengali display in Excel/CSV viewers. */
 const UTF8_BOM = '\uFEFF';
 
-/** Column headers matching the import format (Requirement 11.1). */
+/** Column headers matching the import template for round-trip compatibility. */
 const EXPORT_COLUMNS = [
+    'questionType',
     'questionText',
+    'questionTextBn',
     'option1',
+    'option1Bn',
     'option2',
+    'option2Bn',
     'option3',
+    'option3Bn',
     'option4',
+    'option4Bn',
     'correctOption',
-    'explanation',
     'difficulty',
-    'topic',
-    'category',
+    'marks',
+    'negativeMarks',
     'group',
+    'subGroup',
+    'subject',
+    'chapter',
+    'topic',
     'tags',
+    'explanation',
+    'explanationBn',
+    'imageUrl',
     'year',
     'source',
 ] as const;
@@ -137,39 +149,68 @@ function buildQuestionQuery(filters: QuestionFilters): Record<string, unknown> {
     return query;
 }
 
-// ─── Question Row Mapper ────────────────────────────────────
-
 /**
  * Map a QuestionBankQuestion document to a flat export row.
- * Uses Bengali text (question_bn) when available, falls back to English.
+ * Exports both English and Bengali text separately for round-trip import.
+ * Reads hierarchy names from populated references when available.
  */
 function questionToExportRow(
-    q: IQuestionBankQuestion,
+    q: IQuestionBankQuestion & {
+        group_id?: { title?: { en?: string } } | mongoose.Types.ObjectId;
+        sub_group_id?: { title?: { en?: string } } | mongoose.Types.ObjectId;
+        subject_id?: { title?: { en?: string } } | mongoose.Types.ObjectId;
+        chapter_id?: { title?: { en?: string } } | mongoose.Types.ObjectId;
+        topic_id?: { title?: { en?: string } } | mongoose.Types.ObjectId;
+    },
 ): Record<string, string> {
-    const questionText = q.question_bn || q.question_en || '';
-
-    // Map options by key
-    const optionMap: Record<string, string> = {};
+    // Map options by key (both en/bn)
+    const optionEnMap: Record<string, string> = {};
+    const optionBnMap: Record<string, string> = {};
     for (const opt of q.options || []) {
-        const text = opt.text_bn || opt.text_en || '';
-        optionMap[opt.key] = text;
+        optionEnMap[opt.key] = opt.text_en || '';
+        optionBnMap[opt.key] = opt.text_bn || '';
     }
 
-    const explanation = q.explanation_bn || q.explanation_en || '';
+    // Resolve hierarchy names from populated refs, fall back to string fields
+    const getPopulatedName = (ref: unknown): string => {
+        if (ref && typeof ref === 'object' && 'title' in (ref as Record<string, unknown>)) {
+            const titleObj = (ref as { title?: { en?: string } }).title;
+            return titleObj?.en || '';
+        }
+        return '';
+    };
+
+    const groupName = getPopulatedName(q.group_id) || '';
+    const subGroupName = getPopulatedName(q.sub_group_id) || '';
+    const subjectName = getPopulatedName(q.subject_id) || q.subject || '';
+    const chapterName = getPopulatedName(q.chapter_id) || q.chapter || '';
+    const topicName = getPopulatedName(q.topic_id) || q.topic || '';
 
     return {
-        questionText,
-        option1: optionMap['A'] || '',
-        option2: optionMap['B'] || '',
-        option3: optionMap['C'] || '',
-        option4: optionMap['D'] || '',
-        correctOption: CORRECT_KEY_TO_NUMBER[q.correctKey] || '1',
-        explanation,
+        questionType: q.question_type || 'mcq',
+        questionText: q.question_en || '',
+        questionTextBn: q.question_bn || '',
+        option1: optionEnMap['A'] || '',
+        option1Bn: optionBnMap['A'] || '',
+        option2: optionEnMap['B'] || '',
+        option2Bn: optionBnMap['B'] || '',
+        option3: optionEnMap['C'] || '',
+        option3Bn: optionBnMap['C'] || '',
+        option4: optionEnMap['D'] || '',
+        option4Bn: optionBnMap['D'] || '',
+        correctOption: CORRECT_KEY_TO_NUMBER[q.correctKey] || '',
         difficulty: q.difficulty || 'medium',
-        topic: q.topic || '',
-        category: q.moduleCategory || q.subject || '',
-        group: q.subject || '',
+        marks: String(q.marks ?? 1),
+        negativeMarks: String(q.negativeMarks ?? 0),
+        group: groupName,
+        subGroup: subGroupName,
+        subject: subjectName,
+        chapter: chapterName,
+        topic: topicName,
         tags: (q.tags || []).join(', '),
+        explanation: q.explanation_en || '',
+        explanationBn: q.explanation_bn || '',
+        imageUrl: (q.images && q.images.length > 0) ? q.images[0] : (q.questionImageUrl || ''),
         year: q.yearOrSession || '',
         source: q.sourceLabel || '',
     };
@@ -256,6 +297,11 @@ export async function exportQuestionsExcel(
     }
 
     const questions = await QuestionBankQuestion.find(query)
+        .populate('group_id', 'title')
+        .populate('sub_group_id', 'title')
+        .populate('subject_id', 'title')
+        .populate('chapter_id', 'title')
+        .populate('topic_id', 'title')
         .sort({ createdAt: -1 })
         .lean<IQuestionBankQuestion[]>();
 
@@ -279,7 +325,9 @@ export async function generateExcelBuffer(
     worksheet.columns = EXPORT_COLUMNS.map((col) => ({
         header: col,
         key: col,
-        width: col === 'questionText' ? 50 : col === 'explanation' ? 40 : 20,
+        width: col === 'questionText' || col === 'questionTextBn' ? 50
+            : col === 'explanation' || col === 'explanationBn' ? 40
+            : 20,
     }));
 
     // Style header row
@@ -323,6 +371,11 @@ export async function exportQuestionsCSV(
     }
 
     const questions = await QuestionBankQuestion.find(query)
+        .populate('group_id', 'title')
+        .populate('sub_group_id', 'title')
+        .populate('subject_id', 'title')
+        .populate('chapter_id', 'title')
+        .populate('topic_id', 'title')
         .sort({ createdAt: -1 })
         .lean<IQuestionBankQuestion[]>();
 
@@ -659,6 +712,11 @@ async function processAsyncExport(
 ): Promise<Buffer> {
     const query = buildQuestionQuery(filters);
     const questions = await QuestionBankQuestion.find(query)
+        .populate('group_id', 'title')
+        .populate('sub_group_id', 'title')
+        .populate('subject_id', 'title')
+        .populate('chapter_id', 'title')
+        .populate('topic_id', 'title')
         .sort({ createdAt: -1 })
         .lean<IQuestionBankQuestion[]>();
 

@@ -202,6 +202,13 @@ export const questionFiltersSchema = z.object({
     // Full-text search
     search: z.string().trim().optional(),
 
+    // Recycle Bin flag
+    archivedOnly: z.coerce.boolean().optional(),
+
+    // Sorting
+    sortField: z.string().trim().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+
     // Pagination
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -210,7 +217,7 @@ export const questionFiltersSchema = z.object({
 // ── Bulk Action ─────────────────────────────────────────
 
 export const bulkActionSchema = z.object({
-    action: z.enum(['archive', 'status_change', 'category_reassign']),
+    action: z.enum(['archive', 'status_change', 'category_reassign', 'approve', 'restore', 'hard_delete']),
     ids: z.array(objectId).min(1, 'At least one question ID is required'),
     newStatus: questionStatusEnum.optional(),
     newCategory: objectId.optional(),

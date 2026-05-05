@@ -330,6 +330,7 @@ import {
     adminGetStudentWeakTopics,
     adminGetHardestQuestions,
 } from '../controllers/weakTopicController';
+import { adminGetAnalyticsDashboard } from '../controllers/adminAnalyticsDashboardController';
 import {
     adminGetStudentTimeline,
     adminAddTimelineEntry,
@@ -601,6 +602,7 @@ function inferModuleFromPath(pathname: string): PermissionModule | null {
     if (clean.startsWith('/content-blocks')) return 'site_settings';
     if (clean.startsWith('/legal-pages')) return 'site_settings';
     if (clean.startsWith('/founder')) return 'site_settings';
+    if (clean.startsWith('/analytics/dashboard')) return 'reports_analytics';
     if (clean.startsWith('/analytics/weak-topics')) return 'reports_analytics';
     if (clean.startsWith('/notification-center')) return 'site_settings';
     if (clean.startsWith('/renewal')) return 'subscription_plans';
@@ -866,6 +868,7 @@ router.get('/security/dashboard', requirePermission('security_logs', 'view'), ge
 router.get('/audit-logs', requirePermission('security_logs', 'view'), getAuditLogsList);
 
 /* ── Reports & Analytics ── */
+router.get('/analytics/dashboard', requirePermission('reports_analytics', 'view'), adminGetAnalyticsDashboard);
 router.get('/reports/summary', requirePermission('reports_analytics', 'view'), adminGetReportsSummary);
 router.get('/reports/export', requirePermission('reports_analytics', 'export'), requireSensitiveExport('reports', 'summary_export'), trackSensitiveExport({ moduleName: 'reports', actionName: 'summary_export' }), adminExportReportsSummary);
 router.get('/reports/analytics', requirePermission('reports_analytics', 'view'), adminGetAnalyticsOverview);

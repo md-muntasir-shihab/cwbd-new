@@ -1465,7 +1465,7 @@ export async function archiveQuestion(req: AuthRequest, res: Response): Promise<
 
 /**
  * POST /bulk-action — Perform bulk operations on questions.
- * Body: { action: 'archive' | 'status_change', ids: string[], newStatus?: string }
+ * Body: { action: 'archive' | 'status_change' | 'approve' | 'restore' | 'hard_delete', ids: string[], newStatus?: string }
  */
 export async function bulkAction(req: AuthRequest, res: Response): Promise<void> {
     try {
@@ -1486,6 +1486,24 @@ export async function bulkAction(req: AuthRequest, res: Response): Promise<void>
                     return;
                 }
                 result = await QuestionBankService.bulkStatusChange(ids, newStatus);
+                break;
+            case 'approve':
+                result = await QuestionBankService.bulkApprove(ids, req.user?.id || '');
+                break;
+            case 'restore':
+                result = await QuestionBankService.bulkRestore(ids);
+                break;
+            case 'hard_delete':
+                // Only superadmin can permanently delete questions
+                if (req.user?.role !== 'superadmin' && req.user?.role !== 'admin') {
+                    ResponseBuilder.send(
+                        res,
+                        403,
+                        ResponseBuilder.error('FORBIDDEN', 'Only superadmin can permanently delete questions'),
+                    );
+                    return;
+                }
+                result = await QuestionBankService.bulkHardDelete(ids);
                 break;
             default:
                 ResponseBuilder.send(
@@ -1546,6 +1564,7 @@ export async function reviewQuestion(req: AuthRequest, res: Response): Promise<v
  * POST /import — Import questions from an uploaded file (Excel, CSV, or JSON)
  * via ImportPipelineService.
  * Expects a single file upload via multer (field name: 'file').
+ * Optionally accepts a JSON-encoded 'mapping' field for custom column mapping.
  */
 export async function importQuestions(req: AuthRequest, res: Response): Promise<void> {
     try {
@@ -1561,14 +1580,27 @@ export async function importQuestions(req: AuthRequest, res: Response): Promise<
 
         const adminId = req.user?.id || '';
         const originalName = file.originalname.toLowerCase();
+
+        // Parse optional column mapping from request body
+        let columnMapping: Record<string, string> | undefined;
+        if (req.body?.mapping) {
+            try {
+                columnMapping = typeof req.body.mapping === 'string'
+                    ? JSON.parse(req.body.mapping)
+                    : req.body.mapping;
+            } catch {
+                // Ignore invalid mapping JSON, proceed without it
+            }
+        }
+
         let result: ImportPipelineService.ImportResult;
 
         if (originalName.endsWith('.xlsx') || originalName.endsWith('.xls')) {
-            result = await ImportPipelineService.importExcel(file.buffer, adminId);
+            result = await ImportPipelineService.importExcel(file.buffer, adminId, columnMapping);
         } else if (originalName.endsWith('.csv')) {
-            result = await ImportPipelineService.importCSV(file.buffer, adminId);
+            result = await ImportPipelineService.importCSV(file.buffer, adminId, columnMapping);
         } else if (originalName.endsWith('.json')) {
-            result = await ImportPipelineService.importJSON(file.buffer, adminId);
+            result = await ImportPipelineService.importJSON(file.buffer, adminId, columnMapping);
         } else {
             ResponseBuilder.send(
                 res,

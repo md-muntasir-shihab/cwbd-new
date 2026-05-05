@@ -596,8 +596,16 @@ export function generateImportTemplate(): Buffer {
         'correctKey', 'explanation_en', 'explanation_bn', 'explanationImageUrl',
         'marks', 'negativeMarks', 'tags', 'sourceLabel', 'chapter', 'boardOrPattern', 'yearOrSession',
     ];
+    const exampleRow = [
+        'Physics', 'Mechanics', 'Newton Laws', '', 'medium', 'en',
+        "What is Newton's first law of motion?", '', '',
+        'An object at rest stays at rest', '', 'Force equals mass times acceleration', '',
+        'Every action has an equal reaction', '', 'None of the above', '',
+        'A', 'An object remains in its state unless acted upon by an external force.', '', '',
+        '1', '0', 'newton,mechanics', '', 'Chapter 3', '', '2023',
+    ];
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 }

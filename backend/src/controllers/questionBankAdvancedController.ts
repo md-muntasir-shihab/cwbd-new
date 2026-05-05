@@ -139,18 +139,42 @@ export async function bulkCopy(req: AuthRequest, res: Response) {
 
 /* ─── Import / Export ─────────────────────────────────── */
 export async function importPreview(req: AuthRequest, res: Response) {
-    if (!req.file) return bad(res, 'File required');
-    const mapping = req.body.mapping ? JSON.parse(req.body.mapping) : undefined;
-    const data = await svc.importPreview(req.file.buffer, req.file.originalname, mapping);
-    return ok(res, data);
+    try {
+        if (!req.file) return bad(res, 'File required');
+        let mapping: Record<string, string> | undefined;
+        if (req.body.mapping) {
+            try {
+                mapping = JSON.parse(req.body.mapping);
+            } catch {
+                return bad(res, 'Invalid mapping JSON');
+            }
+        }
+        const data = await svc.importPreview(req.file.buffer, req.file.originalname, mapping);
+        return ok(res, data);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Import preview failed';
+        return ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', message));
+    }
 }
 
 export async function importCommit(req: AuthRequest, res: Response) {
-    if (!req.file) return bad(res, 'File required');
-    const mapping = req.body.mapping ? JSON.parse(req.body.mapping) : {};
-    const mode = req.body.mode === 'upsert' ? 'upsert' : 'create';
-    const data = await svc.importCommit(req.file.buffer, req.file.originalname, mapping, mode, adminId(req));
-    return ok(res, data);
+    try {
+        if (!req.file) return bad(res, 'File required');
+        let mapping: Record<string, string> = {};
+        if (req.body.mapping) {
+            try {
+                mapping = JSON.parse(req.body.mapping);
+            } catch {
+                return bad(res, 'Invalid mapping JSON');
+            }
+        }
+        const mode = req.body.mode === 'upsert' ? 'upsert' : 'create';
+        const data = await svc.importCommit(req.file.buffer, req.file.originalname, mapping, mode, adminId(req));
+        return ok(res, data);
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Import commit failed';
+        return ResponseBuilder.send(res, 500, ResponseBuilder.error('SERVER_ERROR', message));
+    }
 }
 
 export async function exportQuestions(req: AuthRequest, res: Response) {

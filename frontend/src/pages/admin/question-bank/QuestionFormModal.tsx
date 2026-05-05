@@ -6,6 +6,8 @@ import {
     Loader2,
     ImagePlus,
     Eye,
+    AlertCircle,
+    CheckCircle2,
 } from 'lucide-react';
 import { useQuestion } from '../../../hooks/useExamSystemQueries';
 import CascadingDropdowns from '../../../components/admin/question-bank/CascadingDropdowns';
@@ -74,7 +76,7 @@ export default function QuestionFormModal({
     isSubmitting,
 }: QuestionFormModalProps) {
     // ── Fetch existing question for edit mode ────────────────────────────
-    const { data: existingResponse, isLoading: isLoadingExisting } = useQuestion(editingId ?? '');
+    const { data: existingResponse, isLoading: isLoadingExisting, isError: isErrorExisting, refetch: refetchExisting } = useQuestion(editingId ?? '');
 
     // ── Form state ───────────────────────────────────────────────────────
     const [questionType, setQuestionType] = useState<QuestionType>('mcq');
@@ -97,8 +99,11 @@ export default function QuestionFormModal({
 
     // ── Populate form when editing ───────────────────────────────────────
     useEffect(() => {
-        if (!editingId || !existingResponse?.data) return;
-        const q = existingResponse.data as Record<string, unknown>;
+        if (!editingId || !existingResponse) return;
+        // Support both { data: question } (wrapped) and question directly (unwrapped by Axios interceptor)
+                const q = (existingResponse as unknown as Record<string, unknown>).data
+                    ? (existingResponse as unknown as Record<string, unknown>).data as Record<string, unknown>
+                    : existingResponse as unknown as Record<string, unknown>;
         setQuestionType((q.question_type as QuestionType) || 'mcq');
         setQuestionEn((q.question_en as string) || '');
         setQuestionBn((q.question_bn as string) || '');
@@ -117,11 +122,11 @@ export default function QuestionFormModal({
         });
         if (Array.isArray(q.options)) {
             setOptions(
-                (q.options as QuestionOptionDto[]).map((opt, i) => ({
-                    key: opt.key || String.fromCharCode(65 + i),
-                    text_en: opt.text_en || '',
-                    text_bn: opt.text_bn || '',
-                    isCorrect: opt.isCorrect || false,
+                (q.options as Array<Record<string, unknown>>).map((opt, i) => ({
+                    key: (opt.key as string) || String.fromCharCode(65 + i),
+                    text_en: (opt.text_en as string) || '',
+                    text_bn: (opt.text_bn as string) || '',
+                    isCorrect: (opt.isCorrect as boolean) || false,
                 })),
             );
         }
@@ -176,9 +181,9 @@ export default function QuestionFormModal({
                 difficulty,
                 marks,
                 negativeMarks: negativeMarks || undefined,
-                group_id: hierarchy.group_id || '',
-                sub_group_id: hierarchy.sub_group_id || '',
-                subject_id: hierarchy.subject_id || '',
+                group_id: hierarchy.group_id || undefined,
+                sub_group_id: hierarchy.sub_group_id || undefined,
+                subject_id: hierarchy.subject_id || undefined,
                 chapter_id: hierarchy.chapter_id || undefined,
                 topic_id: hierarchy.topic_id || undefined,
                 tags: parsedTags.length > 0 ? parsedTags : undefined,
@@ -211,8 +216,8 @@ export default function QuestionFormModal({
                             type="button"
                             onClick={() => setShowPreview((p) => !p)}
                             className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition ${showPreview
-                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-                                    : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                                ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                                : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                                 }`}
                         >
                             <Eye size={14} />
@@ -233,6 +238,20 @@ export default function QuestionFormModal({
                 {editingId && isLoadingExisting ? (
                     <div className="flex items-center justify-center py-20">
                         <Loader2 size={24} className="animate-spin text-indigo-500" />
+                    </div>
+                ) : editingId && isErrorExisting ? (
+                    <div className="flex flex-col items-center justify-center gap-4 py-20">
+                        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                            <AlertCircle size={16} className="shrink-0" />
+                            <span>Failed to load question data. Please try again.</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => refetchExisting()}
+                            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                        >
+                            Retry
+                        </button>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto px-6 py-5">
@@ -294,7 +313,7 @@ export default function QuestionFormModal({
                                 <div>
                                     <div className="mb-2 flex items-center justify-between">
                                         <label className={labelCls}>Options</label>
-                                        {options.length < 6 && (
+                                        {!showPreview && options.length < 6 && (
                                             <button
                                                 type="button"
                                                 onClick={handleAddOption}
@@ -305,61 +324,96 @@ export default function QuestionFormModal({
                                             </button>
                                         )}
                                     </div>
-                                    <div className="space-y-3">
-                                        {options.map((opt, idx) => (
-                                            <div
-                                                key={idx}
-                                                className={`flex items-start gap-3 rounded-lg border p-3 transition ${opt.isCorrect
+                                    {showPreview ? (
+                                        <div className="space-y-2">
+                                            {options.map((opt) => (
+                                                <div
+                                                    key={opt.key}
+                                                    className={`flex items-center gap-3 rounded-lg border p-3 ${opt.isCorrect
                                                         ? 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-700 dark:bg-emerald-900/10'
                                                         : 'border-slate-200 dark:border-slate-700'
-                                                    }`}
-                                            >
-                                                {/* Correct toggle */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleToggleCorrect(idx)}
-                                                    className={`mt-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition ${opt.isCorrect
-                                                            ? 'border-emerald-500 bg-emerald-500 text-white'
-                                                            : 'border-slate-300 text-slate-400 hover:border-emerald-400 dark:border-slate-600'
                                                         }`}
-                                                    title={opt.isCorrect ? 'Marked correct' : 'Mark as correct'}
-                                                    aria-label={`Mark option ${opt.key} as ${opt.isCorrect ? 'incorrect' : 'correct'}`}
                                                 >
-                                                    {opt.key}
-                                                </button>
-
-                                                {/* Text fields */}
-                                                <div className="flex-1 space-y-2">
-                                                    <input
-                                                        type="text"
-                                                        value={opt.text_en || ''}
-                                                        onChange={(e) => handleOptionChange(idx, 'text_en', e.target.value)}
-                                                        placeholder={`Option ${opt.key} (English)`}
-                                                        className={inputCls}
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        value={opt.text_bn || ''}
-                                                        onChange={(e) => handleOptionChange(idx, 'text_bn', e.target.value)}
-                                                        placeholder={`অপশন ${opt.key} (বাংলা)`}
-                                                        className={inputCls}
-                                                    />
+                                                    <span className="w-6 text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                        {opt.key}
+                                                    </span>
+                                                    <span className="flex-1 text-sm text-slate-900 dark:text-white">
+                                                        {opt.text_en || <span className="text-slate-400">No text</span>}
+                                                    </span>
+                                                    {opt.text_bn && (
+                                                        <span className="flex-1 text-sm text-slate-600 dark:text-slate-400">
+                                                            {opt.text_bn}
+                                                        </span>
+                                                    )}
+                                                    {opt.isCorrect && (
+                                                        <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+                                                    )}
                                                 </div>
-
-                                                {/* Remove */}
-                                                {options.length > 2 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveOption(idx)}
-                                                        className="mt-1.5 rounded-md p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
-                                                        aria-label={`Remove option ${opt.key}`}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                {options.map((opt, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`flex items-start gap-3 rounded-lg border p-3 transition ${
+                                            opt.isCorrect
+                                                ? 'border-emerald-300 bg-emerald-50/50 dark:border-emerald-700 dark:bg-emerald-900/10'
+                                                : 'border-slate-200 dark:border-slate-700'
+                                        }`}
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() => !showPreview && handleToggleCorrect(idx)}
+                                            disabled={showPreview}
+                                            className={`mt-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition ${
+                                                opt.isCorrect
+                                                    ? 'border-emerald-500 bg-emerald-500 text-white'
+                                                    : 'border-slate-300 text-slate-400 hover:border-emerald-400 dark:border-slate-600'
+                                            }`}
+                                        >
+                                            {opt.key}
+                                        </button>
+                                        <div className="flex-1 space-y-2">
+                                            {showPreview ? (
+                                                <div className="text-sm dark:text-white">{opt.text_en || <span className="text-slate-400">No English text</span>}</div>
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    value={opt.text_en}
+                                                    onChange={(e) => handleOptionChange(idx, 'text_en', e.target.value)}
+                                                    placeholder={`Option ${opt.key} (English)`}
+                                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                                                />
+                                            )}
+                                            {showPreview ? (
+                                                <div className="text-sm dark:text-white">{opt.text_bn || <span className="text-slate-400">No Bengali text</span>}</div>
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    value={opt.text_bn}
+                                                    onChange={(e) => handleOptionChange(idx, 'text_bn', e.target.value)}
+                                                    placeholder={`Option ${opt.key} (Bengali)`}
+                                                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                                                />
+                                            )}
+                                        </div>
+                                        {/* Remove Option Button */}
+                                        {options.length > 2 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => !showPreview && handleRemoveOption(idx)}
+                                                disabled={showPreview}
+                                                className="mt-1.5 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-50 disabled:hover:bg-transparent dark:hover:bg-red-900/20"
+                                                aria-label={`Remove option ${opt.key}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
                                     </div>
+                                ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -468,7 +522,8 @@ export default function QuestionFormModal({
                             </button>
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || showPreview}
+                                title={showPreview ? "Exit preview to submit" : undefined}
                                 className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 dark:focus:ring-offset-slate-900"
                             >
                                 {isSubmitting && <Loader2 size={16} className="animate-spin" />}

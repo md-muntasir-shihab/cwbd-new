@@ -27,7 +27,8 @@ export interface ExamInfoDto {
     group_id?: string;
     sub_group_id?: string;
     subject_id?: string;
-    duration: number; // minutes
+    duration?: number; // minutes
+    durationMinutes?: number; // fallback for frontend
     createdBy: string; // admin/examiner user ID
 }
 
@@ -106,7 +107,7 @@ export async function createExamDraft(data: ExamInfoDto): Promise<IExam> {
         title_bn: data.title_bn,
         description: data.description || '',
         subject: data.title, // legacy field — use title as placeholder
-        duration: data.duration,
+        duration: data.duration || data.durationMinutes || 60,
         status: 'draft',
         isPublished: false,
 

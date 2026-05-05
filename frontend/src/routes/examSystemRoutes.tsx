@@ -29,10 +29,6 @@ const AntiCheatReport = lazy(
 const NotificationManagement = lazy(
     () => import('../pages/admin/exam-center/NotificationManagement'),
 );
-const AdminAnalyticsDashboard = lazy(
-    () => import('../pages/admin/analytics/AdminAnalyticsDashboard'),
-);
-
 /* ─── Student Exam System Pages (lazy-loaded) ───────────────────────────────── */
 
 const ExamRunner = lazy(
@@ -110,11 +106,6 @@ export const examSystemAdminRoutes: RouteObject[] = [
     {
         path: 'exam-center/notifications',
         element: <NotificationManagement />,
-    },
-    // Admin analytics dashboard
-    {
-        path: 'exam-center/analytics',
-        element: <AdminAnalyticsDashboard />,
     },
 ];
 

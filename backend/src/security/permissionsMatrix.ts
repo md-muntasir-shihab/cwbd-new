@@ -8,6 +8,7 @@ export const PERMISSION_MODULES = [
     'news',
     'exams',
     'question_bank',
+    'exam_center',
     'students_groups',
     'subscription_plans',
     'payments',
@@ -77,6 +78,7 @@ const CONTENT_MODULES: PermissionModule[] = [
 
 const ADMIN_MODULES: PermissionModule[] = [
     ...CONTENT_MODULES,
+    'exam_center',
     'site_settings',
     'students_groups',
     'subscription_plans',

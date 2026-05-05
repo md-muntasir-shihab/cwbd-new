@@ -230,6 +230,14 @@ function resolveRouteTitle(pathname: string, siteName: string, defaultTitle: str
     if (pathname.startsWith('/__cw_admin__/campaigns')) return withSite('Admin Campaign Platform');
     if (pathname === '/__cw_admin__/reports') return withSite('Admin Reports');
     if (pathname === '/__cw_admin__/question-bank') return withSite('Admin Question Bank');
+    if (pathname.startsWith('/__cw_admin__/exam-center/hierarchy')) return withSite('Admin Question Hierarchy');
+    if (pathname.startsWith('/__cw_admin__/exam-center/question-bank')) return withSite('Admin Question Bank V2');
+    if (pathname.startsWith('/__cw_admin__/exam-center/exam-builder')) return withSite('Admin Exam Builder');
+    if (pathname.startsWith('/__cw_admin__/exam-center/grading')) return withSite('Admin Written Grading');
+    if (pathname.startsWith('/__cw_admin__/exam-center/anti-cheat')) return withSite('Admin Anti-Cheat Report');
+    if (pathname.startsWith('/__cw_admin__/exam-center/notifications')) return withSite('Admin Exam Notifications');
+    if (pathname.startsWith('/__cw_admin__/exam-center/analytics')) return withSite('Admin Exam Analytics');
+    if (pathname.startsWith('/__cw_admin__/exam-center')) return withSite('Admin Exam Center');
     if (pathname.startsWith('/__cw_admin__/team/')) return withSite('Admin Team & Access Control');
     if (pathname === '/__cw_admin__/settings/home-control') return withSite('Admin Home Control');
     if (pathname === '/__cw_admin__/settings/university-settings') return withSite('Admin University Settings');
@@ -457,6 +465,7 @@ export default function App() {
                                         <Route path={ADMIN_PATHS.examCenterGrading} element={<WrittenGradingInterfacePage />} />
                                         <Route path={adminUi('exam-center/grading/:examId')} element={<WrittenGradingInterfacePage />} />
                                         <Route path={ADMIN_PATHS.examCenterAntiCheat} element={<AntiCheatReportPage />} />
+                                        <Route path={adminUi('exam-center/anti-cheat/:examId?')} element={<AntiCheatReportPage />} />
                                         <Route path={ADMIN_PATHS.examCenterNotifications} element={<NotificationManagementPage />} />
                                         <Route path={ADMIN_PATHS.examCenterAnalytics} element={<AdminAnalyticsDashboardV2Page />} />
                                         <Route path={ADMIN_PATHS.students} element={<Navigate to={adminUi('student-management/list')} replace />} />

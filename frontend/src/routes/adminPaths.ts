@@ -15,6 +15,11 @@ import {
     CheckCircle,
     ClipboardCheck,
     Plug,
+    GitBranch,
+    PenTool,
+    ShieldAlert,
+    BellRing,
+    BarChart2,
 } from 'lucide-react';
 
 export type AdminMenuIcon = ComponentType<{ className?: string }>;
@@ -223,17 +228,7 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         matchPrefixes: [adminUi('exams'), adminUi('exams/new')],
     },
 
-    // 6. Question Bank
-    {
-        key: 'questionBank',
-        label: 'Question Bank',
-        path: ADMIN_PATHS.questionBank,
-        icon: BookOpen,
-        module: 'question_bank',
-        matchPrefixes: [adminUi('question-bank')],
-    },
-
-    // 6b. Exam Center (v2)
+    // 6. Exam Center (v2)
     {
         key: 'examCenter',
         label: 'Exam Center',
@@ -242,6 +237,15 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
         module: 'exam_center',
         allowedRoles: ['superadmin', 'admin', 'moderator', 'editor'],
         matchPrefixes: [adminUi('exam-center')],
+        children: [
+            { key: 'ecHierarchy', label: 'Question Hierarchy', path: ADMIN_PATHS.examCenterHierarchy, icon: GitBranch },
+            { key: 'ecQuestionBank', label: 'Question Bank', path: ADMIN_PATHS.examCenterQuestionBank, icon: Database },
+            { key: 'ecExamBuilder', label: 'Exam Builder', path: ADMIN_PATHS.examCenterBuilder, icon: FileText },
+            { key: 'ecGrading', label: 'Written Grading', path: ADMIN_PATHS.examCenterGrading, icon: PenTool },
+            { key: 'ecAntiCheat', label: 'Anti-Cheat Report', path: ADMIN_PATHS.examCenterAntiCheat, icon: ShieldAlert },
+            { key: 'ecNotifications', label: 'Notifications', path: ADMIN_PATHS.examCenterNotifications, icon: BellRing },
+            { key: 'ecAnalytics', label: 'Analytics', path: ADMIN_PATHS.examCenterAnalytics, icon: BarChart2 },
+        ],
     },
 
     // 7. Student Management

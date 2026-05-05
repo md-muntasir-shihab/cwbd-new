@@ -7,6 +7,7 @@ export interface ILocalizedText {
 
 export interface IQuestionTopic extends Document {
     category_id: mongoose.Types.ObjectId;
+    chapter_id?: mongoose.Types.ObjectId | null;
     group_id: mongoose.Types.ObjectId;
     parent_id?: mongoose.Types.ObjectId | null;
     code: string;
@@ -34,6 +35,12 @@ const QuestionTopicSchema = new Schema<IQuestionTopic>(
             type: Schema.Types.ObjectId,
             ref: 'QuestionCategory',
             required: true,
+            index: true,
+        },
+        chapter_id: {
+            type: Schema.Types.ObjectId,
+            ref: 'QuestionChapter',
+            default: null,
             index: true,
         },
         group_id: {

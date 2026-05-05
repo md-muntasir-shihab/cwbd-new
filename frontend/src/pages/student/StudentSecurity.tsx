@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { SEO } from '../../components/common/SEO';
 import { AlertTriangle, KeyRound, Laptop2, MailCheck, ShieldCheck, Smartphone, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import {
     beginTotpSetup,
     changePassword,
@@ -265,7 +265,7 @@ export default function StudentSecurity() {
                             <div className="flex flex-col items-center gap-3">
                                 <p className="text-sm font-semibold text-slate-900 dark:text-white">Scan with your Authenticator App</p>
                                 <div className="rounded-2xl bg-white p-4 shadow-sm border border-slate-100 dark:bg-slate-900 dark:border-slate-700">
-                                    <QRCodeSVG
+                                    <QRCode
                                         value={setupData.otpAuthUrl}
                                         size={180}
                                         level="M"

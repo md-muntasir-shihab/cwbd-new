@@ -18,7 +18,7 @@ const BASE = '/v1/question-hierarchy';
 
 /** GET /tree — Full hierarchy tree. */
 export const getTree = () =>
-    api.get<ApiResponse<HierarchyTree>>(`${BASE}/tree`).then((r) => r.data);
+    api.get<HierarchyTree>(`${BASE}/tree`).then((r) => r.data as HierarchyTree);
 
 /** POST /groups — Create a top-level group. */
 export const createGroup = (payload: CreateGroupDto) =>

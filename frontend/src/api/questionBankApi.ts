@@ -42,10 +42,17 @@ export const reviewQuestion = (id: string, payload: ReviewActionDto) =>
     api.post<ApiResponse<Record<string, unknown>>>(`${BASE}/${id}/review`, payload).then((r) => r.data);
 
 /** POST /import — Import questions from a file (Excel/CSV/JSON). */
-export const importQuestions = (file: File) => {
+export const importQuestions = (file: File, mapping?: Record<string, string>) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post<ApiResponse<ImportResult>>(`${BASE}/import`, fd).then((r) => r.data);
+    if (mapping && Object.keys(mapping).length > 0) {
+        fd.append('mapping', JSON.stringify(mapping));
+    }
+    return api.post<ApiResponse<ImportResult>>(`${BASE}/import`, fd, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    }).then((r) => r.data);
 };
 
 /** GET /export — Export questions to Excel or CSV. */

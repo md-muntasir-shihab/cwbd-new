@@ -5,6 +5,10 @@ import {
     XCircle,
     ChevronLeft,
     ChevronRight,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    RotateCcw,
 } from 'lucide-react';
 import type { PaginationMeta } from '../../../types/exam-system';
 
@@ -48,6 +52,13 @@ const TYPE_LABELS: Record<string, string> = {
     image_mcq: 'Img MCQ',
 };
 
+// ─── Sorting Types ───────────────────────────────────────────────────────
+
+export interface SortState {
+    field: string;
+    order: 'asc' | 'desc';
+}
+
 // ─── Props ───────────────────────────────────────────────────────────────
 
 interface QuestionTableProps {
@@ -59,8 +70,51 @@ interface QuestionTableProps {
     onEdit: (id: string) => void;
     onArchive: (id: string) => void;
     onReview: (id: string, action: 'approve' | 'reject') => void;
+    onRestore?: (id: string) => void;
+    onHardDelete?: (id: string) => void;
     pagination?: PaginationMeta;
     onPageChange: (page: number) => void;
+    isRecycleBin?: boolean;
+    sortState?: SortState;
+    onSort?: (field: string) => void;
+}
+
+// ─── Sortable Header ─────────────────────────────────────────────────────
+
+function SortableHeader({
+    label,
+    field,
+    sortState,
+    onSort,
+    className = '',
+}: {
+    label: string;
+    field: string;
+    sortState?: SortState;
+    onSort?: (field: string) => void;
+    className?: string;
+}) {
+    const isActive = sortState?.field === field;
+    const icon = !isActive ? (
+        <ArrowUpDown size={14} className="ml-1 opacity-40" />
+    ) : sortState?.order === 'asc' ? (
+        <ArrowUp size={14} className="ml-1 text-indigo-500" />
+    ) : (
+        <ArrowDown size={14} className="ml-1 text-indigo-500" />
+    );
+
+    return (
+        <th className={`px-4 py-3 font-semibold text-slate-700 dark:text-slate-300 ${className}`}>
+            <button
+                type="button"
+                onClick={() => onSort?.(field)}
+                className="inline-flex items-center gap-0.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+                {label}
+                {icon}
+            </button>
+        </th>
+    );
 }
 
 // ─── Loading Skeleton ────────────────────────────────────────────────────
@@ -84,7 +138,8 @@ function TableSkeleton() {
 // ─── Component ───────────────────────────────────────────────────────────
 
 /**
- * Question list table with selection, actions, review buttons, and pagination.
+ * Question list table with selection, actions, review buttons, sorting, and pagination.
+ * Supports Recycle Bin mode with restore/permanent-delete actions.
  */
 export default function QuestionTable({
     questions,
@@ -95,16 +150,27 @@ export default function QuestionTable({
     onEdit,
     onArchive,
     onReview,
+    onRestore,
+    onHardDelete,
     pagination,
     onPageChange,
+    isRecycleBin = false,
+    sortState,
+    onSort,
 }: QuestionTableProps) {
     if (isLoading) return <TableSkeleton />;
 
     if (questions.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 py-16 text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                <p className="text-sm">No questions found</p>
-                <p className="mt-1 text-xs">Try adjusting your filters or create a new question</p>
+                <p className="text-sm">
+                    {isRecycleBin ? 'Recycle bin is empty' : 'No questions found'}
+                </p>
+                <p className="mt-1 text-xs">
+                    {isRecycleBin
+                        ? 'Deleted questions will appear here'
+                        : 'Try adjusting your filters or create a new question'}
+                </p>
             </div>
         );
     }
@@ -127,24 +193,14 @@ export default function QuestionTable({
                                     aria-label="Select all questions"
                                 />
                             </th>
-                            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                                Question
-                            </th>
-                            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                                Type
-                            </th>
-                            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                                Difficulty
-                            </th>
-                            <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                                Status
-                            </th>
+                            <SortableHeader label="Question" field="question_en" sortState={sortState} onSort={onSort} />
+                            <SortableHeader label="Type" field="question_type" sortState={sortState} onSort={onSort} />
+                            <SortableHeader label="Difficulty" field="difficulty" sortState={sortState} onSort={onSort} />
+                            <SortableHeader label="Status" field="status" sortState={sortState} onSort={onSort} />
                             <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
                                 Review
                             </th>
-                            <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">
-                                Marks
-                            </th>
+                            <SortableHeader label="Marks" field="marks" sortState={sortState} onSort={onSort} className="text-right" />
                             <th className="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">
                                 Actions
                             </th>
@@ -224,51 +280,78 @@ export default function QuestionTable({
                                     {/* Actions */}
                                     <td className="px-4 py-3">
                                         <div className="flex items-center justify-end gap-1">
-                                            {/* Review buttons (only for pending) */}
-                                            {reviewStatus === 'pending' && (
+                                            {isRecycleBin ? (
+                                                /* ── Recycle Bin Actions ── */
                                                 <>
                                                     <button
                                                         type="button"
-                                                        onClick={() => onReview(id, 'approve')}
+                                                        onClick={() => onRestore?.(id)}
                                                         className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
-                                                        title="Approve"
-                                                        aria-label="Approve question"
+                                                        title="Restore"
+                                                        aria-label="Restore question"
                                                     >
-                                                        <CheckCircle2 size={16} />
+                                                        <RotateCcw size={16} />
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => onReview(id, 'reject')}
+                                                        onClick={() => onHardDelete?.(id)}
                                                         className="rounded-md p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
-                                                        title="Reject"
-                                                        aria-label="Reject question"
+                                                        title="Permanently Delete"
+                                                        aria-label="Permanently delete question"
                                                     >
-                                                        <XCircle size={16} />
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                /* ── Active View Actions ── */
+                                                <>
+                                                    {/* Review buttons (only for pending) */}
+                                                    {reviewStatus === 'pending' && (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onReview(id, 'approve')}
+                                                                className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                                                title="Approve"
+                                                                aria-label="Approve question"
+                                                            >
+                                                                <CheckCircle2 size={16} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onReview(id, 'reject')}
+                                                                className="rounded-md p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
+                                                                title="Reject"
+                                                                aria-label="Reject question"
+                                                            >
+                                                                <XCircle size={16} />
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {/* Edit */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onEdit(id)}
+                                                        className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+                                                        title="Edit"
+                                                        aria-label="Edit question"
+                                                    >
+                                                        <Pencil size={16} />
+                                                    </button>
+
+                                                    {/* Archive */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onArchive(id)}
+                                                        className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+                                                        title="Archive"
+                                                        aria-label="Archive question"
+                                                    >
+                                                        <Trash2 size={16} />
                                                     </button>
                                                 </>
                                             )}
-
-                                            {/* Edit */}
-                                            <button
-                                                type="button"
-                                                onClick={() => onEdit(id)}
-                                                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
-                                                title="Edit"
-                                                aria-label="Edit question"
-                                            >
-                                                <Pencil size={16} />
-                                            </button>
-
-                                            {/* Archive */}
-                                            <button
-                                                type="button"
-                                                onClick={() => onArchive(id)}
-                                                className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
-                                                title="Archive"
-                                                aria-label="Archive question"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>

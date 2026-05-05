@@ -126,6 +126,7 @@ export default function AdminShell({ title, description, children }: AdminShellP
         if (p.startsWith('/__cw_admin__/campaigns')) return `Admin / Campaigns / ${title}`;
         if (p.startsWith('/__cw_admin__/support-center')) return `Admin / Support / ${title}`;
         if (p.startsWith('/__cw_admin__/exams')) return `Admin / Exams / ${title}`;
+        if (p.startsWith('/__cw_admin__/exam-center')) return `Admin / Exam Center / ${title}`;
         if (p.startsWith('/__cw_admin__/universities')) return `Admin / Universities / ${title}`;
         if (p.startsWith('/__cw_admin__/subscriptions')) return `Admin / Subscriptions / ${title}`;
         if (p.startsWith('/__cw_admin__/question-bank')) return `Admin / Question Bank / ${title}`;

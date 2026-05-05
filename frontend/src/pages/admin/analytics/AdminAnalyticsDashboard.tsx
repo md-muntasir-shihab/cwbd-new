@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import AdminGuardShell from '../../../components/admin/AdminGuardShell';
 import {
     LineChart,
     Line,
@@ -32,6 +33,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../../services/api';
+
+const ADMIN_PATH = String(import.meta.env.VITE_ADMIN_PATH || 'campusway-secure-admin').trim().replace(/^\/+|\/+$/g, '');
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -237,7 +240,7 @@ export default function AdminAnalyticsDashboard() {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get('/v1/admin/analytics', {
+            const res = await api.get(`/${ADMIN_PATH}/analytics/dashboard`, {
                 params: { range: timeRange },
             });
             const body = res.data as AdminAnalyticsData;
@@ -259,7 +262,7 @@ export default function AdminAnalyticsDashboard() {
     const handleExportPDF = useCallback(async () => {
         setExporting('pdf');
         try {
-            const res = await api.get('/v1/admin/analytics/export', {
+            const res = await api.get(`/${ADMIN_PATH}/analytics/export`, {
                 params: { format: 'pdf', range: timeRange },
                 responseType: 'blob',
             });
@@ -280,7 +283,7 @@ export default function AdminAnalyticsDashboard() {
     const handleExportExcel = useCallback(async () => {
         setExporting('excel');
         try {
-            const res = await api.get('/v1/admin/analytics/export', {
+            const res = await api.get(`/${ADMIN_PATH}/analytics/export`, {
                 params: { format: 'excel', range: timeRange },
                 responseType: 'blob',
             });
@@ -298,10 +301,11 @@ export default function AdminAnalyticsDashboard() {
         }
     }, [timeRange]);
 
-    if (loading) return <DashboardSkeleton />;
+    if (loading) return <AdminGuardShell title="Analytics" description="Platform-wide metrics and insights" requiredModule="exam_center"><DashboardSkeleton /></AdminGuardShell>;
 
     if (error) {
         return (
+            <AdminGuardShell title="Analytics" description="Platform-wide metrics and insights" requiredModule="exam_center">
             <div className="flex flex-col items-center justify-center gap-4 py-20">
                 <AlertCircle className="h-12 w-12 text-red-400" />
                 <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{error}</p>
@@ -312,14 +316,16 @@ export default function AdminAnalyticsDashboard() {
                     <RefreshCw size={14} /> Retry
                 </button>
             </div>
+            </AdminGuardShell>
         );
     }
 
-    if (!data) return null;
+    if (!data) return <AdminGuardShell title="Analytics" description="Platform-wide metrics and insights" requiredModule="exam_center"><div /></AdminGuardShell>;
 
     const { platform, today, dailyAttempts, userGrowth, difficultyDistribution, examStats, subjectHeatmap, revenue } = data;
 
     return (
+        <AdminGuardShell title="Analytics" description="Platform-wide metrics and insights" requiredModule="exam_center">
         <div className="min-w-0 space-y-6">
             {/* ── Header ── */}
             <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-slate-100/50 p-4 shadow-sm dark:border-slate-800/80 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:p-6 xl:flex-row xl:items-center">
@@ -626,5 +632,6 @@ export default function AdminAnalyticsDashboard() {
                 )}
             </Section>
         </div>
+        </AdminGuardShell>
     );
 }

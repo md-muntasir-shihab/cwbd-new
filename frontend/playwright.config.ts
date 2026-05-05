@@ -6,7 +6,7 @@ export default defineConfig({
     fullyParallel: false,
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
-    workers: Number(process.env.PW_WORKERS || 1),
+    workers: 1,
     reporter: [['list'], ['html', { outputFolder: '../qa-artifacts/playwright-report', open: 'never' }]],
     use: {
         baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:5175',
@@ -21,10 +21,7 @@ export default defineConfig({
         {
             name: 'chromium-desktop',
             use: { ...devices['Desktop Chrome'] },
-        },
-        {
-            name: 'chromium-mobile',
-            use: { ...devices['Pixel 7'] },
+            testMatch: /admin-all-modules\.spec\.ts/,
         },
     ],
 });

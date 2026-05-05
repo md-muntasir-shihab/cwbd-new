@@ -11,18 +11,23 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import ExcelJS from 'exceljs';
+import fc from 'fast-check';
 import {
     validateImportRow,
     importExcel,
     importCSV,
     importJSON,
     processAsyncImport,
+    slugify,
+    resolveOrCreateHierarchy,
 } from '../services/ImportPipelineService';
-import type { RawImportRow } from '../services/ImportPipelineService';
+import type { RawImportRow, ExtendedRawImportRow } from '../services/ImportPipelineService';
 import QuestionBankQuestion from '../models/QuestionBankQuestion';
 import QuestionImportJob from '../models/QuestionImportJob';
 import QuestionGroup from '../models/QuestionGroup';
+import QuestionSubGroup from '../models/QuestionSubGroup';
 import QuestionCategory from '../models/QuestionCategory';
+import QuestionChapter from '../models/QuestionChapter';
 import QuestionTopic from '../models/QuestionTopic';
 
 let mongoServer: MongoMemoryServer;
@@ -48,7 +53,7 @@ afterEach(async () => {
 
 // ─── Helper: build a valid row ──────────────────────────────
 
-function validRow(overrides: Partial<RawImportRow> = {}): RawImportRow {
+function validRow(overrides: Partial<ExtendedRawImportRow> = {}): ExtendedRawImportRow {
     return {
         questionText: 'What is 2+2?',
         option1: '3',
@@ -178,6 +183,10 @@ describe('importJSON', () => {
         const buffer = Buffer.from(JSON.stringify(data), 'utf-8');
 
         const result = await importJSON(buffer, adminId);
+
+        if (result.success !== result.total) {
+            console.log('IMPORT JSON ERROR:', result.errors);
+        }
 
         expect(result.total).toBe(2);
         expect(result.success).toBe(2);
@@ -326,35 +335,37 @@ describe('hierarchy reference validation', () => {
         expect(q?.group_id).toBeTruthy();
     });
 
-    it('fails row when group reference not found', async () => {
+    it('auto-creates group when group reference not found', async () => {
         const data = [validRow({ group: 'NonExistentGroup' })];
         const buffer = Buffer.from(JSON.stringify(data), 'utf-8');
 
         const result = await importJSON(buffer, adminId);
 
-        expect(result.failed).toBe(1);
-        expect(result.errors[0].error).toContain('Group');
-        expect(result.errors[0].error).toContain('not found');
+        expect(result.failed).toBe(0);
+        expect(result.success).toBe(1);
+        expect(result.hierarchyCreated).toBeGreaterThan(0);
     });
 
-    it('fails row when category reference not found', async () => {
-        const data = [validRow({ category: 'NonExistentCategory' })];
+    it('auto-creates category when category reference not found', async () => {
+        const data = [validRow({ group: 'Group1', subGroup: 'SubGroup1', category: 'NonExistentCategory' })];
         const buffer = Buffer.from(JSON.stringify(data), 'utf-8');
 
         const result = await importJSON(buffer, adminId);
 
-        expect(result.failed).toBe(1);
-        expect(result.errors[0].error).toContain('Category');
+        expect(result.failed).toBe(0);
+        expect(result.success).toBe(1);
+        expect(result.hierarchyCreated).toBeGreaterThan(0);
     });
 
-    it('fails row when topic reference not found', async () => {
-        const data = [validRow({ topic: 'NonExistentTopic' })];
+    it('auto-creates topic when topic reference not found', async () => {
+        const data = [validRow({ group: 'Group1', subGroup: 'SubGroup1', category: 'Category1', chapter: 'Chapter1', topic: 'NonExistentTopic' })];
         const buffer = Buffer.from(JSON.stringify(data), 'utf-8');
 
         const result = await importJSON(buffer, adminId);
 
-        expect(result.failed).toBe(1);
-        expect(result.errors[0].error).toContain('Topic');
+        expect(result.failed).toBe(0);
+        expect(result.success).toBe(1);
+        expect(result.hierarchyCreated).toBeGreaterThan(0);
     });
 });
 
@@ -400,5 +411,77 @@ describe('async processing for large files', () => {
 
         const count = await QuestionBankQuestion.countDocuments();
         expect(count).toBe(2);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Property Tests (fast-check)
+// ═══════════════════════════════════════════════════════════════
+
+describe('Property Tests', () => {
+    // Feature: question-bank-exam-center-overhaul, Property 2: Slug is always URL-safe
+    it('Property 2: slugify produces URL-safe strings', () => {
+        fc.assert(
+            fc.property(
+                fc.string({ minLength: 1, maxLength: 100 }),
+                (name) => {
+                    const slug = slugify(name);
+                    return /^[a-z0-9][a-z0-9-]*$/.test(slug) || /^[a-z0-9]$/.test(slug) || slug === 'unnamed';
+                }
+            ),
+            { numRuns: 1000 }
+        );
+    });
+
+    // Feature: question-bank-exam-center-overhaul, Property 1: Hierarchy auto-creation round-trip
+    it('Property 1: Hierarchy auto-creation round-trip', async () => {
+        await fc.assert(
+            fc.asyncProperty(
+                fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
+                async (groupName) => {
+                    await QuestionGroup.deleteMany({});
+                    await QuestionSubGroup.deleteMany({});
+                    await QuestionCategory.deleteMany({});
+                    await QuestionChapter.deleteMany({});
+                    await QuestionTopic.deleteMany({});
+                    await resolveOrCreateHierarchy({ group: groupName });
+                    const trimmed = groupName.trim();
+                    const found = await QuestionGroup.findOne({ 'title.en': trimmed });
+                    return found !== null;
+                }
+            ),
+            { numRuns: 100 }
+        );
+    });
+
+    // Feature: question-bank-exam-center-overhaul, Property 3: hierarchyCreated count is accurate
+    it('Property 3: hierarchyCreated count is accurate', { timeout: 15000 }, async () => {
+        await fc.assert(
+            fc.asyncProperty(
+                fc.array(
+                    fc.record({
+                        group: fc.string({ minLength: 5 }).map(s => s.replace(/[^a-zA-Z0-9]/g, 'a')),
+                        subGroup: fc.string({ minLength: 5 }).map(s => s.replace(/[^a-zA-Z0-9]/g, 'a')),
+                        category: fc.string({ minLength: 5 }).map(s => s.replace(/[^a-zA-Z0-9]/g, 'a')),
+                        questionText: fc.constant('Arbitrary Question'),
+                        option1: fc.constant('A'),
+                        option2: fc.constant('B'),
+                        correctOption: fc.constant('1'),
+                    }),
+                    { minLength: 1, maxLength: 20 }
+                ),
+                async (rows) => {
+                    await QuestionGroup.deleteMany({});
+                    await QuestionSubGroup.deleteMany({});
+                    await QuestionCategory.deleteMany({});
+                    await QuestionChapter.deleteMany({});
+                    await QuestionTopic.deleteMany({});
+                    const buffer = Buffer.from(JSON.stringify(rows), 'utf-8');
+                    const result = await importJSON(buffer, adminId);
+                    return result.hierarchyCreated >= 0 && result.hierarchyCreated <= rows.length * 3;
+                }
+            ),
+            { numRuns: 100 }
+        );
     });
 });

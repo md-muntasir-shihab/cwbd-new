@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
+import ExamSelectorPanel from '../../../components/admin/exam-center/ExamSelectorPanel';
 import {
     ShieldAlert,
     Loader2,
@@ -215,19 +216,30 @@ function PageSkeleton() {
 // ─── Main Component ──────────────────────────────────────────────────────
 
 export default function AntiCheatReport() {
-    const { examId } = useParams<{ examId: string }>();
+    const { examId } = useParams<{ examId?: string }>();
+    const navigate = useNavigate();
 
     const [data, setData] = useState<AntiCheatReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [expandedSession, setExpandedSession] = useState<string | null>(null);
 
+    // Early return: if no examId, show exam selector
+    if (!examId) {
+        return (
+            <AdminGuardShell title="Anti-Cheat Report" requiredModule="exam_center">
+                <ExamSelectorPanel
+                    apiUrl="/v1/exams?status=completed"
+                    onSelect={(id) => navigate(`/exam-center/anti-cheat/${id}`)}
+                    title="Select an Exam"
+                    description="Choose a completed exam to view its anti-cheat report"
+                    emptyMessage="No completed exams found"
+                />
+            </AdminGuardShell>
+        );
+    }
+
     const fetchReport = useCallback(async () => {
-        if (!examId) {
-            setError('No exam ID provided');
-            setLoading(false);
-            return;
-        }
 
         setLoading(true);
         setError(null);

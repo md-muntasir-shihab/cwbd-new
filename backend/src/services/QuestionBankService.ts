@@ -81,6 +81,9 @@ export interface QuestionFilters {
     status?: string;
     review_status?: string;
     search?: string;
+    archivedOnly?: boolean;
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
 export interface PaginationDto {
@@ -411,7 +414,10 @@ export async function listQuestions(
     filters: QuestionFilters,
     pagination: PaginationDto,
 ): Promise<PaginatedResult<IQuestionBankQuestion>> {
-    const query: Record<string, unknown> = { isArchived: { $ne: true } };
+    // Determine archive filter based on archivedOnly flag
+    const query: Record<string, unknown> = filters.archivedOnly
+        ? { isArchived: true }
+        : { isArchived: { $ne: true } };
 
     // Apply filters
     if (filters.group) query.group_id = toObjectId(filters.group);
@@ -443,9 +449,16 @@ export async function listQuestions(
     const { page, limit } = pagination;
     const skip = (page - 1) * limit;
 
+    // Build sort object from filters, defaulting to createdAt desc
+    const ALLOWED_SORT_FIELDS = ['createdAt', 'updatedAt', 'difficulty', 'marks', 'status', 'question_type', 'question_en'];
+    let sortObj: Record<string, 1 | -1> = { createdAt: -1 };
+    if (filters.sortField && ALLOWED_SORT_FIELDS.includes(filters.sortField)) {
+        sortObj = { [filters.sortField]: filters.sortOrder === 'asc' ? 1 : -1 };
+    }
+
     const [data, total] = await Promise.all([
         QuestionBankQuestion.find(query)
-            .sort({ createdAt: -1 })
+            .sort(sortObj)
             .skip(skip)
             .limit(limit)
             .lean<IQuestionBankQuestion[]>(),
@@ -615,6 +628,104 @@ export async function bulkStatusChange(ids: string[], status: string): Promise<B
                 { $set: updateFields },
             );
             if (result.modifiedCount > 0) {
+                success++;
+            } else {
+                failed++;
+            }
+        } catch {
+            failed++;
+        }
+    }
+
+    return { success, failed };
+}
+
+
+/**
+ * Approve multiple questions at once by setting review_status to 'approved'.
+ *
+ * Each question is individually processed so that failures on one
+ * do not block the rest. Returns a summary of successes and failures.
+ */
+export async function bulkApprove(ids: string[], adminId: string): Promise<BulkResult> {
+    let success = 0;
+    let failed = 0;
+
+    for (const id of ids) {
+        try {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                failed++;
+                continue;
+            }
+            const result = await QuestionBankQuestion.updateOne(
+                { _id: toObjectId(id), review_status: { $ne: 'approved' } },
+                { $set: { review_status: 'approved', updatedByAdminId: adminId } },
+            );
+            if (result.modifiedCount > 0) {
+                success++;
+            } else {
+                failed++;
+            }
+        } catch {
+            failed++;
+        }
+    }
+
+    return { success, failed };
+}
+
+
+/**
+ * Restore multiple archived questions (move out of recycle bin).
+ *
+ * Sets isArchived = false and status back to 'draft'.
+ */
+export async function bulkRestore(ids: string[]): Promise<BulkResult> {
+    let success = 0;
+    let failed = 0;
+
+    for (const id of ids) {
+        try {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                failed++;
+                continue;
+            }
+            const result = await QuestionBankQuestion.updateOne(
+                { _id: toObjectId(id), isArchived: true },
+                { $set: { isArchived: false, status: 'draft' } },
+            );
+            if (result.modifiedCount > 0) {
+                success++;
+            } else {
+                failed++;
+            }
+        } catch {
+            failed++;
+        }
+    }
+
+    return { success, failed };
+}
+
+
+/**
+ * Permanently delete multiple questions from the database.
+ *
+ * WARNING: This action is irreversible. Should only be called by superadmin.
+ * The controller layer is responsible for role-checking before invoking this.
+ */
+export async function bulkHardDelete(ids: string[]): Promise<BulkResult> {
+    let success = 0;
+    let failed = 0;
+
+    for (const id of ids) {
+        try {
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                failed++;
+                continue;
+            }
+            const result = await QuestionBankQuestion.deleteOne({ _id: toObjectId(id) });
+            if (result.deletedCount > 0) {
                 success++;
             } else {
                 failed++;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import AdminGuardShell from '../../../components/admin/AdminGuardShell';
+import ExamSelectorPanel from '../../../components/admin/exam-center/ExamSelectorPanel';
 import {
     FileText,
     CheckCircle2,
@@ -314,7 +315,8 @@ function StudentCard({
 // ─── Main Page ───────────────────────────────────────────────────────────
 
 export default function WrittenGradingInterface() {
-    const { examId } = useParams<{ examId: string }>();
+    const { examId } = useParams<{ examId?: string }>();
+    const navigate = useNavigate();
 
     const [results, setResults] = useState<PendingResult[]>([]);
     const [loading, setLoading] = useState(true);
@@ -324,14 +326,29 @@ export default function WrittenGradingInterface() {
     // gradeState: resultId -> { questionId -> GradeInput }
     const [gradeState, setGradeState] = useState<Record<string, Record<string, GradeInput>>>({});
 
+    // ── Early return: Show exam selector if no examId ───────────────────
+
+    if (!examId) {
+        return (
+            <AdminGuardShell title="Written Answer Grading" requiredModule="exam_center">
+                <ExamSelectorPanel
+                    apiUrl="/v1/exams?hasPendingEvaluation=true"
+                    onSelect={(id) => navigate(`/exam-center/grading/${id}`)}
+                    title="Select an Exam to Grade"
+                    description="Choose an exam with pending written answer evaluations"
+                    emptyMessage="No exams with pending evaluations found"
+                />
+            </AdminGuardShell>
+        );
+    }
+
     // ── Fetch pending results ────────────────────────────────────────────
 
     const loadResults = useCallback(async () => {
-        if (!examId) return;
         setLoading(true);
         setError(null);
         try {
-            const data = await fetchPendingResults(examId);
+            const data = await fetchPendingResults(examId!);
             setResults(data);
 
             // Initialize grade inputs from existing writtenGrades or defaults
@@ -469,9 +486,9 @@ export default function WrittenGradingInterface() {
     if (loading) {
         return (
             <AdminGuardShell title="Written Answer Grading" requiredModule="exam_center">
-            <div className="flex min-h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-            </div>
+                <div className="flex min-h-[400px] items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                </div>
             </AdminGuardShell>
         );
     }
@@ -479,63 +496,63 @@ export default function WrittenGradingInterface() {
     if (error) {
         return (
             <AdminGuardShell title="Written Answer Grading" requiredModule="exam_center">
-            <div className="mx-auto max-w-3xl px-4 py-10">
-                <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                <div className="mx-auto max-w-3xl px-4 py-10">
+                    <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                    </div>
                 </div>
-            </div>
             </AdminGuardShell>
         );
     }
 
     return (
         <AdminGuardShell title="Written Answer Grading" requiredModule="exam_center">
-        <div className="mx-auto max-w-4xl px-4 py-6">
-            {/* Page header */}
-            <div className="mb-6">
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Written Answer Grading
-                </h1>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    Review and grade student written/CQ answers for exam{' '}
-                    <span className="font-mono text-xs">{examId}</span>
-                </p>
-            </div>
-
-            {/* Progress */}
-            <div className="mb-6">
-                <ProgressBar graded={gradedCount} total={totalCount} />
-            </div>
-
-            {/* Empty state */}
-            {results.length === 0 && (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 py-16 dark:border-slate-600">
-                    <CheckCircle2 className="mb-3 h-10 w-10 text-emerald-500" />
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                        All written answers have been graded
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                        No pending evaluations for this exam.
+            <div className="mx-auto max-w-4xl px-4 py-6">
+                {/* Page header */}
+                <div className="mb-6">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                        Written Answer Grading
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        Review and grade student written/CQ answers for exam{' '}
+                        <span className="font-mono text-xs">{examId}</span>
                     </p>
                 </div>
-            )}
 
-            {/* Student cards */}
-            <div className="space-y-4">
-                {results.map((r) => (
-                    <StudentCard
-                        key={r._id}
-                        result={r}
-                        gradeInputs={gradeState[r._id] ?? {}}
-                        onGradeChange={(qId, field, val) => handleGradeChange(r._id, qId, field, val)}
-                        onAcceptAI={(qId) => handleAcceptAI(r._id, qId)}
-                        onSave={() => handleSave(r._id)}
-                        saving={!!savingMap[r._id]}
-                    />
-                ))}
+                {/* Progress */}
+                <div className="mb-6">
+                    <ProgressBar graded={gradedCount} total={totalCount} />
+                </div>
+
+                {/* Empty state */}
+                {results.length === 0 && (
+                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 py-16 dark:border-slate-600">
+                        <CheckCircle2 className="mb-3 h-10 w-10 text-emerald-500" />
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                            All written answers have been graded
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                            No pending evaluations for this exam.
+                        </p>
+                    </div>
+                )}
+
+                {/* Student cards */}
+                <div className="space-y-4">
+                    {results.map((r) => (
+                        <StudentCard
+                            key={r._id}
+                            result={r}
+                            gradeInputs={gradeState[r._id] ?? {}}
+                            onGradeChange={(qId, field, val) => handleGradeChange(r._id, qId, field, val)}
+                            onAcceptAI={(qId) => handleAcceptAI(r._id, qId)}
+                            onSave={() => handleSave(r._id)}
+                            saving={!!savingMap[r._id]}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
         </AdminGuardShell>
     );
 }

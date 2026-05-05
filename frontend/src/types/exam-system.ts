@@ -36,6 +36,8 @@ export interface PaginationParams {
     page?: number;
     limit?: number;
     sort?: string;
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
 // ─── Bilingual Text ──────────────────────────────────────────────────────
@@ -658,9 +660,9 @@ export interface CreateQuestionDto {
     difficulty: DifficultyLevel;
     marks: number;
     negativeMarks?: number;
-    group_id: string;
-    sub_group_id: string;
-    subject_id: string;
+    group_id?: string;
+    sub_group_id?: string;
+    subject_id?: string;
     chapter_id?: string;
     topic_id?: string;
     tags?: string[];
@@ -688,13 +690,14 @@ export interface QuestionFilters extends PaginationParams {
     tags?: string[];
     year?: string;
     source?: string;
+    archivedOnly?: boolean;
 }
 
 /** Bulk action DTO. */
 export interface BulkActionDto {
-    action: 'archive' | 'status_change' | 'category_reassign';
-    questionIds: string[];
-    status?: QuestionStatus;
+    action: 'archive' | 'status_change' | 'category_reassign' | 'approve' | 'restore' | 'hard_delete';
+    ids: string[];
+    newStatus?: QuestionStatus;
     targetCategoryId?: string;
 }
 
